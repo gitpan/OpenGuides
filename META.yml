@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: OpenGuides
-version: 0.12
+version: 0.13
 license: perl
 distribution_type: module
 requires:
@@ -42,13 +42,13 @@ provides:
     version: 0.01
   OpenGuides::Diff:
     file: lib/OpenGuides/Diff.pm
-    version: 0.01
+    version: 0.02
   OpenGuides::RDF:
     file: lib/OpenGuides/RDF.pm
     version: 0.05
   OpenGuides::Template:
     file: lib/OpenGuides/Template.pm
-    version: 0.03
+    version: 0.04
   OpenGuides::UK::PubCrawl:
     file: lib/OpenGuides/UK/PubCrawl.pm
     version: 0.01

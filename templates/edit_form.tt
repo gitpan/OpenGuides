@@ -17,8 +17,8 @@
 <form action="[% cgi_url %]" method="POST" enctype="application/x-www-form-urlencoded">
 <table>
 	<tr>
-		<td align="center"><input type="submit" name="preview" value="Preview changes" /></td>
-		<td align="center"><input type="submit" name="Save" value="Save changes" /></td>
+		<td align="center"><input type="submit" name="preview" value="Preview changes" class="form_button" /></td>
+		<td align="center"><input type="submit" name="Save" value="Save changes" class="form_button" /></td>
 	</tr>
 	<tr>
 		<td colspan="2" align="center"><a href="[% cgi_url %]?[% node_param %]">(cancel edit)</a></td>
@@ -68,12 +68,12 @@
 				<td><input type="text" size="50" name="hours_text" value="[% hours_text %]"></td>
 			</tr>
         		<tr>
-				<td><strong>Postcode:</strong></td>
-				<td><input type="text" size="50" name="postcode" value="[% postcode %]"></td>
-			</tr>
-        		<tr>
 				<td><strong>Address:</strong></td>
 				<td><input type="text" size="50" name="address" value="[% address %]"></td>
+			</tr>
+        		<tr>
+				<td><strong>Postcode:</strong></td>
+				<td><input type="text" size="50" name="postcode" value="[% postcode %]"></td>
 			</tr>
 		        <tr>
 				<td><strong>OS X coordinate:</strong></td>
@@ -82,6 +82,10 @@
 		        <tr>
 				<td><strong>OS Y coordinate:</strong></td>
 				<td><input type="text" size="50" name="os_y" value="[% os_y %]"></td>
+			</tr>
+		        <tr>
+				<td><strong>Map link:</strong></td>
+				<td><input type="text" size="70" name="map_link" value="[% map_link %]"></td>
 			</tr>
 		</table>
 		</fieldset>
@@ -101,8 +105,8 @@
 		</fieldset></td>
 	</tr>
 	<tr>
-		<td align="center"><input type="submit" name="preview" value="Preview changes" /></td>
-		<td align="center"><input type="submit" name="Save" value="Save changes" /></td>
+		<td align="center"><input type="submit" name="preview" value="Preview changes" class="form_button" /></td>
+		<td align="center"><input type="submit" name="Save" value="Save changes" class="form_button" /></td>
 	</tr>
 	<tr>
 		<td colspan="2" align="center"><a href="[% cgi_url %]?[% node_param %]">(cancel edit)</a></td>

@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.12';
+$VERSION = '0.13';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -19,7 +19,7 @@ use Geography::NationalGrid::GB;
 use OpenGuides::CGI;
 use OpenGuides::RDF;
 use OpenGuides::Utils;
-use OpenGuides::Diff qw(display_node_diff);
+use OpenGuides::Diff;
 use OpenGuides::Template;
 use Time::Piece;
 use URI::Escape;
@@ -121,7 +121,18 @@ eval {
             my $version = $q->param("version");
 	    my $other_ver = $q->param("diffversion");
 	    if ( $other_ver ) {
-        	display_node_diff($wiki, $node, $version, $other_ver);
+                my %diff_vars = OpenGuides::Diff->formatted_diff_vars(
+                    wiki     => $wiki,
+                    node     => $node,
+                    versions => [ $version, $other_ver ]
+                );
+                print OpenGuides::Template->output(
+                    wiki     => $wiki,
+                    config   => $config,
+                    node     => $node,
+                    template => "differences.tt",
+                    vars     => \%diff_vars
+                );
 	    } else {
         	display_node($node, $version);
 	    }
@@ -203,7 +214,7 @@ sub display_node {
     my $modified   = $node_data{last_modified};
     my %metadata   = %{$node_data{metadata}};
 
-    my %metadata_vars = OpenGuides::Template->extract_tt_vars(
+    my %metadata_vars = OpenGuides::Template->extract_metadata_vars(
                             wiki     => $wiki,
 			    config   => $config,
                             metadata => $node_data{metadata} );
@@ -342,7 +353,7 @@ sub preview_node {
     $content     =~ s/\r\n/\n/gs;
     my $checksum = $q->param('checksum');
 
-    my %tt_metadata_vars = OpenGuides::Template->extract_tt_vars(
+    my %tt_metadata_vars = OpenGuides::Template->extract_metadata_vars(
                                                    wiki    => $wiki,
 						   config  => $config,
 						   cgi_obj => $q );
@@ -385,7 +396,7 @@ sub edit_node {
     my ($content, $checksum) = @node_data{ qw( content checksum ) };
     my $username = get_cookie( "username" );
 
-    my %metadata_vars = OpenGuides::Template->extract_tt_vars(
+    my %metadata_vars = OpenGuides::Template->extract_metadata_vars(
                              wiki     => $wiki,
                              config   => $config,
 			     metadata => $node_data{metadata} );
@@ -468,7 +479,7 @@ sub commit_node {
     $content =~ s/\r\n/\n/gs;
     my $checksum = $q->param('checksum');
 
-    my %metadata = OpenGuides::Template->extract_tt_vars(
+    my %metadata = OpenGuides::Template->extract_metadata_vars(
         wiki    => $wiki,
         config  => $config,
 	cgi_obj => $q
