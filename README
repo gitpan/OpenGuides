@@ -1,0 +1,47 @@
+OpenGuides Version 0.04
+=======================
+
+This distribution contains the OpenGuides wiki software. It requires:
+
+ - Module::Build for installation
+ - other Perl modules as detailed in the PREREQUISITES file
+ - a webserver (such as Apache)
+ - a Postgres or MySQL database dedicated to the OpenGuides installation
+
+See the INSTALL file for details on how to install OpenGuides.
+
+
+About OpenGuides
+================
+
+
+**** THIS SOFTWARE IS VERY ALPHA.  It is released solely for those who ****
+****     know what they're doing and want to play around with it.      ****
+
+
+The OpenGuides software provides the framework for a collaboratively-written
+city guide.  It is similar to a wiki but provides somewhat more structured
+data storage allowing you to annotate wiki pages with information such as
+category, location, and much more.  It provides searching facilities
+including "find me everything within a certain distance of this place".
+Every page includes a link to a machine-readable (RDF) version of the page.
+
+At the moment, the location data uses a United-Kingdom-specific module,
+so the location features might not work so well outside the UK.
+
+
+Feedback
+========
+
+If you have a question, a bug report, or a patch, or you're interested
+in joining the development team, please contact grubstreet@hummous.earth.li
+(moderated mailing list, will reach all current developers but you'll have
+to wait for your post to be approved) or kake@earth.li (a real person who
+may take a little while to reply to your mail if she's busy).
+
+
+Authors
+=======
+
+As of version 0.04, the development team consists of Earle Martin,
+Kake Pugh, and Ivor Williams.

@@ -1,0 +1,234 @@
+use strict;
+use lib "lib";
+use OpenGuides::Build;
+use Data::Dumper;
+
+eval "use Config::Tiny";
+die "Config::Tiny is required to configure this application.\n" if $@;
+
+##### Find out where to install, etc.
+
+# See if we already have some config variables set.
+use lib "lib";
+my %existing_config;
+eval "use OpenGuides::Config";
+%existing_config = %OpenGuides::Config::config unless $@;
+
+my @questions = (
+{ question =>
+        "what's the name of the database that this site runs on?",
+  variable => "dbname"
+},
+{ question => "and the database user that can access that database?",
+  variable => "dbuser"
+  },
+{ question => "and the password that they use to access the database?",
+  variable => "dbpass"
+  },
+{ question => "what do you want the script to be called?",
+  variable => "script_name",
+  default  => "wiki.cgi"
+  },
+{ question => "what directory should I install it in?",
+  variable => "install_directory",
+  default  => "/usr/lib/cgi-bin/openguides/"
+  },
+{ question => "what URL does the install directory map to?",
+  variable => "script_url",
+  },
+{ question => "what directory can I use to store indexes in for searching? "
+            . "***NOTE*** this directory must exist and be writeable by the "
+            . "user that your script will run as.  See README for more ",
+  variable => "indexing_directory",
+  default  => "/usr/lib/cgi-bin/openguides/indexes/"
+  },
+{ question => "what's the URL of the wiki's stylesheet?",
+  variable => "stylesheet_url"
+},
+{ question => "what's the wiki called?",
+  variable => "site_name",
+  default  => "OpenGuides Wiki"
+  },
+{ question => "what should the home page of the wiki be called?",
+  variable => "home_name",
+  default  => "Home"
+  },
+{ question => "how would you describe the wiki?",
+  variable => "site_desc",
+  default  => "Development site for openguides.org's software"
+  },
+{ question => "what city is the wiki based in?",
+  variable => "default_city",
+  default  => "London"
+  },
+{ question => "what country is the wiki based in?",
+  variable => "default_country",
+  default  => "United Kingdom"
+  },
+{ question => "contact email address for the wiki admin?",
+  variable => "contact_email"
+  }
+);
+
+my $skip_config = Module::Build->y_n("Skip OpenGuides configuration?", "n");
+if ( $skip_config ) {
+    print <<EOF;
+===========================================================================
+Skipping OpenGuides configuration - any configuration options previously
+saved will be used instead.  You may tweak your configuration now by
+editing the 'wiki.conf' file produced by this script, but changes made to
+that file will *not* stick around for the next time you install OpenGuides.
+===========================================================================
+EOF
+}
+
+my @answers;
+
+# Database type is speshull - can be one of two.
+my $dbtype;
+my $dbtype_qu = "what type of database do you want the site to run on?  postgres/mysql";
+if ( $skip_config ) {
+    $dbtype = $existing_config{dbtype} || "postgres";
+} else {
+    until ( $dbtype ) {
+        my $def = $existing_config{dbtype} || "postgres";
+	$dbtype = Module::Build->prompt("\n$dbtype_qu", $def);
+	$dbtype = lc($dbtype);
+	$dbtype =~ s/^\s*//;
+	$dbtype =~ s/\s*$//;
+	unless ( $dbtype eq "postgres" or $dbtype eq "mysql" ) {
+	    undef $dbtype;
+	}
+    }
+}
+
+# Check they have the relevant DBD driver installed.
+my %drivers = ( postgres => "DBD::Pg",
+                mysql    => "DBD::mysql" );
+eval "require $drivers{$dbtype}";
+die "$drivers{$dbtype} is needed to run a $dbtype database" if $@;
+
+push @answers, { question => $dbtype_qu,
+                 variable => "dbtype",
+                 value    => $dbtype };
+
+foreach my $qset (@questions) {
+    my $qu  = $qset->{question};
+    my $var = $qset->{variable};
+    my $def = $existing_config{$var} || $qset->{default};
+    my $val = $def;
+    unless ( $skip_config ) {
+        $val = Module::Build->prompt("\n$qu ", $def);
+    }
+
+    # Make sure that script_url ends in a /
+    if ( $var eq "script_url" and $val !~ /\/$/ ) {
+        $val .= "/";
+    }
+
+    push @answers, { question => $qu,
+		     variable => $var,
+		     value    => $val };
+
+    # For now we put the templates in the same place as the script, since I
+    # can't figure out how to get Module::Build to put them in a subdirectory.
+    if ( $var eq "install_directory" ) {
+        push @answers, { question => "what directory are the templates in?",
+			 variable => "template_path",
+			 value    => $val };
+    }
+}
+
+# Create a user-friendly config file from answers to prompts.
+open FILE, ">wiki.conf" or die "Can't open wiki.conf for writing: $!";
+foreach my $ans (@answers) {
+    print FILE "# $ans->{question}\n";
+    print FILE "$ans->{variable} = $ans->{value}\n\n";
+}
+close FILE or die "Can't close wiki.conf: $!";
+
+# Now use Config::Tiny to read it all back in - bit convoluted I know.
+my $read_config = Config::Tiny->read('wiki.conf');
+%existing_config = %{ $read_config->{_} };
+
+# And pop it in OpenGuides::Config
+%OpenGuides::Config::config = %existing_config;
+open OUT, ">lib/OpenGuides/Config.pm"
+    or die "Can't open lib/OpenGuides/Config.pm for writing: $!";
+
+# Sigh, I am still cargo culting this line; one day I will figure out
+# how it works (Kake).
+print OUT Data::Dumper->new([ \%OpenGuides::Config::config ],
+                            [ '*OpenGuides::Config::config' ]
+                           )->Dump,
+    "\n1;\n";
+
+#####
+##### When updating the prepreqs PLEASE REMEMBER to update PREREQUISITES.
+#####
+
+# Create the build object.
+my $build = OpenGuides::Build->new(
+    dist_name => "OpenGuides",
+    dist_version_from => "wiki.cgi",
+    license => "perl",
+    script_files => [ "wiki.cgi", "wiki.conf", "preferences.cgi",
+		      "supersearch.cgi",
+		      "templates/backlink_results.tt",
+		      "templates/display_metadata.tt",
+                      "templates/edit_conflict.tt",
+                      "templates/edit_form.tt",
+                      "templates/footer.tt",
+                      "templates/header.tt",
+                      "templates/home_node.tt",
+                      "templates/navbar.tt",
+                      "templates/node.tt",
+                      "templates/node_history.tt",
+		      "templates/preferences.tt",
+                      "templates/rdf_index.tt",
+                      "templates/recent_changes.tt",
+                      "templates/search_results.tt",
+                      "templates/site_index.tt",
+                      "templates/userstats.tt"
+		      ],
+    requires => {
+	'CGI' => 0,
+	'CGI::Carp' => 0,
+	'CGI::Cookie' => 0,
+	'CGI::Wiki' => '0.28',
+	'CGI::Wiki::Formatter::UseMod' => '0.03',
+	'CGI::Wiki::Plugin::GeoCache' => 0,
+	'CGI::Wiki::Plugin::Locator::UK' => '0.04',
+	'CGI::Wiki::Plugin::RSS::ModWiki' => '0.01',
+	'Config::Tiny' => 0,
+	'Data::Dumper' => 0,
+        $drivers{$dbtype} => 0,
+	'File::Spec::Functions' => 0,
+	'Geography::NationalGrid' => 0,
+	'Parse::RecDescent' => 0,
+	'Search::InvertedIndex' => 0,
+	'Template' => 0,
+	'Time::Piece' => 0,
+	'URI::Escape' => 0
+	},
+    build_requires => {
+        'Module::Build' => '0.18', # earlier doesn't install script files
+        },
+    dynamic_config => 1
+);
+
+$build->add_to_cleanup( "wiki.conf" );
+
+# Set the install directory:
+#  - scripts go in the actual directory.
+$build->{config}{installscript} = $existing_config{install_directory};
+#  - and modules go in lib/
+$build->{config}{sitelib} = $existing_config{install_directory} . "/lib";
+
+# Finally write the build script.
+$build->create_build_script;
+                    
+
+
+
+

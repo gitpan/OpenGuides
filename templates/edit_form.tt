@@ -1,0 +1,102 @@
+[% INCLUDE header.tt %]
+
+<h1 align="center">Edit "[% node_name %]"</h1>
+
+<form action="[% cgi_url %]" method="POST" enctype="application/x-www-form-urlencoded">
+<table>
+	<tr>
+		<td colspan="2">
+		<fieldset>
+		<legend>Main information</legend>
+		<table>
+			<tr>
+				<td><strong>Content:</strong></td>
+				<td><textarea name="content" rows="21" cols="70">[% content %]</textarea></td>
+			</tr>
+			<tr>
+				<td><strong>Locales:</strong><br />(one per line)</td>
+[%# NOTE: The whitespace in the next two textareas is deliberate, to avoid
+    getting bogus tabs and blank lines in the textarea content.  Please
+    do not reintroduce this bug.  Test on more than one browser. #%]
+				<td><textarea name="locales" rows="5" cols="70">[% FOREACH locale = locales %][% locale %]
+[% END %]</textarea></td>
+			</tr>
+			<tr>
+				<td><strong>Categories:</strong><br />(one per line)</td>
+				<td><textarea name="categories" rows="5" cols="70">[% FOREACH category = categories %][% category %]
+[% END %]</textarea></td>
+			</tr>
+		</table>
+		</fieldset>
+		&nbsp;
+		<fieldset>
+		<legend>Metadata</legend>
+		<table>
+			<tr>
+				<td><strong>Phone:</strong></td>
+				<td><input type="text" size="50" name="phone" value="[% phone %]"></td>
+			</tr>
+			<tr>
+				<td><strong>Fax:</strong></td>
+				<td><input type="text" size="50" name="fax" value="[% fax %]"></td>
+			</tr>
+        		<tr>
+				<td><strong>Website:</strong></td>
+				<td><input type="text" size="50" name="website" value="[% website %]"></td>
+			</tr>
+        		<tr>
+				<td><strong>Opening hours:</strong></td>
+				<td><input type="text" size="50" name="hours_text" value="[% hours_text %]"></td>
+			</tr>
+        		<tr>
+				<td><strong>Postcode:</strong></td>
+				<td><input type="text" size="50" name="postcode" value="[% postcode %]"></td>
+			</tr>
+        		<tr>
+				<td><strong>Address:</strong></td>
+				<td><input type="text" size="50" name="address" value="[% address %]"></td>
+			</tr>
+		        <tr>
+				<td><strong>OS X coordinate:</strong></td>
+				<td><input type="text" size="50" name="os_x" value="[% os_x %]">
+			</tr>
+		        <tr>
+				<td><strong>OS Y coordinate:</strong></td>
+				<td><input type="text" size="50" name="os_y" value="[% os_y %]"></td>
+			</tr>
+		</table>
+		</fieldset>
+		&nbsp;
+		<fieldset>
+		<legend>OpenGuides information</legend>
+		<table>
+		        <tr>
+				<td><strong>Your username (<a href="preferences.cgi">set</a>):</strong></td>
+				<td><input type="text" size="30" name="username" value="[% username %]"></td>
+			</tr>
+		        <tr>
+				<td><strong>Comment about your changes:</strong></td>
+				<td><input type="text" size="30" name="comment" value="[% comment %]"></td>
+			</tr>
+		</table>
+		</fieldset></td>
+	</tr>
+	<tr>
+		<td align="center"><input type="submit" name="preview" value="Preview changes" /></td>
+		<td align="center"><input type="submit" name="Save" value="Save changes" /></td>
+	</tr>
+	<tr>
+		<td colspan="2" align="center"><a href="[% cgi_url %]?[% node_param %]">(cancel edit)</a></td>
+	</tr>
+</table>
+<input type="hidden" name="title" value="[% node_name %]">
+<input type="hidden" name="checksum" value="[% checksum %]" />
+</form>
+
+[% IF preview_html %]
+  <h2>Preview</h2>
+  [% INCLUDE display_metadata.tt %]
+
+  [% preview_html %]
+[% END %]
+[% INCLUDE footer.tt %]

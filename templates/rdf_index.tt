@@ -1,0 +1,31 @@
+[%- USE CGI -%]
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+  	 xmlns:dc="http://purl.org/dc/1.0/"
+	 xmlns:gs="http://the.earth.li/~kake/xmlns/gs/0.1/"
+	>
+
+[%- IF criterion -%]
+  <gs:[% criterion.type %] rdf:about="[% full_cgi_url %]?action=index;index_type=[% CGI.escape(criterion.type) %];index_value=[% CGI.escape(criterion.value) %];format=rdf">
+  <gs:name>[% CGI.escapeHTML(criterion.name) %]</gs:name>
+[% ELSE -%]
+  <gs:category rdf:about="[% full_cgi_url %]?action=index;format=rdf">
+  <gs:name>Full site index</gs:name>
+[% END -%]
+
+  [%- FOREACH node = nodes %]
+    <gs:object>
+      <rdf:Description rdf:about="[% full_cgi_url %]?[% node.param %]">
+        <dc:title>[% node.name %]</dc:title>
+        <rdfs:seeAlso rdf:resource="[% full_cgi_url %]?action=rss;feed=chef_dan;id=[% node.param %]" />
+      </rdf:Description>
+    </gs:object>
+  [% END %]
+
+[%- IF criterion -%]
+  </gs:[% criterion.type %]>
+[%- ELSE -%]
+  </gs:category>
+[%- END -%]
+</rdf:RDF>

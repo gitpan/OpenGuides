@@ -1,0 +1,40 @@
+--- #YAML:1.0
+name: OpenGuides
+version: 0.04
+license: perl
+distribution_type: module
+requires:
+  CGI: 0
+  CGI::Carp: 0
+  CGI::Cookie: 0
+  CGI::Wiki: 0.28
+  CGI::Wiki::Formatter::UseMod: 0.03
+  CGI::Wiki::Plugin::GeoCache: 0
+  CGI::Wiki::Plugin::Locator::UK: 0.04
+  CGI::Wiki::Plugin::RSS::ModWiki: 0.01
+  Config::Tiny: 0
+  DBD::Pg: 0
+  Data::Dumper: 0
+  File::Spec::Functions: 0
+  Geography::NationalGrid: 0
+  Parse::RecDescent: 0
+  Search::InvertedIndex: 0
+  Template: 0
+  Time::Piece: 0
+  URI::Escape: 0
+recommends: {}
+build_requires:
+  Module::Build: 0.18
+conflicts: {}
+dynamic_config: 1
+provides:
+  OpenGuides:
+    file: lib/OpenGuides.pm
+    version: 0.04
+  OpenGuides::Build:
+    file: lib/OpenGuides/Build.pm
+    version: ~
+  OpenGuides::RDF:
+    file: lib/OpenGuides/RDF.pm
+    version: 0.01
+generated_by: Module::Build version 0.18
