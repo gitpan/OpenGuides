@@ -1,3 +1,15 @@
+0.40    18 September 2004
+        Recent Changes now shows changes in the past 24 hours, past week,
+          past fortnight, and past 30 days.
+        New preferences option to allow Recent Changes visit tracking.
+        Preferences now has an option for when your prefs expire.
+        Navbar added to diff and history pages.
+        The "omit help links" preference now actually works.
+        Set some pages to non-editable and non-deletable that should have been.
+        Recent Changes RSS fixed so "wiki:importance" is set correctly.
+        New "ignore_minor_edits" option for Recent Changes RSS.
+        Added RSS feeds for contributors, locales and categories.
+
 0.39    15 September 2004
         Split commit_node out into OpenGuides.pm in preparation for spam filter
         Added option of using Plucene for searching.  If you want to do this

@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.39';
+$VERSION = '0.40';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -106,7 +106,23 @@ eval {
         if ( !defined $feed or $feed eq "recent_changes" ) {
             my $items = $q->param("items") || "";
             my $days  = $q->param("days")  || "";
-            emit_recent_changes_rss( items => $items, days => $days);
+            my $ignore_minor_edits = $q->param("ignore_minor_edits") ? 1 : 0;
+            my $username = $q->param("username") || "";
+            my $category = $q->param("category") || "";
+            my $locale   = $q->param("locale")   || "";
+            my %criteria = (
+                             items              => $items,
+                             days               => $days,
+                             ignore_minor_edits => $ignore_minor_edits,
+                           );
+            my %filter;
+            $filter{username} = $username if $username;
+            $filter{category} = $category if $category;
+            $filter{locale}   = $locale   if $locale;
+            if ( scalar keys %filter ) {
+                $criteria{filter_on_metadata} = \%filter;
+            }
+            emit_recent_changes_rss( %criteria );
         } elsif ( $feed eq "chef_dan" ) {
             display_node_rdf( node => $node );
         } else {
@@ -155,8 +171,8 @@ sub show_userstats {
     croak "No username or host supplied to show_userstats"
         unless $username or $host;
     my %criteria = ( last_n_changes => 5 );
-    $criteria{metadata_is} = $username ? { username => $username }
-                                       : { host     => $host };
+    $criteria{metadata_was} = $username ? { username => $username }
+                                        : { host     => $host };
     my @nodes = $wiki->list_recent_changes( %criteria );
     @nodes = map { {name          => $q->escapeHTML($_->{name}),
 		    last_modified => $q->escapeHTML($_->{last_modified}),
@@ -303,9 +319,10 @@ sub show_backlinks {
         { url   => $q->escape($formatter->node_name_to_node_param($_)),
 	  title => $q->escapeHTML($_)
         }             } sort @backlinks;
-    my %tt_vars = ( results      => \@results,
-                    num_results  => scalar @results,
-                    not_editable => 1 );
+    my %tt_vars = ( results       => \@results,
+                    num_results   => scalar @results,
+                    not_deletable => 1,
+                    not_editable  => 1 );
     process_template("backlink_results.tt", $node, \%tt_vars);
 }
 
@@ -326,7 +343,8 @@ sub show_wanted_pages {
     }
     process_template( "wanted_pages.tt",
                       "",
-                      { not_editable => 1,
-                        wanted       => \@wanted } );
+                      { not_editable  => 1,
+                        not_deletable => 1,
+                        wanted        => \@wanted } );
 }
 

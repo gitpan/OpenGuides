@@ -6,13 +6,15 @@ use CGI;
 use CGI::Wiki::Plugin::Diff;
 use CGI::Wiki::Plugin::GeoCache;
 use CGI::Wiki::Plugin::Locator::UK;
+use OpenGuides::CGI;
 use OpenGuides::Template;
 use OpenGuides::Utils;
+use Time::Piece;
 use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.39';
+$VERSION = '0.40';
 
 =head1 NAME
 
@@ -137,6 +139,8 @@ sub display_node {
         $tt_vars{is_indexable_node} = 1;
         $tt_vars{index_type} = lc($type);
         $tt_vars{index_value} = $2;
+        $tt_vars{rss_link} = $config->{_}{script_name} . "?action=rss;"
+                           . lc($type) . "=" . lc(CGI->escape($2));
     }
 
     my %current_data = $wiki->retrieve_node( $id );
@@ -186,29 +190,75 @@ sub display_node {
 
     if ($id eq "RecentChanges") {
         my $minor_edits = $self->get_cookie( "show_minor_edits_in_rc" );
-        my %criteria = ( days => 7 );
-        $criteria{metadata_was} = { edit_type => "Normal edit" }
-          unless $minor_edits;
-        my @recent = $wiki->list_recent_changes( %criteria );
-        @recent = map { {name          => CGI->escapeHTML($_->{name}),
-                         last_modified => CGI->escapeHTML($_->{last_modified}),
-                         version       => CGI->escapeHTML($_->{version}),
-                         comment       => CGI->escapeHTML($_->{metadata}{comment}[0]),
-                         username      => CGI->escapeHTML($_->{metadata}{username}[0]),
-                         host          => CGI->escapeHTML($_->{metadata}{host}[0]),
-                         username_param => CGI->escape($_->{metadata}{username}[0]),
-                         edit_type     => CGI->escapeHTML($_->{metadata}{edit_type}[0]),
-                         url           => "$config->{_}->{script_name}?"
-          . CGI->escape($wiki->formatter->node_name_to_node_param($_->{name})) }
-                       } @recent;
-        $tt_vars{recent_changes} = \@recent;
-        $tt_vars{days} = 7;
+        my %recent_changes;
+        my $q = CGI->new;
+        my $since = $q->param("since");
+        if ( $since ) {
+            $tt_vars{since} = $since;
+            my $t = localtime($since); # overloaded by Time::Piece
+            $tt_vars{since_string} = $t->strftime;
+            my %criteria = ( since => $since );
+            $criteria{metadata_was} = { edit_type => "Normal edit" }
+              unless $minor_edits;
+            my @rc = $self->{wiki}->list_recent_changes( %criteria );
+
+            @rc = map {
+                {
+                  name        => CGI->escapeHTML($_->{name}),
+                  last_modified => CGI->escapeHTML($_->{last_modified}),
+                  version     => CGI->escapeHTML($_->{version}),
+                  comment     => CGI->escapeHTML($_->{metadata}{comment}[0]),
+                  username    => CGI->escapeHTML($_->{metadata}{username}[0]),
+                  host        => CGI->escapeHTML($_->{metadata}{host}[0]),
+                  username_param => CGI->escape($_->{metadata}{username}[0]),
+                  edit_type   => CGI->escapeHTML($_->{metadata}{edit_type}[0]),
+                  url         => "$config->{_}->{script_name}?"
+          . CGI->escape($wiki->formatter->node_name_to_node_param($_->{name})),
+	        }
+                       } @rc;
+            if ( scalar @rc ) {
+                $recent_changes{since} = \@rc;
+    	    }
+        } else {
+            for my $days ( [0, 1], [1, 7], [7, 14], [14, 30] ) {
+                my %criteria = ( between_days => $days );
+                $criteria{metadata_was} = { edit_type => "Normal edit" }
+                  unless $minor_edits;
+                my @rc = $self->{wiki}->list_recent_changes( %criteria );
+
+                @rc = map {
+                {
+                  name        => CGI->escapeHTML($_->{name}),
+                  last_modified => CGI->escapeHTML($_->{last_modified}),
+                  version     => CGI->escapeHTML($_->{version}),
+                  comment     => CGI->escapeHTML($_->{metadata}{comment}[0]),
+                  username    => CGI->escapeHTML($_->{metadata}{username}[0]),
+                  host        => CGI->escapeHTML($_->{metadata}{host}[0]),
+                  username_param => CGI->escape($_->{metadata}{username}[0]),
+                  edit_type   => CGI->escapeHTML($_->{metadata}{edit_type}[0]),
+                  url         => "$config->{_}->{script_name}?"
+          . CGI->escape($wiki->formatter->node_name_to_node_param($_->{name})),
+	        }
+                           } @rc;
+                if ( scalar @rc ) {
+                    $recent_changes{$days->[1]} = \@rc;
+	        }
+    	    }
+        }
+        $tt_vars{recent_changes} = \%recent_changes;
+        my %processing_args = (
+                                id            => $id,
+                                template      => "recent_changes.tt",
+                                tt_vars       => \%tt_vars,
+                               );
+        if ( !$since && $self->get_cookie("track_recent_changes_views") ) {
+	    my $cookie =
+               OpenGuides::CGI->make_recent_changes_cookie(config => $config );
+            $processing_args{cookies} = $cookie;
+            $tt_vars{last_viewed} = OpenGuides::CGI->get_last_recent_changes_visit_from_cookie( config => $config );
+        }
         return %tt_vars if $args{return_tt_vars};
-        my $output = $self->process_template(
-                                          id            => $id,
-                                          template      => "recent_changes.tt",
-                                          tt_vars       => \%tt_vars,
-                                            );
+        my $output = $self->process_template( %processing_args );
         return $output if $return_output;
         print $output;
     } elsif ( $id eq $self->config->{_}->{home_name} ) {
@@ -278,6 +328,8 @@ sub display_diffs {
                                         left_version  => $args{version},
    		                        right_version => $args{other_version},
                                               );
+    $diff_vars{not_deletable} = 1;
+    $diff_vars{not_editable} = 1;
     return %diff_vars if $args{return_tt_vars};
     my $output = $self->process_template(
                                           id       => $args{id},
@@ -469,6 +521,7 @@ sub list_all_versions {
     my %tt_vars = ( node          => $node,
 		    version       => $curr_version,
                     not_deletable => 1,
+                    not_editable  => 1,
 		    history       => \@history );
     return %tt_vars if $args{return_tt_vars};
     my $output = $self->process_template(
@@ -538,6 +591,11 @@ sub commit_node {
         $metadata{$var} = $q->param($var) || "";
     }
     $metadata{host} = $ENV{REMOTE_ADDR};
+
+    # CGI::Wiki::Plugin::RSS::ModWiki wants "major_change" to be set.
+    $metadata{major_change} = ( $metadata{edit_type} eq "Normal edit" )
+                            ? 1
+                            : 0;
 
     my $written = $wiki->write_node($node, $content, $checksum, \%metadata );
 
@@ -641,6 +699,7 @@ sub process_template {
                         node     => $args{id},
 			template => $args{template},
 			vars     => $args{tt_vars},
+                        cookies  => $args{cookies},
     );
     if ( $args{content_type} ) {
         $output_conf{content_type} = "";
