@@ -1,9 +1,10 @@
 --- #YAML:1.0
 name: OpenGuides
-version: 0.14
+version: 0.15
 license: perl
 distribution_type: module
 requires:
+  Algorithm::Diff: 0.13
   CGI: 0
   CGI::Carp: 0
   CGI::Cookie: 0
@@ -33,7 +34,7 @@ dynamic_config: 1
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.14
+    version: 0.15
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
     version: ~
