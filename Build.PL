@@ -153,7 +153,8 @@ foreach my $qset (@questions) {
     my $qu  = $qset->{question};
     my $type = $qset->{type} || "";
     my $var = $qset->{variable};
-    my $def = $existing_config{$var} || $qset->{default};
+    my $def = defined $existing_config{$var} ? $existing_config{$var}
+                                             : $qset->{default};
     my $val = $def;
 
     if ( $dbtype eq "sqlite" and $var eq "dbname" ) {
@@ -227,7 +228,7 @@ my $build = OpenGuides::Build->new(
         'CGI::Wiki::Plugin::Categoriser'  => 0,
 	'CGI::Wiki::Plugin::Diff'         => 0,
 	'CGI::Wiki::Plugin::GeoCache'     => 0,
-	'CGI::Wiki::Plugin::Locator::UK'  => '0.06',
+	'CGI::Wiki::Plugin::Locator::UK'  => '0.09',
 	'CGI::Wiki::Plugin::RSS::ModWiki' => '0.02',
         'CGI::Wiki::Plugin::RSS::Reader'  => '1.3',  # earlier versions don't support RSS 2.0
 	'Config::Tiny'                    => 0,

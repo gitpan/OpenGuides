@@ -12,7 +12,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.33_05';
+$VERSION = '0.33_06';
 
 =head1 NAME
 
@@ -299,10 +299,9 @@ sub display_diffs {
 
 sub find_within_distance {
     my ($self, %args) = @_;
-    my $node = $args{node};
+    my $node = $args{id};
     my $metres = $args{metres};
     my $formatter = $self->wiki->formatter;
-
     my @finds = $self->locator->find_within_distance(
                                                       node   => $node,
 			 		              metres => $metres,
@@ -332,7 +331,7 @@ sub find_within_distance {
     print $self->process_template(
                                    id       => "index", # KLUDGE
                                    template => "site_index.tt",
-                                   vars     => \%tt_vars,
+                                   tt_vars  => \%tt_vars,
                                  );
 }
 
