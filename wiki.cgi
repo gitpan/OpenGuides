@@ -4,9 +4,7 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.06';
-
-use lib "lib"; # for OpenGuides modules that are installed with this script
+$VERSION = '0.07';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -82,7 +80,7 @@ my $formatter = CGI::Wiki::Formatter::UseMod->new(
     implicit_links      => 0,
     allowed_tags        => [qw(a p b strong i em pre small img table td tr th
 			       br hr ul li center blockquote kbd div code
-			       strike sub)],
+			       strike sub sup font)],
     macros              => \%macros,
     node_prefix         => "$script_name?",
     edit_prefix         => "$script_name?action=edit&id="
@@ -209,17 +207,20 @@ sub display_node {
     # If this is a Category or Locale node, check whether it exists
     # and write it a stub node if it doesn't.
     if ( $node =~ /^(Category|Locale) (.*)$/ ) {
+        my $type = $1;
         $tt_vars{is_indexable_node} = 1;
-        $tt_vars{index_type} = lc($1);
+        $tt_vars{index_type} = lc($type);
         $tt_vars{index_value} = $2;
 
         unless ( $wiki->node_exists($node) ) {
             warn "Creating default node $node";
+            my $category = $type eq "Category" ? "Category" : "Locales";
             $wiki->write_node( $node,
                                "\@INDEX_LINK [[$node]]",
                                undef,
 			       { username => "Auto Create",
-				 comment  => "Auto created $tt_vars{index_type} stub page"
+				 comment  => "Auto created $tt_vars{index_type} stub page",
+                                 category => $category
 			       }
 	    );
 	}
