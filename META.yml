@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: OpenGuides
-version: 0.04
+version: 0.05
 license: perl
 distribution_type: module
 requires:
@@ -30,7 +30,7 @@ dynamic_config: 1
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.04
+    version: 0.05
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
     version: ~

@@ -3,7 +3,7 @@ use strict;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.04';
+$VERSION = '0.05';
 
 =head1 NAME
 
@@ -29,6 +29,8 @@ so the location features might not work so well outside the UK.
 
 =item * The OpenGuides development site, temporarily at L<http://un.earth.li/~kake/cgi-bin/wiki.cgi>
 
+=item * L<http://the.earth.li/~kake/cgi-bin/openguides/vegan-oxford.cgi>, an experimental OpenGuides install mirroring the Vegan Guide to Oxford at L<http://www.earth.li/~kake/vegan-oxford/>
+
 =item * grubstreet, the motivation behind OpenGuides; at L<http://grault.net/grubstreet/>
 
 =back
@@ -51,6 +53,13 @@ The OpenGuides Project (grubstreet@hummous.earth.li)
 
 The OpenGuides distribution is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.
+
+=head1 CREDITS
+
+Programming by Earle Martin, Kake Pugh, Ivor Williams.  Testing and
+bug reporting by Cal Henderson and Bob Walker.  Much of the
+Module::Build stuff copied from the Siesta project
+L<http://siesta.unixbeard.net/>
 
 =cut
 
