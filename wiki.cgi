@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.10';
+$VERSION = '0.11';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -202,54 +202,20 @@ sub display_node {
     my $content    = $wiki->format($raw);
     my $modified   = $node_data{last_modified};
     my %metadata   = %{$node_data{metadata}};
-    my $catref     = $metadata{category};
-    my $locref     = $metadata{locale};
-    my $phone      = $metadata{phone}[0];
-    my $fax        = $metadata{fax}[0];
-    my $website    = $metadata{website}[0];
-    my $address    = $metadata{address}[0];
-    my $hours_text = $metadata{opening_hours_text}[0];
-    my $postcode   = $metadata{postcode}[0];
-    my $os_x       = $metadata{os_x}[0];
-    my $os_y       = $metadata{os_y}[0];
-    my $latitude   = $metadata{latitude}[0];
-    my $longitude  = $metadata{longitude}[0];
-    my $geocache_link = make_geocache_link($node);
 
-    # The 'website' attribute might contain a URL so we wiki-format it here
-    # rather than just CGI::escapeHTMLing it all in the template.
-    my $formatted_website_text;
-    if ( $website ) {
-        $formatted_website_text = _format_website($website);
-    }
+    my %metadata_vars = OpenGuides::Template->extract_tt_vars(
+                            wiki     => $wiki,
+			    config   => $config,
+                            metadata => $node_data{metadata} );
 
-    my @categories = map { { name => $_,
-                             url  => "$script_name?Category_"
-            . uri_escape($formatter->node_name_to_node_param($_)) } } @$catref;
-
-    my @locales    = map { { name => $_,
-                             url  => "$script_name?Locale_"
-            . uri_escape($formatter->node_name_to_node_param($_)) } } @$locref;
-
-    %tt_vars = (    %tt_vars,
-		    content       => $content,
-                    categories    => \@categories,
-		    locales       => \@locales,
-		    phone         => $phone,
-                    fax           => $fax,
-		    formatted_website_text => $formatted_website_text,
-		    hours_text    => $hours_text,
-		    address       => $address,
-		    postcode      => $postcode,
-		    os_x          => $os_x,
-		    os_y          => $os_y,
-		    latitude      => $latitude,
-		    longitude     => $longitude,
-		    geocache_link => $geocache_link,
-		    last_modified => $modified,
-		    version       => $node_data{version},
-		    node_name     => $q->escapeHTML($node),
-		    node_param    => $q->escape($node) );
+    %tt_vars = ( %tt_vars,
+		 %metadata_vars,
+		 content       => $content,
+		 geocache_link => make_geocache_link($node),
+		 last_modified => $modified,
+		 version       => $node_data{version},
+		 node_name     => $q->escapeHTML($node),
+		 node_param    => $q->escape($node) );
 
     # We've undef'ed $version above if this is the current version.
     $tt_vars{current} = 1 unless $version;
@@ -376,58 +342,12 @@ sub preview_node {
     $content     =~ s/\r\n/\n/gs;
     my $checksum = $q->param('checksum');
 
-    # Multiple categories and locales can be supplied, one per line.
-    my $categories_text = $q->param('categories');
-    my $locales_text    = $q->param('locales');
-    my @catlist = sort split("\r\n", $categories_text);
-    my @loclist = sort split("\r\n", $locales_text);
-
-    my @categories = map { { name => $_,
-                             url  => "$script_name?Category_"
- 		          . uri_escape($formatter->node_name_to_node_param($_))
-			   }
-		         } @catlist;
-
-    my @locales    = map { { name => $_,
-                             url  => "$script_name?Locale_"
-			  . uri_escape($formatter->node_name_to_node_param($_))
-                           }
-                         } @loclist;
-
-    # The 'website' attribute might contain a URL so we wiki-format it here
-    # rather than just CGI::escapeHTMLing it all in the template.
-    my $website = $q->param('website');
-    my $formatted_website_text;
-    if ( $website ) {
-        $formatted_website_text = _format_website($website);
-    }
-
-    my %tt_metadata_vars = (
-			categories   => \@categories,
-			locales      => \@locales,
-  		        phone        => $q->param("phone"),
-			fax          => $q->param("fax"),
-                        website      => $website,
-		        formatted_website_text => $formatted_website_text,
-		        hours_text   => $q->param("hours_text"),
-			address      => $q->param("address"),
-                        postcode     => $q->param("postcode"),
-			username     => $q->param("username"),
-			comment      => $q->param("comment")
-     );
-
-    my $os_x = $q->param("os_x");
-    my $os_y = $q->param("os_y");
-    # Work out latitude and longitude for the preview display.
-    if ($os_x and $os_y) {
-        my $point = Geography::NationalGrid::GB->new( Easting  => $os_x,
-						      Northing => $os_y );
-        %tt_metadata_vars = ( %tt_metadata_vars,
-  		              latitude  => $point->latitude,
-			      longitude => $point->longitude,
-			      os_x      => $os_x,
-			      os_y      => $os_y
-	);
+    my %tt_metadata_vars = OpenGuides::Template->extract_tt_vars(
+                                                   wiki    => $wiki,
+						   config  => $config,
+						   cgi_obj => $q );
+    foreach my $var ( qw( username comment ) ) {
+        $tt_metadata_vars{$var} = $q->param($var);
     }
 
     if ($wiki->verify_checksum($node, $checksum)) {
@@ -461,28 +381,16 @@ sub edit_node {
     my $node = shift;
     my %node_data = $wiki->retrieve_node($node);
     my ($content, $checksum) = @node_data{ qw( content checksum ) };
-    my %metadata   = %{$node_data{metadata}};
-    my $username   = get_cookie( "username" );
+    my $username = get_cookie( "username" );
 
-    # We turn the categories and locales into arrays of hashrefs rather than
-    # simple arrays of strings, because the edit_form.tt template is also
-    # used for preview_node, which makes use of display_categories.tt to
-    # display the categories as links, and hence addresses as category.name
-    my @categories = map { { name => $_ } } @{$metadata{category} || []};
-    my @locales    = map { { name => $_ } } @{$metadata{locale}   || []};
+    my %metadata_vars = OpenGuides::Template->extract_tt_vars(
+                             wiki     => $wiki,
+                             config   => $config,
+			     metadata => $node_data{metadata} );
 
     my %tt_vars = ( content    => $q->escapeHTML($content),
                     checksum   => $q->escapeHTML($checksum),
-                    categories => \@categories,
-		    locales    => \@locales,
-		    phone      => $metadata{phone}[0],
-		    fax        => $metadata{fax}[0],
-		    website    => $metadata{website}[0],
-		    hours_text => $metadata{opening_hours_text}[0],
-                    postcode   => $metadata{postcode}[0],
-                    address    => $metadata{address}[0],
-		    os_x       => $metadata{os_x}[0],
-		    os_y       => $metadata{os_y}[0],
+                    %metadata_vars,
 		    username   => $username
     );
 
@@ -564,45 +472,21 @@ sub commit_node {
     my $content  = $q->param('content');
     $content =~ s/\r\n/\n/gs;
     my $checksum = $q->param('checksum');
-    my $categories_text = $q->param('categories');
-    my $locales_text    = $q->param('locales');
-    my $phone           = $q->param('phone');
-    my $fax             = $q->param('fax');
-    my $website         = $q->param('website');
-    my $address         = $q->param('address');
-    my $hours_text      = $q->param('hours_text');
-    my $postcode        = $q->param('postcode');
-    my $os_x            = $q->param('os_x');
-    my $os_y            = $q->param('os_y');
-    my $username        = $q->param('username');
-    my $comment         = $q->param('comment');
 
-    my @categories = sort split("\r\n", $categories_text);
-    my @locales    = sort split("\r\n", $locales_text);
-
-    my %metadata = ( category   => \@categories,
-		     locale     => \@locales,
-		     phone      => $phone,
-		     fax        => $fax,
-                     website    => $website,
-		     address    => $address,
-		     opening_hours_text => $hours_text,
-		     postcode   => $postcode,
-		     username   => $username,
-		     comment    => $comment,
+    my %metadata = OpenGuides::Template->extract_tt_vars(
+        wiki    => $wiki,
+        config  => $config,
+	cgi_obj => $q
     );
 
-
-    # We store latitude and longitude as well for the ICBM meta stuff.
-    if ($os_x and $os_y) {
-        my $point = Geography::NationalGrid::GB->new( Easting  => $os_x,
-						      Northing => $os_y );
-        %metadata = ( %metadata,
-		      latitude  => $point->latitude,
-		      longitude => $point->longitude,
-		      os_x      => $os_x,
-		      os_y      => $os_y
-	);
+    $metadata{opening_hours_text} = $q->param("hours_text") || "";
+    # kludge
+    my @cats = map { $_->{name} } @{$metadata{categories}};
+    $metadata{category} = \@cats;
+    my @locs = map { $_->{name} } @{$metadata{locales}};
+    $metadata{locale}   = \@locs;
+    foreach my $var ( qw( username comment ) ) {
+        $metadata{$var} = $q->param($var) || "";
     }
 
     my $written = $wiki->write_node($node, $content, $checksum, \%metadata );
@@ -648,17 +532,4 @@ sub show_backlinks {
                     num_results  => scalar @results,
                     not_editable => 1 );
     process_template("backlink_results.tt", $node, \%tt_vars);
-}
-
-
-sub _format_website {
-    my $text = shift;
-    my $formatted = $wiki->format($text);
-
-    # Strip out paragraph markers put in by formatter since we want this
-    # to be a single string to put in a <ul>.
-    $formatted =~ s/<p>//g;
-    $formatted =~ s/<\/p>//g;
-
-    return $formatted;
 }
