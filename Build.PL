@@ -192,8 +192,10 @@ my $build = OpenGuides::Build->new(
 	'Parse::RecDescent' => 0,
 	'Search::InvertedIndex' => 0,
 	'Template' => 0,
+        'Test::MockObject' => '0.07', # earlier doesn't use 'mock'
 	'Time::Piece' => 0,
-	'URI::Escape' => 0
+	'URI::Escape' => 0,
+        'VCS::Lite' => '0.04'
 	},
     build_requires => {
         'Module::Build' => '0.18', # earlier doesn't install script files
@@ -209,6 +211,7 @@ $build->{config}{__extra_scripts}     =
                         "pubcrawl.cgi" ];
 $build->{config}{__templates}         = [
 		      "backlink_results.tt",
+                      "differences.tt",
 		      "display_categories.tt",
 		      "display_metadata.tt",
                       "edit_conflict.tt",

@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.09';
+$VERSION = '0.10';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -19,7 +19,8 @@ use Geography::NationalGrid;
 use Geography::NationalGrid::GB;
 use OpenGuides::RDF;
 use OpenGuides::Utils;
-use Template;
+use OpenGuides::Diff qw(display_node_diff);
+use OpenGuides::Template;
 use Time::Piece;
 use URI::Escape;
 
@@ -29,11 +30,6 @@ my $config = Config::Tiny->read('wiki.conf');
 # Read in configuration values from config file.
 my $script_name = $config->{_}->{script_name};
 my $script_url = $config->{_}->{script_url};
-my $site_name = $config->{_}->{site_name};
-my $home_name = $config->{_}->{home_name};
-my $contact_email = $config->{_}->{contact_email};
-my $search_url = $config->{_}->{script_url} . "supersearch.cgi";
-my $template_path = $config->{_}->{template_path};
 
 my ($wiki, $formatter, $locator, $q);
 eval {
@@ -123,7 +119,12 @@ eval {
             display_node_rdf( node => $node );
         } else {
             my $version = $q->param("version");
-            display_node($node, $version);
+	    my $other_ver = $q->param("diffversion");
+	    if ( $other_ver ) {
+        	display_node_diff($wiki, $node, $version, $other_ver);
+	    } else {
+        	display_node($node, $version);
+	    }
         }
     }
 };
@@ -132,6 +133,7 @@ if ($@) {
     my $error = $@;
     warn $error;
     print $q->header;
+    my $contact_email = $config->{_}->{contact_email};
     print qq(<html><head><title>ERROR</title></head><body>
              <p>Sorry!  Something went wrong.  Please contact the
              Wiki administrator at
@@ -462,10 +464,17 @@ sub edit_node {
     my %metadata   = %{$node_data{metadata}};
     my $username   = get_cookie( "username" );
 
+    # We turn the categories and locales into arrays of hashrefs rather than
+    # simple arrays of strings, because the edit_form.tt template is also
+    # used for preview_node, which makes use of display_categories.tt to
+    # display the categories as links, and hence addresses as category.name
+    my @categories = map { { name => $_ } } @{$metadata{category} || []};
+    my @locales    = map { { name => $_ } } @{$metadata{locale}   || []};
+
     my %tt_vars = ( content    => $q->escapeHTML($content),
                     checksum   => $q->escapeHTML($checksum),
-                    categories => $metadata{category},
-		    locales    => $metadata{locale},
+                    categories => \@categories,
+		    locales    => \@locales,
 		    phone      => $metadata{phone}[0],
 		    fax        => $metadata{fax}[0],
 		    website    => $metadata{website}[0],
@@ -513,7 +522,7 @@ sub display_node_rdf {
 
 sub make_geocache_link {
     return "" unless get_cookie( "include_geocache_link" );
-    my $node = shift || $home_name;
+    my $node = shift || $config->{_}->{home_name};
     my %current_data = $wiki->retrieve_node( $node );
     my %criteria     = ( name => $node );
     my %node_data    = $wiki->retrieve_node( %criteria );
@@ -539,37 +548,14 @@ sub make_geocache_link {
 sub process_template {
     my ($template, $node, $vars, $conf, $omit_header) = @_;
 
-    $vars ||= {};
-    $conf ||= {};
-
-    my %tt_vars = ( %$vars,
-                    site_name     => $site_name,
-                    cgi_url       => $script_name,
-                    full_cgi_url  => $script_url . $script_name,
-                    contact_email => $contact_email,
-                    description   => "",
-                    keywords      => "",
-                    stylesheet    => $config->{_}->{stylesheet_url},
-                    home_link     => $script_name,
-                    home_name     => $home_name );
-
-    if ($node) {
-        $tt_vars{node_name} = $q->escapeHTML($node);
-        $tt_vars{node_param} = $q->escape($formatter->node_name_to_node_param($node));
-    }
-
-    my %tt_conf = ( %$conf,
-                INCLUDE_PATH => $template_path );
-
-    # Create Template object, print CGI header, process template.
-    my $tt = Template->new(\%tt_conf);
-    print $q->header unless $omit_header;
-    unless ($tt->process($template, \%tt_vars)) {
-        print qq(<html><head><title>ERROR</title></head><body><p>
-                 Failed to process template: )
-          . $tt->error
-          . qq(</p></body></html>);
-    }
+    my %output_conf = ( wiki     => $wiki,
+			config   => $config,
+                        node     => $node,
+			template => $template,
+			vars     => $vars
+    );
+    $output_conf{content_type} = "" if $omit_header; # defaults otherwise
+    print OpenGuides::Template->output( %output_conf );
 }
 
 

@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: OpenGuides
-version: 0.09
+version: 0.10
 license: perl
 distribution_type: module
 requires:
@@ -21,6 +21,7 @@ requires:
   Parse::RecDescent: 0
   Search::InvertedIndex: 0
   Template: 0
+  Test::MockObject: 0.07
   Time::Piece: 0
   URI::Escape: 0
 recommends: {}
@@ -31,17 +32,23 @@ dynamic_config: 1
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.09
+    version: 0.10
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
     version: ~
+  OpenGuides::Diff:
+    file: lib/OpenGuides/Diff.pm
+    version: 0.01
   OpenGuides::RDF:
     file: lib/OpenGuides/RDF.pm
-    version: 0.04
+    version: 0.05
+  OpenGuides::Template:
+    file: lib/OpenGuides/Template.pm
+    version: 0.01
   OpenGuides::UK::PubCrawl:
     file: lib/OpenGuides/UK/PubCrawl.pm
     version: 0.01
   OpenGuides::Utils:
     file: lib/OpenGuides/Utils.pm
-    version: 0.01
+    version: 0.02
 generated_by: Module::Build version 0.18

@@ -7,7 +7,9 @@ PREREQUISITES
 README
 TROUBLESHOOTING
 lib/OpenGuides/Build.pm
+lib/OpenGuides/Diff.pm
 lib/OpenGuides/RDF.pm
+lib/OpenGuides/Template.pm
 lib/OpenGuides/UK/PubCrawl.pm
 lib/OpenGuides/Utils.pm
 lib/OpenGuides.pm
@@ -15,6 +17,7 @@ preferences.cgi
 pubcrawl.cgi
 supersearch.cgi
 templates/backlink_results.tt
+templates/differences.tt
 templates/display_categories.tt
 templates/display_metadata.tt
 templates/edit_conflict.tt
@@ -35,8 +38,10 @@ templates/userstats.tt
 t/00_setup.t
 t/01_add_test_data.t
 t/11_utils.t
+t/15_template.t
 t/21_rdf.t
 t/21_wiki.conf
 t/22_rss_modwiki.t
 t/41_pubcrawl.t
+t/templates/15_test.tt
 wiki.cgi
