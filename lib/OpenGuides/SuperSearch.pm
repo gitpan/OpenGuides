@@ -313,7 +313,8 @@ sub _perform_search {
               my $name = $formatter->node_name_to_node_param( $_ );
               my %data = $wiki->retrieve_node( $_ );
               my $content = $wiki->format( @data{ qw( content metadata ) } );
-              my $summary = substr( $content, 0, 60 );
+              $content = $self->_mungepage( $content );
+              my $summary = substr( $content, 0, 150 );
               $name => {
                          name    => $name,
                          score   => 0,
@@ -639,7 +640,7 @@ The OpenGuides Project (openguides-dev@openguides.org)
 
 =head1 COPYRIGHT
 
-     Copyright (C) 2003 The OpenGuides Project.  All Rights Reserved.
+     Copyright (C) 2003-4 The OpenGuides Project.  All Rights Reserved.
 
 The OpenGuides distribution is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.
