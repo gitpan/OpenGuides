@@ -1,5 +1,4 @@
-<div id="toolbar">
-<!-- <div align="center"><a href="[% home_link %]"><img src="http://grault.net/grubstreet/grubstreet.gif" alt="" class="n"></a></div> -->
+<div class="toolbar">
 <ul>
     <li><a href="[% home_link %]">[% home_name %]</a></li>
     <li><a href="[% full_cgi_url %]?RecentChanges">RecentChanges</a></li>
@@ -10,6 +9,9 @@
     <li>[% geocache_link %]</li>
     [% END %]
     <li><a href="preferences.cgi">Set username/preferences</a></li>
+    [% IF formatting_rules_link %]
+      <li><a href="[% formatting_rules_link %]">[% formatting_rules_node %]</a></li>
+    [% END %]
     [% IF not_editable %]
     </ul><br />
     [% ELSE %]

@@ -52,6 +52,11 @@ my @questions = (
   variable => "site_name",
   default  => "OpenGuides Wiki"
   },
+{ question => "do you want the navigation bar included on the home page?",
+  variable => "navbar_on_home_page",
+  default  => "y",
+  type     => "y_n"
+  },
 { question => "what should the home page of the wiki be called?",
   variable => "home_name",
   default  => "Home"
@@ -70,7 +75,11 @@ my @questions = (
   },
 { question => "contact email address for the wiki admin?",
   variable => "contact_email"
-  }
+  },
+{ question => "what's the name of the node to use for the text formatting rules link?",
+  variable => "formatting_rules_node",
+  default  => "Text Formatting Examples"
+  },
 );
 
 my $skip_config = Module::Build->y_n("Skip OpenGuides configuration?", "n");
@@ -117,11 +126,16 @@ push @answers, { question => $dbtype_qu,
 
 foreach my $qset (@questions) {
     my $qu  = $qset->{question};
+    my $type = $qset->{type} || "";
     my $var = $qset->{variable};
     my $def = $existing_config{$var} || $qset->{default};
     my $val = $def;
     unless ( $skip_config ) {
-        $val = Module::Build->prompt("\n$qu ", $def);
+        if ( $type eq "y_n" ) {
+            $val = Module::Build->y_n("\n$qu ", $def);
+	} else {
+            $val = Module::Build->prompt("\n$qu ", $def);
+	}
     }
 
     # Make sure that script_url ends in a /
@@ -179,7 +193,7 @@ my $build = OpenGuides::Build->new(
 	'CGI' => 0,
 	'CGI::Carp' => 0,
 	'CGI::Cookie' => 0,
-	'CGI::Wiki' => '0.38',
+	'CGI::Wiki' => '0.44',
 	'CGI::Wiki::Formatter::UseMod' => '0.04', # for correct FreeUpper
         'CGI::Wiki::Plugin::Categoriser' => 0,
 	'CGI::Wiki::Plugin::GeoCache' => 0,
@@ -226,6 +240,7 @@ $build->{config}{__templates}         = [
                       "newpage.tt",
                       "node.tt",
                       "node_history.tt",
+                      "openguides_information_boxes.tt",
 		      "preferences.tt",
                       "pubcrawl.tt",
                       "rdf_index.tt",

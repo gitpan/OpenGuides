@@ -19,9 +19,12 @@
 </head>
 
 <body>
-<div id="content">
 
 [% USE CGI %]
+
+[% IF navbar_on_home_page %]
+  [% INCLUDE navbar.tt %]
+[% END %]
 
 <div id="header">
 <h1>[% site_name %] - [% node_name %]</h1>
@@ -48,7 +51,7 @@
 <p><b><a href="[% cgi_url %]?action=edit;id=[% node_param %]">Edit this page</a></b></p>
 
 </div>
-
+<div id="content">
 [% content %]
 
 <hr>

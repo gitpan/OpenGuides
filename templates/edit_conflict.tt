@@ -83,22 +83,15 @@ You will need to manually merge your changes into the new version.
         <td><input type="text" size="50" name="os_y" value="[% stored_os_y %]"></td>
         <td>[% CGI.escapeHTML(new_os_y) %]</td>
       </tr>
+      <tr>
+	<td><strong>Map link:</strong></td>
+	<td><input type="text" size="70" name="map_link" value="[% map_link %]"></td>
+      </tr>
     </table>
     </fieldset>
     &nbsp;
-    <fieldset>
-    <legend>OpenGuides information</legend>
-    <table>
-            <tr>
-        <td><strong>Your username (<a href="preferences.cgi">set</a>):</strong></td>
-        <td><input type="text" size="30" name="username" value="[% new_username %]"></td>
-      </tr>
-            <tr>
-        <td><strong>Comment about your changes:</strong></td>
-        <td><input type="text" size="30" name="comment" value="[% new_comment %]"></td>
-      </tr>
-    </table>
-    </fieldset></td>
+    [% INCLUDE openguides_information_boxes.tt %]
+    </td>
   </tr>
   <tr>
     <td align="center"><input type="submit" name="preview" value="Preview changes" class="form_button" /></td>

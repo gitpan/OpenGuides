@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.18';
+$VERSION = '0.19';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -30,6 +30,10 @@ my $config = Config::Tiny->read('wiki.conf');
 # Read in configuration values from config file.
 my $script_name = $config->{_}->{script_name};
 my $script_url = $config->{_}->{script_url};
+
+# Ensure that script_url ends in a '/' - this is done in Build.PL but
+# we need to allow for people editing the config file by hand later.
+$script_url .= "/" unless $script_url =~ /\/$/;
 
 my ($wiki, $formatter, $locator, $q);
 eval {
@@ -234,11 +238,16 @@ sub display_node {
     $tt_vars{current} = 1 unless $version;
 
     if ($node eq "RecentChanges") {
-        my @recent = $wiki->list_recent_changes( days => 7 );
+        my $minor_edits = get_cookie( "show_minor_edits_in_rc" );
+        my %criteria = ( days => 7 );
+        $criteria{metadata_isnt} = { edit_type => "Minor tidying" }
+          unless $minor_edits;
+        my @recent = $wiki->list_recent_changes( %criteria );
         @recent = map { {name          => $q->escapeHTML($_->{name}),
                          last_modified => $q->escapeHTML($_->{last_modified}),
                          comment       => $q->escapeHTML($_->{metadata}{comment}[0]),
                          username      => $q->escapeHTML($_->{metadata}{username}[0]),
+                         edit_type     => $q->escapeHTML($_->{metadata}{edit_type}[0]),
                          url           => "$script_name?"
           . $q->escape($formatter->node_name_to_node_param($_->{name})) }
                        } @recent;
@@ -246,7 +255,10 @@ sub display_node {
         $tt_vars{days} = 7;
         process_template("recent_changes.tt", $node, \%tt_vars);
     } elsif ($node eq "Home") {
-        my @recent = $wiki->list_recent_changes( last_n_changes => 10);
+        my @recent = $wiki->list_recent_changes(
+            last_n_changes => 10,
+            metadata_isnt  => { edit_type => "Minor tidying" },
+        );
         @recent = map { {name          => $q->escapeHTML($_->{name}),
                          last_modified => $q->escapeHTML($_->{last_modified}),
                          comment       => $q->escapeHTML($_->{metadata}{comment}[0]),
@@ -359,7 +371,7 @@ sub preview_node {
                                                    wiki    => $wiki,
 						   config  => $config,
 						   cgi_obj => $q );
-    foreach my $var ( qw( username comment ) ) {
+    foreach my $var ( qw( username comment edit_type ) ) {
         $tt_metadata_vars{$var} = $q->param($var);
     }
 
@@ -384,6 +396,9 @@ sub preview_node {
             } elsif ($mdvar eq "categories") {
                 $tt_vars{"stored_$mdvar"} = $node_data{metadata}{category};
                 $tt_vars{"new_$mdvar"}    = $tt_metadata_vars{category};
+            } elsif ($mdvar eq "username" or $mdvar eq "comment"
+                      or $mdvar eq "edit_type" ) {
+                $tt_vars{$mdvar} = $tt_metadata_vars{$mdvar};
             } else {
                 $tt_vars{"stored_$mdvar"} = $node_data{metadata}{$mdvar}[0];
                 $tt_vars{"new_$mdvar"}    = $tt_metadata_vars{$mdvar};
@@ -490,7 +505,7 @@ sub commit_node {
 
     $metadata{opening_hours_text} = $q->param("hours_text") || "";
 
-    foreach my $var ( qw( username comment ) ) {
+    foreach my $var ( qw( username comment edit_type ) ) {
         $metadata{$var} = $q->param($var) || "";
     }
 
@@ -510,6 +525,9 @@ sub commit_node {
             } elsif ($mdvar eq "categories") {
                 $tt_vars{"stored_$mdvar"} = $node_data{metadata}{category};
                 $tt_vars{"new_$mdvar"}    = $metadata{category};
+            } elsif ($mdvar eq "username" or $mdvar eq "comment"
+                      or $mdvar eq "edit_type" ) {
+                $tt_vars{$mdvar} = $metadata{$mdvar};
             } else {
                 $tt_vars{"stored_$mdvar"} = $node_data{metadata}{$mdvar}[0];
                 $tt_vars{"new_$mdvar"}    = $metadata{$mdvar};

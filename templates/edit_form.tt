@@ -1,5 +1,5 @@
 [% INCLUDE header.tt %]
-
+<div id="content">
 <h1 align="center">Edit "[% node_name %]"</h1>
 
 [% IF preview_html AND preview_above_edit_box %]
@@ -30,7 +30,7 @@
 		<table>
 			<tr>
 				<td><strong>Content:</strong></td>
-				<td><textarea name="content" rows="21" cols="70">[% content %]</textarea></td>
+				<td><textarea name="content" rows="21" cols="70" wrap="virtual">[% content %]</textarea></td>
 			</tr>
 			<tr>
 				<td><strong>Locales:</strong><br />(one per line)</td>
@@ -90,19 +90,8 @@
 		</table>
 		</fieldset>
 		&nbsp;
-		<fieldset>
-		<legend>OpenGuides information</legend>
-		<table>
-		        <tr>
-				<td><strong>Your username (<a href="preferences.cgi">set</a>):</strong></td>
-				<td><input type="text" size="30" name="username" value="[% username %]"></td>
-			</tr>
-		        <tr>
-				<td><strong>Comment about your changes:</strong></td>
-				<td><input type="text" size="30" name="comment" value="[% comment %]"></td>
-			</tr>
-		</table>
-		</fieldset></td>
+		[% INCLUDE openguides_information_boxes.tt %]
+		</td>
 	</tr>
 	<tr>
 		<td align="center"><input type="submit" name="preview" value="Preview changes" class="form_button" /></td>

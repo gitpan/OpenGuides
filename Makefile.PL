@@ -1,7 +1,7 @@
     use ExtUtils::MakeMaker;
     WriteMakefile
       ('DISTNAME' => 'OpenGuides',
-       'VERSION' => '0.18',
+       'VERSION' => '0.19',
        'PL_FILES' => {},
        'PREREQ_PM' => {
 			'CGI::Cookie' => '0',

@@ -1,5 +1,5 @@
 [% INCLUDE header.tt %]
-
+<div id="content">
 <h1 align=center>[% site_name %] - [% node_name %]</h1>
 
 [% content %]
@@ -10,6 +10,9 @@
 [% FOREACH node = recent_changes %]
   <li><a href="[% node.url %]">[% node.name %]</a>
       [% node.last_modified %]
+      [% IF node.edit_type %]
+        <i>([% node.edit_type %])</i>
+      [% END %]
       [% IF node.comment %]
         <b>[[% node.comment %]]</b>
       [% END %]
