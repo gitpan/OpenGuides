@@ -1,7 +1,7 @@
 local $^W = 1;
 use strict;
 use vars qw( $sqlite_tests );
-BEGIN { $sqlite_tests = 15; }
+BEGIN { $sqlite_tests = 16; }
 use Test::More tests => 1 + $sqlite_tests;
 
 use CGI::Wiki::Setup::SQLite;
@@ -41,6 +41,8 @@ SKIP: {
     my $output = $search->run( return_output => 1 );
     unlike( $output, qr/no items matched/i,
             "doesn't output 'no items matched' if no terms supplied" );
+    unlike( $output, qr/action=edit/,
+            "doesn't offer edit link" );
 
     my %tt_vars = $search->run(
                                 return_tt_vars => 1,
@@ -63,6 +65,7 @@ SKIP: {
     $wiki->write_node( "Monkey Brains", "BRANES" );
     $wiki->write_node( "Want Pie Now", "weebl" );
     $wiki->write_node( "Punctuation", "*" );
+    $wiki->write_node( "Choice", "Eenie meenie minie mo");
 
     # Test with two hits first - simpler.
     %tt_vars = $search->run(
@@ -95,7 +98,7 @@ SKIP: {
     # Test the AND search
     $output = $search->run(
                             return_output => 1,
-                            vars          => { search => "monkey&banana" },
+                            vars          => { search => "monkey banana" },
                            );
     like( $output, qr/Location: http:\/\/example.com\/wiki.cgi\?Monkey/,
           "AND search returns right results" );
@@ -103,7 +106,7 @@ SKIP: {
     # Test the OR search
     %tt_vars = $search->run(
                              return_tt_vars => 1,
-                             vars           => { search => "brains|pie" },
+                             vars           => { search => "brains, pie" },
                            );
     @found = sort map { $_->{name} } @{ $tt_vars{results} || [] };
     is_deeply( \@found, [ "Monkey", "Monkey_Brains", "Want_Pie_Now" ],
@@ -111,21 +114,16 @@ SKIP: {
     print "# Found in $_\n" foreach @found;
 
     # Test the NOT search
-SKIP: {
-    skip "NOT search doesn't work yet", 1;
-    %tt_vars = $search->run(
-                             return_tt_vars => 1,
-                             vars           => { search => "!monkey" },
+    $output = $search->run(
+                            return_output => 1,
+                            vars           => { search => "banana !monkey" },
                            );
-    @found = sort map { $_->{name} } @{ $tt_vars{results} || [] };
-    is_deeply( \@found, [ "Banana", "Want_Pie_Now" ],
-               "NOT search returns right results" );
-    print "# Found in $_\n" foreach @found;
-}
+    like( $output,
+          qr/Location: http:\/\/example.com\/wiki.cgi\?Banana/,    
+          "NOT search returns right results"
+        );
 
     # Test the phrase search
-SKIP: {
-    skip "phrase search doesn't work yet", 1;
     $output = $search->run(
                             return_output => 1,
                             vars          => { search => '"monkey brains"' },
@@ -134,7 +132,6 @@ SKIP: {
           qr/Location: http:\/\/example.com\/wiki.cgi\?Monkey_Brains/,    
           "phrase search returns right results"
         );
-}
 
     #####
     ##### Test numbering when we have more than a page of results.
@@ -153,3 +150,4 @@ SKIP: {
     like( $output, qr/ol start="21"/,
           "second page of results starts with right numbering" );
 }
+

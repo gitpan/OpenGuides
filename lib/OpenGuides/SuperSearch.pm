@@ -1,6 +1,6 @@
 package OpenGuides::SuperSearch;
 use strict;
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use CGI qw( :standard );
 use File::Spec::Functions qw(:ALL);
@@ -155,6 +155,7 @@ sub run {
 sub process_template {
     my ($self, %args) = @_;
     my $tt_vars = $args{tt_vars} || {};
+    $tt_vars->{not_editable} = 1;
 
     return %$tt_vars if $self->{return_tt_vars};
 
@@ -170,53 +171,59 @@ sub process_template {
     return 1;
 }
 
-# method to populate $self with text of nodes matching a single-term search
+# method to populate $self with text of nodes potentially matching a query
+# This could contain many more nodes than actually match the query
 sub _prime_wikitext {
-    my ($self, $search) = @_;
+    my ($self, $op, @leaves) = @_;
     my $wiki = $self->{wiki};
 
-    # Clear out any previously-accumulated wikitext - need to do this
-    # for persistent environments such as testing.
-    $self->{wikitext} = {};
+    if ($op =~ /AND|OR/) {
+	# Recurse into parse tree for boolean op nodes
+	$self->_prime_wikitext(@$_) for @leaves;
+    } elsif ($op eq 'NOT') {
+	$self->_prime_wikitext(@leaves);
+    } elsif ($op eq 'word') {
+	foreach (@leaves) {
+	    # Search title and body.
+	    my %results = $wiki->search_nodes( $_ );
+	    foreach my $node ( keys %results ) {
+		next unless $node; # Search::InvertedIndex goes screwy sometimes
+		my $key = $wiki->formatter->node_name_to_node_param( $node );
+		my $text = $node . " " . $wiki->retrieve_node( $node );
+		$self->{wikitext}{$key} ||= $self->_mungepage( $text );
+	    }
 
-    # Search title and body.
-    my %results = $wiki->search_nodes( $search );
-    foreach my $node ( keys %results ) {
-        next unless $node; # Search::InvertedIndex goes screwy sometimes
-        my $key = $wiki->formatter->node_name_to_node_param( $node );
-        my $text = $node . " " . $wiki->retrieve_node( $node );
-        $self->{wikitext}{$key} ||= $self->_mungepage( $text );
-    }
+	    # Search categories.
+	    my @catmatches = $wiki->list_nodes_by_metadata(
+				 metadata_type  => "category",
+				 metadata_value => $_,
+				 ignore_case    => 1,
+	    );
 
-    # Search categories.
-    my @catmatches = $wiki->list_nodes_by_metadata(
-                         metadata_type  => "category",
-                         metadata_value => $search,
-                         ignore_case    => 1,
-    );
+	    foreach my $node ( @catmatches ) {
+		my $key = $wiki->formatter->node_name_to_node_param( $node );
+		my $text = $node. " " . $wiki->retrieve_node( $node );
+		$self->{wikitext}{$key} ||= $self->_mungepage( $text );
+		# Append this category so the regex finds it later.
+		$self->{wikitext}{$key} .= " [$_]";
+	    }
 
-    foreach my $node ( @catmatches ) {
-        my $key = $wiki->formatter->node_name_to_node_param( $node );
-        my $text = $node. " " . $wiki->retrieve_node( $node );
-        $self->{wikitext}{$key} ||= $self->_mungepage( $text );
-        # Append this category so the regex finds it later.
-        $self->{wikitext}{$key} .= " [$search]";
-    }
-
-    # Search locales.
-    my @locmatches = $wiki->list_nodes_by_metadata(
-                         metadata_type  => "locale",
-                         metadata_value => $search,
-                         ignore_case    => 1,
-    );
-    foreach my $node ( @locmatches ) {
-        my $key = $wiki->formatter->node_name_to_node_param( $node );
-        my $text = $node. " " . $wiki->retrieve_node( $node );
-        $self->{wikitext}{$key} ||= $self->_mungepage( $text );
-        # Append this locale so the regex finds it later.
-        $self->{wikitext}{$key} .= " [$search]";
-    }
-}
+	    # Search locales.
+	    my @locmatches = $wiki->list_nodes_by_metadata(
+				 metadata_type  => "locale",
+				 metadata_value => $_,
+				 ignore_case    => 1,
+	    );
+	    foreach my $node ( @locmatches ) {
+		my $key = $wiki->formatter->node_name_to_node_param( $node );
+		my $text = $node. " " . $wiki->retrieve_node( $node );
+		$self->{wikitext}{$key} ||= $self->_mungepage( $text );
+		# Append this locale so the regex finds it later.
+		$self->{wikitext}{$key} .= " [$_]";
+	    }
+	} # foreach (@leaves)
+    } # $op eq 'word'
+} # sub _prime_wikitext
     
 # method to filter out undesirable markup from the raw wiki text
 sub _mungepage {
@@ -251,39 +258,43 @@ sub _perform_search {
 
     # Check for only valid characters in tainted search param
     # (quoted literals are OK, as they are escaped)
-    if ( $srh !~ /^("[^"]*"|[\w \-'&|()!*%\[\]])+$/i) { #"
+    if ( $srh !~ /^("[^"]*"|[\w \-',()!*%\[\]])+$/i) { #"
         $self->{error} = "Search expression contains invalid character(s)";
         return;
     }
 
-    # Build RecDescent grammar for search syntax.
+    $self->_build_parser && exists($self->{error}) && return;
+    $self->_apply_parser($srh);
+}
 
-    # Note: '&' and '|' can be replaced with other non-alpha. This may
-    # be needed if you need to call the script from METHOD=GET (as &
-    # is a separator) Also, word: pattern could be changed to include
-    # numbers and handle locales properly. However, quoted literals
-    # are usually good enough for most odd characters.
+sub _build_parser {
+    my $self = shift;
+
+    # Build RecDescent grammar for search syntax.
 
     my $parse = Parse::RecDescent->new(q{
 
         search: list eostring {$return = $item[1]}
 
-        list: <leftop: comby '|' comby> 
-            {$return = (@{$item[1]}>1) ? ['OR', @{$item[1]}] : $item[1][0]}
-
-        comby: <leftop: term '&' term> 
+	list: comby(s)
             {$return = (@{$item[1]}>1) ? ['AND', @{$item[1]}] : $item[1][0]}
+
+        comby: <leftop: term ',' term> 
+            {$return = (@{$item[1]}>1) ? ['OR', @{$item[1]}] : $item[1][0]}
 
         term: '(' list ')' {$return = $item[2]}
             |        '!' term {$return = ['NOT', @{$item[2]}]}
-            |        '"' /[^"]*/ '"' {$return = ['literal', $item[2]]}
-            |        word(s) {$return = ['word', @{$item[1]}]}
+#           |        word ':' term {$return = ['meta', $item[1], $item[3]];}
+            |        '"' word(s) '"' {$return = ['word', @{$item[2]}]}
+            |        word {$return = ['word', $item[1]]}
             |        '[' word(s) ']' {$return = ['title', @{$item[2]}]}
+#	    |        m([/|\\]) m([^$item[1]]+) $item[1]
+#	    		{ $return = ['regexp', qr($item[2])] }
 
         word: /[\w'*%]+/ {$return = $item[1]}
             
         eostring: /^\Z/
-
+	
     });
 
     unless ( $parse ) {
@@ -291,13 +302,23 @@ sub _perform_search {
         $self->{error} = "can't create parse object";
         return;
     }
+    
+    $self->{parser} = $parse;
+    return $self;
+}
 
+sub _apply_parser {
+    my ($self,$search) = @_;
+	
     # Turn search string into parse tree
-    my $tree = $parse->search($srh);
+    my $tree = $self->{parser}->search($search);
     unless ( $tree ) {
         $self->{error} = "Search syntax error";
         return;
     }
+
+    #Prime the search
+    $self->_prime_wikitext(@$tree);
 
     # Apply search and return results
     my %results = $self->_matched_items( tree => $tree );
@@ -311,20 +332,9 @@ sub _matched_items {
     my $tree = $args{tree};
     my @tree_arr = @$tree;
     my $op = shift @tree_arr;
+    my $meth = 'matched_'.$op;
 
-    if ( $op eq 'word' ) {
-        return $self->matched_word( @tree_arr );
-    } elsif ( $op eq 'AND' ) {
-        return $self->matched_AND( @tree_arr );
-    } elsif ( $op eq 'OR' ) {
-        return $self->matched_OR( @tree_arr );
-    } elsif ( $op eq 'NOT' ) {
-        return $self->matched_NOT( @tree_arr );
-    } elsif ( $op eq 'literal' ) {
-        return $self->matched_literal( @tree_arr );
-    }
-
-    return;
+    return $self->can($meth) ? $self->$meth(@tree_arr) : undef;
 }
 
 
@@ -335,8 +345,7 @@ sub _matched_items {
 
 =item B<word>
 
-Unquoted single words will be matched as-is.  They are allowed to contain
-the wildcards C<*> and C<%>.  For example, a search on
+a single word will be matched as-is. For example, a search on
 
   escalator
 
@@ -350,17 +359,14 @@ sub matched_word {
     $wmatch =~ s/%/\\w/g;
     $wmatch =~ s/\*/\\w*/g;
 
-    # Read in pages from the database that are candidates for the search.
-    $self->_prime_wikitext(join ' ',@_);
-
     return $self->_do_search($wmatch);
 }
 
 =item B<AND searches>
 
-Clauses joined with ampersands (C<&>), for example:
+A list of words with no punctuation will be ANDed, for example:
 
-  restaurant&vegetarian
+  restaurant vegetarian
 
 will return all pages containing both the word "restaurant" and the word
 "vegetarian".
@@ -395,9 +401,10 @@ sub matched_AND {
 
 =item B<OR searches>
 
-Clauses joined with pipes (C<|>), for example:
+A list of words separated by commas (and optional spaces) will be ORed, 
+for example:
 
-  restaurant|cafe
+  restaurant, cafe
 
 will return all pages containing either the word "restaurant" or the
 word "cafe".

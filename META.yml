@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: OpenGuides
-version: 0.26
+version: 0.27
 license: perl
 distribution_type: module
 requires:
@@ -34,7 +34,7 @@ dynamic_config: 1
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.26
+    version: 0.27
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
   OpenGuides::CGI:
@@ -48,7 +48,7 @@ provides:
     version: 0.06
   OpenGuides::SuperSearch:
     file: lib/OpenGuides/SuperSearch.pm
-    version: 0.03
+    version: 0.04
   OpenGuides::Template:
     file: lib/OpenGuides/Template.pm
     version: 0.12
