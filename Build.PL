@@ -9,10 +9,8 @@ die "Config::Tiny is required to configure this application.\n" if $@;
 ##### Find out where to install, etc.
 
 # See if we already have some config variables set.
-use lib "lib";
-my %existing_config;
-eval "use OpenGuides::Config";
-%existing_config = %OpenGuides::Config::config unless $@;
+my $read_config = Config::Tiny->read('wiki.conf');
+my %existing_config = $read_config ? %{ $read_config->{_} } : ();
 
 my @questions = (
 { question =>
@@ -82,23 +80,34 @@ my @questions = (
   },
 );
 
+print <<EOF;
+
+Beginning install process... if you already have an OpenGuides
+configuration file and you don't want to have to type in all your config
+parameters over again, abort this process now, copy that file to this
+directory, and start again.
+
+EOF
+
+my $continue = Module::Build->y_n("Continue with install?", "y");
+exit 0 unless $continue;
+
 my $skip_config = Module::Build->y_n("Skip OpenGuides configuration?", "n");
 if ( $skip_config ) {
     print <<EOF;
 ===========================================================================
 Skipping OpenGuides configuration - any configuration options previously
 saved will be used instead.  You may tweak your configuration now by
-editing the 'wiki.conf' file produced by this script, but changes made to
-that file will *not* stick around for the next time you install OpenGuides.
+editing the 'wiki.conf' file produced by this script.
 ===========================================================================
 EOF
 }
 
 my @answers;
 
-# Database type is speshull - can be one of two.
+# Database type is speshull - can be one of three.
 my $dbtype;
-my $dbtype_qu = "what type of database do you want the site to run on?  postgres/mysql";
+my $dbtype_qu = "what type of database do you want the site to run on?  postgres/mysql/sqlite";
 if ( $skip_config ) {
     $dbtype = $existing_config{dbtype} || "postgres";
 } else {
@@ -108,7 +117,8 @@ if ( $skip_config ) {
 	$dbtype = lc($dbtype);
 	$dbtype =~ s/^\s*//;
 	$dbtype =~ s/\s*$//;
-	unless ( $dbtype eq "postgres" or $dbtype eq "mysql" ) {
+	unless ( $dbtype eq "postgres" or $dbtype eq "mysql"
+                 or $dbtype eq "sqlite" ) {
 	    undef $dbtype;
 	}
     }
@@ -116,7 +126,9 @@ if ( $skip_config ) {
 
 # Check they have the relevant DBD driver installed.
 my %drivers = ( postgres => "DBD::Pg",
-                mysql    => "DBD::mysql" );
+                mysql    => "DBD::mysql",
+                sqlite   => "DBD::SQLite",
+              );
 eval "require $drivers{$dbtype}";
 die "$drivers{$dbtype} is needed to run a $dbtype database" if $@;
 
@@ -130,8 +142,24 @@ foreach my $qset (@questions) {
     my $var = $qset->{variable};
     my $def = $existing_config{$var} || $qset->{default};
     my $val = $def;
+
+    if ( $dbtype eq "sqlite" and $var eq "dbname" ) {
+        $qu = "what's the full filename of the SQLite database this site runs on?";
+    }
+
+    if ( $dbtype eq "sqlite" and
+         ( $var eq "dbuser" or $var eq "dbpass" or $var eq "dbhost" )
+       ) {
+        print "$var not relevant for SQLite... skipping...\n";
+        push @answers, { question => $qu,
+	   	         variable => $var,
+		         value    => "not-used" };
+        next;
+    }
+
     unless ( $skip_config ) {
         if ( $type eq "y_n" ) {
+            $def = $def ? "y" : "n";
             $val = Module::Build->y_n("\n$qu ", $def);
 	} else {
             $val = Module::Build->prompt("\n$qu ", $def);
@@ -162,22 +190,6 @@ foreach my $ans (@answers) {
     print FILE "$ans->{variable} = $ans->{value}\n\n";
 }
 close FILE or die "Can't close wiki.conf: $!";
-
-# Now use Config::Tiny to read it all back in - bit convoluted I know.
-my $read_config = Config::Tiny->read('wiki.conf');
-%existing_config = %{ $read_config->{_} };
-
-# And pop it in OpenGuides::Config
-%OpenGuides::Config::config = %existing_config;
-open OUT, ">lib/OpenGuides/Config.pm"
-    or die "Can't open lib/OpenGuides/Config.pm for writing: $!";
-
-# Sigh, I am still cargo culting this line; one day I will figure out
-# how it works (Kake).
-print OUT Data::Dumper->new([ \%OpenGuides::Config::config ],
-                            [ '*OpenGuides::Config::config' ]
-                           )->Dump,
-    "\n1;\n";
 
 #####
 ##### When updating the prereqs PLEASE REMEMBER to update PREREQUISITES.
@@ -220,6 +232,7 @@ my $build = OpenGuides::Build->new(
 );
 
 $build->add_to_cleanup( "wiki.conf" );
+$build->add_to_cleanup( "configlib" );
 
 # Tell OpenGuides::Build which additional scripts and templates to install.
 $build->{config}{__extra_scripts}     = 

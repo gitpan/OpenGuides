@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: OpenGuides
-version: 0.27
+version: 0.28
 license: perl
 distribution_type: module
 requires:
@@ -15,7 +15,7 @@ requires:
   CGI::Wiki::Plugin::Locator::UK: 0.06
   CGI::Wiki::Plugin::RSS::ModWiki: 0.02
   Config::Tiny: 0
-  DBD::Pg: 0
+  DBD::SQLite: 0
   Data::Dumper: 0
   File::Spec::Functions: 0
   Geography::NationalGrid: 0
@@ -34,7 +34,7 @@ dynamic_config: 1
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.27
+    version: 0.28
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
   OpenGuides::CGI:
