@@ -12,7 +12,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.37';
+$VERSION = '0.38';
 
 =head1 NAME
 
@@ -184,7 +184,7 @@ sub display_node {
     # We've undef'ed $version above if this is the current version.
     $tt_vars{current} = 1 unless $version;
 
-    if ($id eq "RecentChanges") {
+    if ($id && $id eq "RecentChanges") {
         my $minor_edits = $self->get_cookie( "show_minor_edits_in_rc" );
         my %criteria = ( days => 7 );
         $criteria{metadata_was} = { edit_type => "Normal edit" }
@@ -641,9 +641,10 @@ and/or modify it under the same terms as Perl itself.
 
 =head1 CREDITS
 
-Programming by Dominic Hargreaves, Earle Martin, Kake Pugh, Ivor Williams.
-Testing and bug reporting by Cal Henderson, Bob Walker, Kerry Bosworth,
-Simon Cozens, among others.  Much of the Module::Build stuff copied from
+Programming by Dominic Hargreaves, Earle Martin, Kake Pugh, and Ivor
+Williams.  Testing and bug reporting by Billy Abbott, Jody Belka,
+Kerry Bosworth, Simon Cozens, Cal Henderson, Steve Jolly, and Bob
+Walker (among others).  Much of the Module::Build stuff copied from
 the Siesta project L<http://siesta.unixbeard.net/>
 
 =cut

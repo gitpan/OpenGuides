@@ -1,6 +1,6 @@
 package OpenGuides::SuperSearch;
 use strict;
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use CGI qw( :standard );
 use CGI::Wiki::Plugin::Locator::UK;
@@ -140,8 +140,15 @@ sub run {
         my @results = values %{ $self->{results} || {} };
         my $numres = scalar @results;
 
-        # For 0 or many we display results, for 1 we redirect to that page.
-        if ( $numres == 1 && !$self->{return_tt_vars}) {
+        # Clear out wikitext; we're done with this search.  (Avoids
+        # subsequent searches with this object erroneously matching things
+        # that matched this time.)  Do it here (ie at the last minute) to
+        # avoid screwing up "AND" searches.
+        delete $self->{wikitext};
+
+        # Redirect to a single result only if the title is a good enough match.
+        my %fuzzies = $self->{wiki}->fuzzy_title_match($self->{search_string});
+        if ($numres == 1 && !$self->{return_tt_vars} && scalar keys %fuzzies) {
             my $node = $results[0]{name};
             my $output = CGI::redirect( $self->{wikimain} . "?"
                                         . CGI::escape($node) );
@@ -168,7 +175,7 @@ sub run {
             if ( $vars{distance_in_metres} ) {
                 @results = sort { $a->{distance} <=> $b->{distance} } @results;
 	    } else {
-                @results = sort { $a->{score} <=> $b->{score} } @results;
+                @results = sort { $b->{score} <=> $a->{score} } @results;
             }
 
             # Now snip out just the ones for this page.  The -1 is
@@ -208,14 +215,15 @@ sub process_template {
 # method to populate $self with text of nodes potentially matching a query
 # This could contain many more nodes than actually match the query
 sub _prime_wikitext {
-    my ($self, $op, @leaves) = @_;
+    my ($self, %args) = @_;
+    my ($op, @leaves) = @{ $args{tree} };
     my $wiki = $self->{wiki};
 
     if ($op =~ /AND|OR/) {
 	# Recurse into parse tree for boolean op nodes
-	$self->_prime_wikitext(@$_) for @leaves;
+	$self->_prime_wikitext( tree => $_ ) for @leaves;
     } elsif ($op eq 'NOT') {
-	$self->_prime_wikitext(@leaves);
+	$self->_prime_wikitext( tree => \@leaves );
     } elsif ($op eq 'word') {
 	foreach (@leaves) {
 	    # Search title and body.
@@ -224,7 +232,7 @@ sub _prime_wikitext {
 		next unless $node; # Search::InvertedIndex goes screwy sometimes
 		my $key = $wiki->formatter->node_name_to_node_param( $node );
 		my $text = $node . " " . $wiki->retrieve_node( $node );
-		$self->{wikitext}{$key} ||= $self->_mungepage( $text );
+		$self->{wikitext}{$key}{text} ||= $self->_mungepage( $text );
 	    }
 	}
 
@@ -241,9 +249,10 @@ sub _prime_wikitext {
 	foreach my $node ( @catmatches ) {
 		my $key = $wiki->formatter->node_name_to_node_param( $node );
 		my $text = $node. " " . $wiki->retrieve_node( $node );
-		$self->{wikitext}{$key} ||= $self->_mungepage( $text );
+		$self->{wikitext}{$key}{text} ||= $self->_mungepage( $text );
 		# Append this category so the regex finds it later.
-		$self->{wikitext}{$key} .= " [$matchstr]";
+		$self->{wikitext}{$key}{text} .= " [$matchstr]";
+                $self->{wikitext}{$key}{category_match} = 1;
 	}
 
 	# Search locales.
@@ -255,9 +264,10 @@ sub _prime_wikitext {
 	foreach my $node ( @locmatches ) {
 		my $key = $wiki->formatter->node_name_to_node_param( $node );
 		my $text = $node. " " . $wiki->retrieve_node( $node );
-		$self->{wikitext}{$key} ||= $self->_mungepage( $text );
+		$self->{wikitext}{$key}{text} ||= $self->_mungepage( $text );
 		# Append this locale so the regex finds it later.
-		$self->{wikitext}{$key} .= " [$matchstr]";
+		$self->{wikitext}{$key}{text} .= " [$matchstr]";
+                $self->{wikitext}{$key}{locale_match} = 1;
 	}
     } # $op eq 'word'
 } # sub _prime_wikitext
@@ -305,6 +315,18 @@ sub _perform_search {
         }
         $self->_build_parser && exists($self->{error}) && return;
         $self->_apply_parser($srh);
+
+        # Now give extra bonus points to any nodes matching the entire
+        # search string verbatim.  This is really shonky and inefficient
+        # but then the whole of this module needs rewriting to be less
+        # ick in any case.
+        foreach my $page ( keys %{ $self->{results} } ) {
+            my $summary = $self->{results}{$page}{summary};
+            $summary =~ s/<\/?b>//g;
+            if ( $summary =~ /$self->{search_string}/i ) {
+                $self->{results}{$page}{score} += 5;
+	      }
+	}
     } else {
         my $wiki = $self->{wiki};
         my @all_nodes = $wiki->list_all_nodes;
@@ -426,8 +448,11 @@ sub _apply_parser {
         return;
     }
 
+    # Store search string too.
+    $self->{search_string} = $search;
+
     #Prime the search
-    $self->_prime_wikitext(@$tree);
+    $self->_prime_wikitext( tree => $tree);
 
     # Apply search and return results
     my %results = $self->_matched_items( tree => $tree );
@@ -495,7 +520,7 @@ sub matched_AND {
         my @pages = keys %results;
         foreach my $page ( @pages ) {
 	    if ( exists $subres{$page} ) {
-                $results{$page}{score} += $subres{$page};
+                $results{$page}{score} += $subres{$page}{score};
 	    } else {
                 delete $results{$page};
             }
@@ -554,7 +579,7 @@ cannot use -foo standalone to give you all pages without foo.
 sub matched_NOT {
     my $self = shift;
     my %excludes = $self->_matched_items(tree => \@_);
-    my %out = map {$_=>[0]} keys %{ $self->{wikitext} };
+    my %out = map { $_ => { score => 0} } keys %{ $self->{wikitext} };
 
     delete $out{$_} for keys %excludes;
     return %out;
@@ -577,6 +602,34 @@ sub matched_literal {
     my $lit = shift;
     $self->_do_search(quotemeta $lit);
 }
+
+=back
+
+=head1 OUTPUT
+
+Results will be put into some form of relevance ordering.  These are
+the rules we have tests for so far (and hence the only rules that can
+be relied on):
+
+=over
+
+=item *
+
+A match on page title will score higher than a match on page category
+or locale.
+
+=item *
+
+A match on page category or locale will score higher than a match on
+page content.
+
+=item *
+
+Two matches in the title beats one match in the title and one in the content.
+
+=back
+
+=cut
 
 sub intersperse {
     my $self = shift;
@@ -611,8 +664,8 @@ sub _do_search {
     my %wikitext = %{ $self->{wikitext} || {} };
     while (my ($k,$v) = each %wikitext) {
         my @out;
-        for ($v =~ /$wexp/g) {
-            my $match .= "...$_...";
+        for ($v->{text} =~ /$wexp/g) {
+            my $match = "...$_...";
             $match =~ s/<[^>]+>//gs;
             $match =~ s!\b($wmatch)\b!<b>$&</b>!i;
             push @out,$match;
@@ -621,8 +674,14 @@ sub _do_search {
         $temp =~ s/_/ /g;
 
         # Compute score and create summary.
-        my $score = scalar @out;
-        $score +=10 if $temp =~ /$wexp/;
+        my $score = scalar @out; # 1 point for each match in body/title/cats
+        $score += 10 if $temp =~ /$wexp/; # 10 points if title matches
+        # 3 points for cat/locale match.  Check $score too since this might
+        # be a branch of an AND search and the cat/locale match may have
+        # been for the other branch,
+        $score += 3  if $v->{category_match} and $score;
+        $score += 3  if $v->{locale_match} and $score;
+
         $results{$k} = {
                          score   => $score,
                          summary => join( "", @out ),
