@@ -37,6 +37,10 @@ my @questions = (
 { question => "What URL does the install directory map to?",
   variable => "script_url",
   },
+{ question => "Do you want me to munge a custom lib path into the scripts? "
+             . "If so, enter it here.  Separate path entries with whitespace:",
+  variable => "custom_lib_path",
+  },
 { question => "Do you want to use Plucene for searching? (recommended, but see Changes file before saying yes to this)",
   variable => "use_plucene",
   default  => "n",
@@ -228,7 +232,7 @@ my $build = OpenGuides::Build->new(
 	'CGI::Carp'                       => 0,
 	'CGI::Cookie'                     => 0,
 	'CGI::Wiki'                       => '0.54',
-	'CGI::Wiki::Formatter::UseMod'    => '0.09',
+	'CGI::Wiki::Formatter::UseMod'    => '0.16', # macros
         'CGI::Wiki::Plugin::Categoriser'  => 0,
 	'CGI::Wiki::Plugin::Diff'         => '0.07', # earlier buggy
 	'CGI::Wiki::Plugin::GeoCache'     => 0,

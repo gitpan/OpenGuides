@@ -56,26 +56,34 @@ sub ACTION_install_extras {
     my $install_directory = $config->{_}->{install_directory};
     my $script_name       = $config->{_}->{script_name};
     my $template_path     = $config->{_}->{template_path};
+    my $custom_lib_path   = $config->{_}->{custom_lib_path};
     my @extra_scripts     = @{ $self->{config}{__extra_scripts} };
     my @templates         = @{ $self->{config}{__templates} };
 
     print "Installing scripts to $install_directory:\n";
+    # Allow for blank script_name - assume "index.cgi".
+        my $script_filename = $script_name || "index.cgi";
     if ( $FAKE ) {
-        print "wiki.cgi -> $install_directory/$script_name (FAKE)\n";
+        print "wiki.cgi -> $install_directory/$script_filename (FAKE)\n";
     } else {
-        if ( $script_name ne "wiki.cgi" ) {
-            File::Copy::copy("wiki.cgi", $script_name)
-	        or die "Can't copy('wiki.cgi', '$script_name'): $!";
+        if ( $script_filename ne "wiki.cgi" ) {
+            File::Copy::copy("wiki.cgi", $script_filename)
+	        or die "Can't copy('wiki.cgi', '$script_filename'): $!";
 	}
-        my $copy = $self->copy_if_modified( $script_name, $install_directory );
+        my $copy = $self->copy_if_modified(
+                                            $script_filename,
+                                            $install_directory
+                                          );
         if ( $copy ) {
             $self->fix_shebang_line($copy);
 	    $self->make_executable($copy);
+            $self->add_custom_lib_path( $copy, $custom_lib_path )
+              if $custom_lib_path;
         } else {
-            print "Skipping $install_directory/$script_name (unchanged)\n";
+            print "Skipping $install_directory/$script_filename (unchanged)\n";
         }
-        print "(Really: wiki.cgi -> $install_directory/$script_name)\n"
-            unless $script_name eq "wiki.cgi";
+        print "(Really: wiki.cgi -> $install_directory/$script_filename)\n"
+            unless $script_filename eq "wiki.cgi";
     }
 
     foreach my $script ( @extra_scripts ) {
@@ -86,6 +94,8 @@ sub ACTION_install_extras {
 	    if ( $copy ) {
 		$self->fix_shebang_line($copy);
 		$self->make_executable($copy) unless $script eq "wiki.conf";
+                $self->add_custom_lib_path( $copy, $custom_lib_path )
+                  if $custom_lib_path;
 	    } else {
 		print "Skipping $install_directory/$script (unchanged)\n";
 	    }
@@ -101,6 +111,19 @@ sub ACTION_install_extras {
                 or print "Skipping $install_directory/templates/$template (unchanged)\n";
         }
     }
+}
+
+sub add_custom_lib_path {
+    my ($self, $copy, $lib_path) = @_;
+    local $/ = undef;
+    open my $fh, $copy or die $!;
+    my $content = <$fh>;
+    close $fh or die $!;
+    $content =~ s|use strict;|use strict\;\nuse lib qw( $lib_path )\;|s;
+    open $fh, ">$copy" or die $!;
+    print $fh $content;
+    close $fh or die $!;
+    return 1;
 }
 
 1;

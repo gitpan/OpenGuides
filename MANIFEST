@@ -1,4 +1,5 @@
 Build.PL
+CUSTOMISATION
 Changes
 INSTALL
 MANIFEST
@@ -6,6 +7,7 @@ Makefile.PL
 META.yml
 PREREQUISITES
 README
+README.CSS
 TROUBLESHOOTING
 examples/london.css
 examples/reindex.pl
@@ -26,7 +28,6 @@ templates/delete_confirm.tt
 templates/delete_done.tt
 templates/delete_password_wrong.tt
 templates/differences.tt
-templates/display_categories.tt
 templates/display_metadata.tt
 templates/edit_conflict.tt
 templates/edit_form.tt

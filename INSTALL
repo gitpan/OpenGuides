@@ -82,6 +82,30 @@ Give the full address needed to access the installation directory with
 a web browser - for example http://london.openguides.org/cgi-bin/
 
 
+  "Do you want me to munge a custom lib path into the scripts?"
+
+If you have installed some or all of the required Perl modules (or indeed
+the OpenGuides modules themselves) into a private directory, you will
+need to tell the scripts where to find these modules.  Enter the paths
+to search here just as you would enter them in a 'use lib qw( ... );'
+in a Perl script.
+
+
+  "Do you want to use Plucene for searching?"
+
+From version 0.39 of OpenGuides, you have the option of using Plucene
+to index your wiki instead of Search::InvertedIndex.  If you answer
+yes to this question, you will need to make sure you have installed
+both Plucene, and CGI::Wiki version 0.56 or later.
+
+If you are changing to Plucene from Search::InvertedIndex, you will
+need to do two things:
+    - either delete your old indexes (they're just files in the index
+      directory) or use a different index directory
+    - reindex your entire wiki (see reindex.pl in the examples/
+      directory of this distribution)
+
+
   "What directory can I use to store indexes in for searching?"
 
 You need a directory to store files used as indexes for the site. The
@@ -138,6 +162,12 @@ need to put the name of that node in here for it to work, though.  You
 might want to call the node "Text Formatting Examples", "Text
 Formatting Rules", "House Style" or whatever.
 
+* Custom templates and CSS
+
+Once you have installed OpenGuides you may wish to edit templates that
+provide site-specific design. These templates are stored in the directory
+templates/custom and are described in the file CUSTOMISATION. The id and
+class tags used for the CSS in OpenGuides are specified in README.CSS.
 
 * Web server configuration
 

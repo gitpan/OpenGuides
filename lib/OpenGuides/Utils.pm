@@ -2,7 +2,7 @@ package OpenGuides::Utils;
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = '0.07';
+$VERSION = '0.08';
 
 use Carp qw( croak );
 use CGI::Wiki;
@@ -119,33 +119,62 @@ sub make_wiki_object {
             qq(<form action="$search_url" method="get"><input type="text" size="20" name="search"><input type="submit" name="Go" value="Search"></form>),
         qr/\@INDEX_LINK\s+\[\[(Category|Locale)\s+([^\]|]+)\|?([^\]]+)?\]\]/ =>
             sub {
+                  my $wiki = shift;
                   my $link_title = $_[2] || "View all pages in $_[0] $_[1]";
                   return qq(<a href="$script_name?action=index;index_type=) . uri_escape(lc($_[0])) . qq(;index_value=) . uri_escape($_[1]) . qq(">$link_title</a>);
                 },
-	qr/\@RSS\s+\[(.*?)\]/ => sub { 
-                                      # Get the URL. It's already been formatted into a 
-                                      # hyperlink so we need to reverse that.
-                                      my $url_raw = $_[0];
-                                      $url_raw =~ />(.*?)</;
-                                      my $url = $1;
+        qr/\@INDEX_LIST\s+\[\[(Category|Locale)\s+([^\]]+)]]/ =>
+             sub {
+                   my ($wiki, $type, $value) = @_;
+                   my @nodes = sort $wiki->list_nodes_by_metadata(
+                       metadata_type  => $type,
+                       metadata_value => $value,
+                       ignore_case    => 1,
+                   );
+                   unless ( scalar @nodes ) {
+                       return "\n* No pages currently in "
+                              . lc($type) . " $value\n";
+                   }
+                   my $return = "\n";
+                   foreach my $node ( @nodes ) {
+                       $return .= "* "
+                               . $wiki->formatter->format_link(
+                                                                wiki => $wiki,
+                                                                link => $node,
+                                                              )
+                                . "\n";
+	           }
+                   return $return;
+                 },
+	qr/\@RSS\s+(.+)/ => sub {
+                    my ($wiki, $url) = @_;
 
-                                      # Retrieve the RSS from the given URL.
-                                      my $rss = CGI::Wiki::Plugin::RSS::Reader->new(url => $url);
-                                      my @items = $rss->retrieve;
+                    # The URL will already have been processed as an inline
+                    # link, so transform it back again.
+                    if ( $url =~ m/href="([^"]+)/ ) {
+                        $url = $1;
+                    }
 
-                                      # Ten items only at this till.
-                                      $#items = 10 if $#items > 10;
+                    my $rss = CGI::Wiki::Plugin::RSS::Reader->new(url => $url);
+                    my @items = $rss->retrieve;
 
-                                      # Make an HTML list with them.
-                                      my $list  = "<ul>\n";
-                                      foreach (@items)
-                                      {
-                                        my $link  = $_->{link};
-                                        my $title = $_->{title};
-                                        $list .= qq{\t<li><a href="$link">$title</a></li>\n};
-                                      }
-                                      $list .= "</ul>\n";
-                                    }
+                    # Ten items only at this till.
+                    $#items = 10 if $#items > 10;
+
+                    # Make a UseMod-formatted list with them - macros are
+                    # processed *before* UseMod formatting is applied but
+                    # *after* inline links like [http://foo/ bar]
+                    my $list = "\n";
+                    foreach (@items) {
+                        my $link        = $_->{link};
+                        my $title       = $_->{title};
+                        my $description = $_->{description};
+                        $list .= qq{* <a href="$link">$title</a>};
+                        $list .= " - $description" if $description;
+                        $list .= "\n";
+                    }
+                    $list .= "</ul>\n";
+        },
     );
 
     my $formatter = CGI::Wiki::Formatter::UseMod->new(
@@ -155,6 +184,7 @@ sub make_wiki_object {
                                    tr th br hr ul li center blockquote kbd
                                    div code strike sub sup font)],
         macros              => \%macros,
+        pass_wiki_to_macros => 1,
         node_prefix         => "$script_name?",
         edit_prefix         => "$script_name?action=edit&id=",
         munge_urls          => 1,
