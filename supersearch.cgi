@@ -1,21 +1,9 @@
 #!/usr/local/stow/perl-5.8.0/bin/perl 
 
-eval 'exec /usr/local/stow/perl-5.8.0/bin/perl  -S $0 ${1+"$@"}'
-    if 0; # not running under some shell
-#
-# Usemod Wiki search facility
-#
-# Ivor Williams: October 2002
-#
-# Change the variable $wikiroot and $wikimain below for your site specific
-# datadir path and wiki url.
-#
-# The prog uses bog-standard CGI.pm stuff. The main program can be tailored for look and feel.
-
 use strict;
 use warnings;
 
-our $VERSION = '1.03';
+our $VERSION = '1.04';
 
 use CGI qw(:standard *ol *div);
 use CGI::Carp qw(fatalsToBrowser);	#Remove fatalsToBrowser if paranoid
@@ -25,13 +13,12 @@ use Data::Dumper;
 use File::Spec::Functions qw(:ALL);
 use Config::Tiny;
 
-use CGI::Wiki::Store::Pg;
 use CGI::Wiki::Search::SII;
 use CGI::Wiki::Formatter::UseMod;
 
 my $config = Config::Tiny->read('wiki.conf');
 
-use vars qw($wiki_dbpath $wikimain $css $head 
+use vars qw($store_class $wiki_dbpath $wikimain $css $head 
 	$wikistore $wiki_search $wiki_formatter %wikitext
 	$db_name $db_user $db_pass);
 
@@ -43,6 +30,16 @@ $wikimain = $config->{_}->{script_name};
 $css = $config->{_}->{stylesheet_url};
 $head = $config->{_}->{site_name} . " Search";
 
+# Require in the right database module.
+my $dbtype = $config->{_}->{dbtype};
+
+my %cgi_wiki_exts = ( postgres => "Pg",
+		      mysql    => "MySQL" );
+
+$store_class = "CGI::Wiki::Store::" . $cgi_wiki_exts{$dbtype};
+eval "require $store_class";
+die "Can't 'require' $store_class.\n" if $@;
+
 # sub matched_items is called with parse tree. Uses horrible subname concatenation - this
 # could be rewritten to us OO instead and be much neater. This would be a major refactor:
 # need to address design issues - patterns?
@@ -53,8 +50,6 @@ sub matched_items {
 	no strict 'subs';
 	goto &{matched_.$op};
 }
-
-my $fs = '\xb3';
 
 # sub mungepage is used to filter out undesirable markup from the raw wiki text
 
@@ -92,47 +87,10 @@ sub mungepage {
 	$text;
 }
 
-###!!!!! load_wiki_text -UseMod version commented out.
-#
-# sub load_wiki_text is used to load the entire wiki into global hash %wikitext. This is a 
-# performance hit everytime the search is used. Looks OK for small wikis. Could replace 
-# this sub with something that makes %wikitext persistent, using a tied hash - issue of when
-# to reload comes up.
-#
-# Note: uses File::Spec routines so as to be fully portable. Works on Windoze, should work on
-# Unix just as well. Uses the patent Perlmonks superslurper trick.
-
-#sub load_wiki_text {
-#
-## glob for topics
-#
-#	my $wikiglob = catdir($wikiroot,'page','*','*.db');
-#	
-#	for (glob $wikiglob) {
-#		my ($dev,$dir,$term) = splitpath($_);
-#		
-#		$term =~ s/\.db//;
-#		readpage($term,$_);
-#	}
-#
-## glob for subtopics
-#
-#	$wikiglob = catdir($wikiroot,'page','*','*','*.db');
-#		
-#	for (glob $wikiglob) {
-#		my ($dev,$dir,$term) = splitpath($_);
-#		my @sd = splitdir($dir);
-#
-#		$term =~ s/\.db//;
-#		$term = $sd[-2].'/'.$term;
-#		readpage($term,$_);
-#	}
-#}
-
 sub load_wiki_text {
 
 # Make store
-	$wikistore = CGI::Wiki::Store::Pg->new( 
+	$wikistore = $store_class->new( 
 		dbname => $db_name,
 		dbuser => $db_user,
 		dbpass => $db_pass,
@@ -457,7 +415,7 @@ sub matched_NOT {
 
 =head1 NAME
 
-search.pl - Enhancement to Usemod Wiki for searches
+supersearch.cgi - Search script for OpenGuides.
 
 =head1 SYNOPSIS
 
@@ -473,18 +431,29 @@ category restaurants&!expensive
 
 =head1 DESCRIPTION
 
-This script presents a single search form when called. The search string is parsed with a full
-RecDescent grammar, and the wiki pages are searched for matches.
+This script presents a single search form when called. The search
+string is parsed with a full RecDescent grammar, and the wiki pages
+are searched for matches.
 
-Borrowing from Perl (or C) & represents AND, | represents OR, and ! represents NOT.
-
-For notes about how to tailor this script, please read the script comments.
+Borrowing from Perl (or C) & represents AND, | represents OR, and !
+represents NOT.
 
 =head1 AUTHOR
 
+The OpenGuides Project (grubstreet@hummous.earth.li)
+
+=head1 COPYRIGHT
+
+     Copyright (C) 2003 The OpenGuides Project.  All Rights Reserved.
+
+The OpenGuides distribution is free software; you can redistribute it
+and/or modify it under the same terms as Perl itself.
+
+=head1 CREDITS
+
+Most of the work in this script done by
 I. Williams, E<lt>ivor.williams@tiscali.co.ukE<gt>
 
 =head1 SEE ALSO
 
-L<usemod>.
-
+L<OpenGuides>
