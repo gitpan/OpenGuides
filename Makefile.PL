@@ -1,7 +1,7 @@
     use ExtUtils::MakeMaker;
     WriteMakefile
       ('DISTNAME' => 'OpenGuides',
-       'VERSION' => '0.20',
+       'VERSION' => '0.21',
        'PL_FILES' => {},
        'PREREQ_PM' => {
 			'CGI::Cookie' => '0',
@@ -11,7 +11,7 @@
 			'CGI::Wiki::Plugin::Locator::UK' => '0.06',
 			'Time::Piece' => '0',
 			'Search::InvertedIndex' => '0',
-			'CGI' => '0',
+			'CGI' => '2.76',
 			'Module::Build' => '0.18',
 			'File::Spec::Functions' => '0',
 			'CGI::Wiki::Plugin::Categoriser' => '0',

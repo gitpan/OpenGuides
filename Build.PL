@@ -190,7 +190,7 @@ my $build = OpenGuides::Build->new(
     license => "perl",
     requires => {
         'Algorithm::Diff' => '0.13', # for sdiff 
-	'CGI' => 0,
+	'CGI' => '2.76', # unescape not in early versions, picked random
 	'CGI::Carp' => 0,
 	'CGI::Cookie' => 0,
 	'CGI::Wiki' => '0.44',
@@ -216,7 +216,6 @@ my $build = OpenGuides::Build->new(
         'Module::Build' => '0.18', # earlier doesn't install script files
         },
     dynamic_config => 1,
-    create_makefile_pl => "traditional",
 );
 
 $build->add_to_cleanup( "wiki.conf" );
