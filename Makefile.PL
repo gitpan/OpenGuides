@@ -1,7 +1,7 @@
     use ExtUtils::MakeMaker;
     WriteMakefile
       ('DISTNAME' => 'OpenGuides',
-       'VERSION' => '0.19',
+       'VERSION' => '0.20',
        'PL_FILES' => {},
        'PREREQ_PM' => {
 			'CGI::Cookie' => '0',
@@ -24,7 +24,7 @@
 			'DBD::Pg' => '0',
 			'Template' => '0',
 			'Parse::RecDescent' => '0',
-			'CGI::Wiki' => '0.38',
+			'CGI::Wiki' => '0.44',
 			'Geography::NationalGrid' => '0',
 			'Config::Tiny' => '0',
 
