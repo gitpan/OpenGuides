@@ -13,7 +13,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.46';
+$VERSION = '0.47';
 
 =head1 NAME
 
@@ -278,6 +278,7 @@ sub display_node {
         );
         @recent = map { {name          => CGI->escapeHTML($_->{name}),
                          last_modified => CGI->escapeHTML($_->{last_modified}),
+                         version       => CGI->escapeHTML($_->{version}),
                          comment       => CGI->escapeHTML($_->{metadata}{comment}[0]),
                          username      => CGI->escapeHTML($_->{metadata}{username}[0]),
                          url           => $config->script_name . "?"
@@ -527,7 +528,6 @@ sub list_all_versions {
     my $node = $args{id};
     my %curr_data = $self->wiki->retrieve_node($node);
     my $curr_version = $curr_data{version};
-    croak "This is the first version" unless $curr_version > 1;
     my @history;
     for my $version ( 1 .. $curr_version ) {
         my %node_data = $self->wiki->retrieve_node( name    => $node,

@@ -8,6 +8,7 @@ META.yml
 PREREQUISITES
 README
 README.CSS
+SIGNATURE
 TROUBLESHOOTING
 examples/london.css
 examples/reindex.pl
@@ -85,5 +86,7 @@ t/63_bug_map_link_no_address.t
 t/64_bug_node_history.t
 t/65_bug_metadata_escape.t
 t/66_bug_latlong_representation.t
+t/67_bug_first_version.t
 t/templates/15_test.tt
 wiki.cgi
+SIGNATURE    Added here by Module::Build

@@ -26,6 +26,7 @@
   [% INCLUDE navbar.tt %]
 [% END %]
 
+<div id="maincontent">
 <div id="recent">
 
 <h3>Ten most <a href="[% cgi_url %]?RecentChanges">recent changes</a>
@@ -33,7 +34,11 @@
 
 <dl>
   [% FOREACH node = recent_changes %]
-  <dt><a href="[% node.url %]">[% node.name %]</a></dt>
+  <dt><a href="[% node.url %]">[% node.name %]</a>
+  [% IF node.version == "1" %]
+    [new]
+  [% END %]
+  </dt>
   [% IF node.comment or node.username %]
     <dd>
       [% node.comment %]
@@ -50,4 +55,5 @@
 </div>
 [% content %]
 
+</div>
 [% INCLUDE footer.tt %]
