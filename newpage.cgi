@@ -4,7 +4,7 @@ use warnings;
 use strict;
 
 use CGI;
-use Config::Tiny;
+use OpenGuides::Config;
 use OpenGuides::Template;
 use OpenGuides::Utils;
 use URI::Escape;
@@ -13,7 +13,7 @@ my @badchars = qw( & ? );
 push @badchars, '#'; # Avoid warning about possible comments in qw()
 
 my $q = CGI->new;
-my $config = Config::Tiny->read('wiki.conf');
+my $config = OpenGuides::Config->new( file => "wiki.conf" );
 my $wiki = OpenGuides::Utils->make_wiki_object( config => $config );
 
 my $pagename = $q->param("pagename") || "";
@@ -85,7 +85,7 @@ sub make_page {
 
     # Hurrah, we're OK.
     my $node_param = $wiki->formatter->node_name_to_node_param($pagename);
-    print "Location: ".$config->{_}->{script_url}.$config->{_}->{script_name}."?action=edit;id=$node_param\n\n";
+    print "Location: ".$config->script_url.$config->script_name."?action=edit;id=$node_param\n\n";
     exit 0;
 }
 

@@ -1,10 +1,10 @@
 package OpenGuides::Test;
 
-use Config::Tiny;
+use OpenGuides::Config;
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 use CGI;
 
@@ -25,7 +25,7 @@ only useful to OpenGuides developers.
   use OpenGuides::Test;
 
   my $config = OpenGuides::Test->make_basic_config;
-  $config->{_}{default_language} = "nl";
+  $config->default_language( "nl" );
 
   my $guide = OpenGuides->new( config => $config );
 
@@ -44,16 +44,16 @@ only useful to OpenGuides developers.
 =item B<make_basic_config>
 
   my $config = OpenGuides::Test->make_basic_config;
-  $config->{_}{default_language} = "nl";
+  $config->default_language( "nl" );
 
-Makes a L<Config::Tiny> object with needed fields pre-filled.  You can
+Makes an L<OpenGuides::Config> object with needed fields pre-filled.  You can
 mess with it as you like then.
 
 =cut
 
 sub make_basic_config {
-    my $config = Config::Tiny->new;
-    $config->{_} = {
+    my $config = OpenGuides::Config->new(
+           vars => {
                      dbtype               => "sqlite",
                      dbname               => "t/node.db",
                      indexing_directory   => "t/indexes",
@@ -64,12 +64,18 @@ sub make_basic_config {
                      custom_template_path => "./custom-templates",
                      home_name            => "Home",
                      geo_handler          => 1,
-                   };
+                   }
+    );
+
+    eval { require CGI::Wiki::Search::Plucene; };
+    if ( $@ ) { $config->use_plucene ( 0 ) };
+	
     return $config;
 }
 
 =item B<write_data>
 
+  my $config = OpenGuides::Test->make_basic_config;
   my $guide = OpenGuides->new( config => $config );
 
   OpenGuides::Test->write_data(
@@ -77,8 +83,13 @@ sub make_basic_config {
                                 node       => "Crabtree Tavern",
                                 os_x       => 523465,
                                 os_y       => 177490,
-                                categories => "Pubs",
+                                categories => "Pubs\r\nPub Food",
                               );
+
+You can supply values for the following keys: C<content>,
+C<categories>, C<locales>, C<os_x>, C<os_y>, C<osie_x>, C<osie_y>,
+C<latitude>, C<longitude>.  You should supply them exactly as they
+would come from a CGI form, eg lines in a textarea are separated by C<\r\n>.
 
 =cut
 
@@ -90,7 +101,7 @@ sub write_data {
     my $q = CGI->new( "" );
     $q->param( -name => "content", -value => $args{content} || "foo" );
     $q->param( -name => "categories", -value => $args{categories} || "" );
-    $q->param( -name => "locales", -value => "" );
+    $q->param( -name => "locales", -value => $args{locales} || "" );
     $q->param( -name => "phone", -value => "" );
     $q->param( -name => "fax", -value => "" );
     $q->param( -name => "website", -value => "" );

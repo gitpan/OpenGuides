@@ -13,7 +13,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.45';
+$VERSION = '0.46';
 
 =head1 NAME
 
@@ -34,6 +34,7 @@ Every page includes a link to a machine-readable (RDF) version of the page.
 
 =item B<new>
 
+  my $config = OpenGuides::Config->new( file => "wiki.conf" );
   my $guide = OpenGuides->new( config => $config );
 
 =cut
@@ -45,8 +46,7 @@ sub new {
     my $wiki = OpenGuides::Utils->make_wiki_object( config => $args{config} );
     $self->{wiki} = $wiki;
     $self->{config} = $args{config};
-    # Default to British National Grid for historical reasons.
-    my $geo_handler = $self->config->{_}{geo_handler} || 1;
+    my $geo_handler = $self->config->geo_handler;
     my $locator;
     if ( $geo_handler == 1 ) {
         $locator = CGI::Wiki::Plugin::Locator::Grid->new(
@@ -79,7 +79,7 @@ sub wiki {
 
 =item B<config>
 
-An accessor, returns the underlying L<Config::Tiny> object.
+An accessor, returns the underlying L<OpenGuides::Config> object.
 
 =cut
 
@@ -139,7 +139,7 @@ sub display_node {
     my ($self, %args) = @_;
     my $return_output = $args{return_output} || 0;
     my $version = $args{version};
-    my $id = $args{id} || $self->config->{_}->{home_name};
+    my $id = $args{id} || $self->config->home_name;
     my $wiki = $self->wiki;
     my $config = $self->config;
 
@@ -151,7 +151,7 @@ sub display_node {
         $tt_vars{index_type} = lc($type);
         $tt_vars{index_value} = $2;
         $tt_vars{"rss_".lc($type)."_url"} =
-                           $config->{_}{script_name} . "?action=rss;"
+                           $config->script_name . "?action=rss;"
                            . lc($type) . "=" . lc(CGI->escape($2));
     }
 
@@ -192,7 +192,7 @@ sub display_node {
 		 last_modified => $modified,
 		 version       => $node_data{version},
                  node          => $id,
-                 language      => $config->{_}->{default_language},
+                 language      => $config->default_language,
                );
 
     # We've undef'ed $version above if this is the current version.
@@ -222,7 +222,7 @@ sub display_node {
                   host        => CGI->escapeHTML($_->{metadata}{host}[0]),
                   username_param => CGI->escape($_->{metadata}{username}[0]),
                   edit_type   => CGI->escapeHTML($_->{metadata}{edit_type}[0]),
-                  url         => "$config->{_}->{script_name}?"
+                  url         => $config->script_name . "?"
           . CGI->escape($wiki->formatter->node_name_to_node_param($_->{name})),
 	        }
                        } @rc;
@@ -246,7 +246,7 @@ sub display_node {
                   host        => CGI->escapeHTML($_->{metadata}{host}[0]),
                   username_param => CGI->escape($_->{metadata}{username}[0]),
                   edit_type   => CGI->escapeHTML($_->{metadata}{edit_type}[0]),
-                  url         => "$config->{_}->{script_name}?"
+                  url         => $config->script_name . "?"
           . CGI->escape($wiki->formatter->node_name_to_node_param($_->{name})),
 	        }
                            } @rc;
@@ -271,7 +271,7 @@ sub display_node {
         my $output = $self->process_template( %processing_args );
         return $output if $return_output;
         print $output;
-    } elsif ( $id eq $self->config->{_}->{home_name} ) {
+    } elsif ( $id eq $self->config->home_name ) {
         my @recent = $wiki->list_recent_changes(
             last_n_changes => 10,
             metadata_was   => { edit_type => "Normal edit" },
@@ -280,7 +280,7 @@ sub display_node {
                          last_modified => CGI->escapeHTML($_->{last_modified}),
                          comment       => CGI->escapeHTML($_->{metadata}{comment}[0]),
                          username      => CGI->escapeHTML($_->{metadata}{username}[0]),
-                         url           => "$config->{_}->{script_name}?"
+                         url           => $config->script_name . "?"
           . CGI->escape($wiki->formatter->node_name_to_node_param($_->{name})) }
                        } @recent;
         $tt_vars{recent_changes} = \@recent;
@@ -367,7 +367,7 @@ sub find_within_distance {
     my %data = $self->wiki->retrieve_node( $node );
     my $lat = $data{metadata}{latitude}[0];
     my $long = $data{metadata}{longitude}[0];
-    my $script_url = $self->config->{_}{script_url};
+    my $script_url = $self->config->script_url;
     print CGI->redirect( $script_url . "supersearch.cgi?lat=$lat;long=$long;distance_in_metres=$metres" );
 }
 
@@ -445,17 +445,17 @@ sub show_index {
             $tt_vars{criterion} = {
                 type  => $args{type},  # for RDF version
                 value => $args{value}, # for RDF version
-                name  => CGI->escapeHTML("Fuzzy Title Match on '$args{value}'"),
-		not_editable => 1
+                name  => CGI->escapeHTML("Fuzzy Title Match on '$args{value}'")
 	    };
+	    $tt_vars{not_editable} = 1;
         } else {
             @selnodes = $wiki->list_nodes_by_metadata(
                 metadata_type  => $args{type},
 	        metadata_value => $args{value},
-                ignore_case    => 1,
+                ignore_case    => 1
             );
             my $name = ucfirst($args{type}) . " $args{value}" ;
-            my $url = $self->config->{_}->{script_name}
+            my $url = $self->config->script_name
                       . "?"
                       . ucfirst( $args{type} )
                       . "_"
@@ -466,9 +466,9 @@ sub show_index {
                 type  => $args{type},
                 value => $args{value}, # for RDF version
                 name  => CGI->escapeHTML( $name ),
-	        url   => $url,
-		not_editable => 1
+	        url   => $url
             };
+	    $tt_vars{not_editable} = 1;
         }
     } else {
         @selnodes = $wiki->list_all_nodes();
@@ -781,7 +781,7 @@ sub delete_node {
     my $password = $args{password};
 
     if ($password) {
-        if ($password ne $self->config->{_}->{admin_pass}) {
+        if ($password ne $self->config->admin_pass) {
             return %tt_vars if $return_tt_vars;
             my $output = $self->process_template(
                                      id       => $node,
@@ -839,8 +839,8 @@ sub process_template {
 
 sub redirect_to_node {
     my ($self, $node) = @_;
-    my $script_url = $self->config->{_}->{script_url};
-    my $script_name = $self->config->{_}->{script_name};
+    my $script_url = $self->config->script_url;
+    my $script_name = $self->config->script_name;
     my $formatter = $self->wiki->formatter;
     my $param = $formatter->node_name_to_node_param( $node );
     return CGI->redirect( "$script_url$script_name?$param" );
@@ -859,8 +859,10 @@ sub get_cookie {
 
 =head1 BUGS AND CAVEATS
 
-At the moment, the location data uses a United-Kingdom-specific module,
-so the location features might not work so well outside the UK.
+UTF8 data are currently not handled correctly throughout.
+
+Other bugs are documented at
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=OpenGuides>
 
 =head1 SEE ALSO
 
@@ -879,8 +881,8 @@ so the location features might not work so well outside the UK.
 If you have a question, a bug report, or a patch, or you're interested
 in joining the development team, please contact openguides-dev@openguides.org
 (moderated mailing list, will reach all current developers but you'll have
-to wait for your post to be approved) or kake@earth.li (a real person who
-may take a little while to reply to your mail if she's busy).
+to wait for your post to be approved) or file a bug report at
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=OpenGuides>
 
 =head1 AUTHOR
 
@@ -888,7 +890,7 @@ The OpenGuides Project (openguides-dev@openguides.org)
 
 =head1 COPYRIGHT
 
-     Copyright (C) 2003-4 The OpenGuides Project.  All Rights Reserved.
+     Copyright (C) 2003-2004 The OpenGuides Project.  All Rights Reserved.
 
 The OpenGuides distribution is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.
