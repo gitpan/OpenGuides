@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.35';
+$VERSION = '0.36';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -297,6 +297,8 @@ sub commit_node {
         foreach my $index (@{$metadata{$lctype}}) {
 	    $index =~ s/(.*)/\u$1/;
 	    my $node = $type . " " . $index;
+	    # Uppercase the node name before checking for existence
+	    $node =~ s/ (\S+)/ \u$1/g;
 	    unless ( $wiki->node_exists($node) ) {
 	        my $category = $type eq "Category" ? "Category" : "Locales";
 		$wiki->write_node( $node,

@@ -1,3 +1,8 @@
+0.36    13 July 2004
+        Added diff link to node template. Fixed case sensitivity bug in
+          index node autocreation.  Fixed bug with node history comments
+          not being HTML-escaped.
+
 0.35    25 June 2004
         Forgot to add version prerequisite on CGI::Wiki.  Don't use 0.34,
           use this.
