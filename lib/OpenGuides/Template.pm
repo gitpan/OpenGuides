@@ -2,7 +2,7 @@ package OpenGuides::Template;
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = '0.04';
+$VERSION = '0.05';
 
 use Carp qw( croak );
 use CGI; # want to get rid of this and put the burden on the templates
@@ -68,13 +68,14 @@ sub output {
     my $tt_vars = $args{vars} || {};
 
     my $script_name = $config->{_}->{script_name};
+    my $script_url  = $config->{_}->{script_url};
     $tt_vars = { %$tt_vars,
 		 site_name     => $config->{_}->{site_name},
 		 cgi_url       => $script_name,
-		 full_cgi_url  => $config->{_}->{script_url} . $script_name,
+		 full_cgi_url  => $script_url . $script_name,
 		 contact_email => $config->{_}->{contact_email},
 		 stylesheet    => $config->{_}->{stylesheet_url},
-		 home_link     => $script_name,
+		 home_link     => $script_url . $script_name,
 		 home_name     => $config->{_}->{home_name}
     };
 
@@ -182,11 +183,11 @@ sub extract_metadata_vars {
 
     if ( $args{metadata} ) {
         foreach my $var ( qw( phone fax address postcode os_x os_y
-                              latitude longitude map_link ) ) {
+                              latitude longitude map_link website) ) {
             $vars{$var} = $metadata{$var}[0];
         }
     } else {
-        foreach my $var ( qw( phone fax address postcode map_link ) ) {
+        foreach my $var ( qw( phone fax address postcode map_link website) ) {
             $vars{$var} = $q->param($var);
         }
 

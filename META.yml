@@ -1,13 +1,13 @@
 --- #YAML:1.0
 name: OpenGuides
-version: 0.13
+version: 0.14
 license: perl
 distribution_type: module
 requires:
   CGI: 0
   CGI::Carp: 0
   CGI::Cookie: 0
-  CGI::Wiki: 0.36
+  CGI::Wiki: 0.38
   CGI::Wiki::Formatter::UseMod: 0.04
   CGI::Wiki::Plugin::Categoriser: 0
   CGI::Wiki::Plugin::GeoCache: 0
@@ -33,7 +33,7 @@ dynamic_config: 1
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.12
+    version: 0.14
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
     version: ~
@@ -48,7 +48,7 @@ provides:
     version: 0.05
   OpenGuides::Template:
     file: lib/OpenGuides/Template.pm
-    version: 0.04
+    version: 0.05
   OpenGuides::UK::PubCrawl:
     file: lib/OpenGuides/UK/PubCrawl.pm
     version: 0.01
