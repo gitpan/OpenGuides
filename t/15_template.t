@@ -1,5 +1,5 @@
 use strict;
-use Test::More tests => 22;
+use Test::More tests => 23;
 use Config::Tiny;
 use Cwd;
 use CGI::Cookie;
@@ -17,7 +17,7 @@ $config->{_}->{template_path} = cwd . "/t/templates";
 # info to make a proper wiki object here.
 my $fake_wiki = Test::MockObject->new;
 $fake_wiki->mock("formatter",
-                 sub { return CGI::Wiki::Formatter::UseMod->new; } );
+                 sub { return CGI::Wiki::Formatter::UseMod->new( munge_urls => 1 ); } );
 
 eval { OpenGuides::Template->output( wiki   => $fake_wiki,
                                      config => $config ); };
@@ -75,6 +75,10 @@ like( $output, qr/HOME NAME: Home Page/, "home_name var set" );
 like( $output,
       qr/FORMATTING RULES LINK: http:\/\/wiki.example.com\/mywiki.cgi\?Rules/,
       "formatting_rules_link var set" );
+
+# Test openguides_version TT variable.
+like( $output, qr/OPENGUIDES VERSION: 0\.\d\d/,
+      "openguides_version set" );
 
 # Test TT variables auto-set from node name.
 $output = OpenGuides::Template->output(

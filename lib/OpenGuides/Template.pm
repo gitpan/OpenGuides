@@ -2,12 +2,13 @@ package OpenGuides::Template;
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = '0.09';
+$VERSION = '0.10';
 
 use Carp qw( croak );
 use CGI; # want to get rid of this and put the burden on the templates
 use Geography::NationalGrid;
 use Geography::NationalGrid::GB;
+use OpenGuides; # for $VERSION for template variable
 use OpenGuides::CGI;
 use Template;
 use URI::Escape;
@@ -63,6 +64,8 @@ in the config object or the user cookies.
 
 =over
 
+=item * C<openguides_version>
+
 =item * C<site_name>
 
 =item * C<cgi_url>
@@ -101,7 +104,8 @@ sub output {
     croak "No template supplied" unless $args{template};
     my $config = $args{config} or croak "No config supplied";
     my $template_path = $config->{_}->{template_path};
-    my $tt = Template->new( { INCLUDE_PATH => $template_path } );
+    my $tt = Template->new( { POST_CHOMP   => 1,
+                              INCLUDE_PATH => $template_path } );
 
     my $script_name = $config->{_}->{script_name};
     my $script_url  = $config->{_}->{script_url};
@@ -129,6 +133,7 @@ sub output {
                     navbar_on_home_page   => $config->{_}->{navbar_on_home_page},
                     formatting_rules_link => $formatting_rules_link,
                     formatting_rules_node => $formatting_rules_node,
+                    openguides_version    => $OpenGuides::VERSION,
     };
 
     if ($args{node}) {

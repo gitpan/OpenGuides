@@ -194,7 +194,7 @@ my $build = OpenGuides::Build->new(
 	'CGI::Carp' => 0,
 	'CGI::Cookie' => 0,
 	'CGI::Wiki' => '0.44',
-	'CGI::Wiki::Formatter::UseMod' => '0.04', # for correct FreeUpper
+	'CGI::Wiki::Formatter::UseMod' => '0.07', # for nested lists and bugfix
         'CGI::Wiki::Plugin::Categoriser' => 0,
 	'CGI::Wiki::Plugin::GeoCache' => 0,
 	'CGI::Wiki::Plugin::Locator::UK' => '0.06',
@@ -216,6 +216,7 @@ my $build = OpenGuides::Build->new(
         'Module::Build' => '0.18', # earlier doesn't install script files
         },
     dynamic_config => 1,
+    create_makefile_pl => "passthrough"
 );
 
 $build->add_to_cleanup( "wiki.conf" );

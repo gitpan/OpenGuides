@@ -1,3 +1,5 @@
+<div align="right">
+<p>Powered by <a href="http://openguides.org/">OpenGuides</a> (version [% openguides_version %]).</p>
 </div>
 </body>
 </html>
