@@ -2,12 +2,13 @@ package OpenGuides::Template;
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = '0.05';
+$VERSION = '0.07';
 
 use Carp qw( croak );
 use CGI; # want to get rid of this and put the burden on the templates
 use Geography::NationalGrid;
 use Geography::NationalGrid::GB;
+use OpenGuides::CGI;
 use Template;
 use URI::Escape;
 
@@ -142,6 +143,9 @@ sub extract_metadata_vars {
     my $script_name = $config->{_}->{script_name};
 
     # Categories and locales are displayed as links in the page footer.
+    # We return these twice, as eg 'category' being a simple array of
+    # category names, but 'categories' being an array of hashrefs including
+    # a URL too.  This is ick.
     my (@catlist, @loclist);
     if ( $args{metadata} ) {
         @catlist = @{ $metadata{category} || [] };
@@ -177,6 +181,8 @@ sub extract_metadata_vars {
     my %vars = (
         categories             => \@categories,
 	locales                => \@locales,
+	category               => \@catlist,
+        locale                 => \@loclist,
 	formatted_website_text => $formatted_website_text,
 	hours_text             => $hours_text
     );
@@ -204,6 +210,14 @@ sub extract_metadata_vars {
 		      os_y      => $os_y
 	    );
 	}
+    }
+
+    # Check whether we need to munge lat and long.
+    my %prefs = OpenGuides::CGI->get_prefs_from_cookie( config => $config );
+    if ( $prefs{latlong_traditional} ) {
+        foreach my $var ( qw( latitude longitude ) ) {
+            $vars{$var} = Geography::NationalGrid->deg2string($vars{$var});
+        }
     }
 
     return %vars;
