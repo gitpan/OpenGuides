@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: OpenGuides
-version: 0.17
+version: 0.18
 license: perl
 distribution_type: module
 requires:
@@ -34,7 +34,7 @@ dynamic_config: 1
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.17
+    version: 0.18
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
     version: ~
@@ -44,6 +44,9 @@ provides:
   OpenGuides::Diff:
     file: lib/OpenGuides/Diff.pm
     version: 0.03
+  OpenGuides::LocaleVote:
+    file: lib/OpenGuides/LocaleVote.pm
+    version: 0.01
   OpenGuides::RDF:
     file: lib/OpenGuides/RDF.pm
     version: 0.05
@@ -56,4 +59,7 @@ provides:
   OpenGuides::Utils:
     file: lib/OpenGuides/Utils.pm
     version: 0.03
-generated_by: Module::Build version 0.18
+  main:
+    file: lib/OpenGuides/Config.pm
+    version: ~
+generated_by: Module::Build version 0.18_02

@@ -1,0 +1,32 @@
+    use ExtUtils::MakeMaker;
+    WriteMakefile
+      ('DISTNAME' => 'OpenGuides',
+       'VERSION' => '0.18',
+       'PL_FILES' => {},
+       'PREREQ_PM' => {
+			'CGI::Cookie' => '0',
+			'URI::Escape' => '0',
+			'VCS::Lite' => '0.04',
+			'CGI::Wiki::Plugin::RSS::ModWiki' => '0.02',
+			'CGI::Wiki::Plugin::Locator::UK' => '0.06',
+			'Time::Piece' => '0',
+			'Search::InvertedIndex' => '0',
+			'CGI' => '0',
+			'Module::Build' => '0.18',
+			'File::Spec::Functions' => '0',
+			'CGI::Wiki::Plugin::Categoriser' => '0',
+			'CGI::Wiki::Plugin::GeoCache' => '0',
+			'Algorithm::Diff' => '0.13',
+			'CGI::Carp' => '0',
+			'CGI::Wiki::Formatter::UseMod' => '0.04',
+			'Test::MockObject' => '0.07',
+			'Data::Dumper' => '0',
+			'DBD::Pg' => '0',
+			'Template' => '0',
+			'Parse::RecDescent' => '0',
+			'CGI::Wiki' => '0.38',
+			'Geography::NationalGrid' => '0',
+			'Config::Tiny' => '0',
+
+		      },
+      );
