@@ -13,7 +13,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.43';
+$VERSION = '0.44';
 
 =head1 NAME
 
@@ -397,7 +397,8 @@ sub show_index {
             $tt_vars{criterion} = {
                 type  => $args{type},  # for RDF version
                 value => $args{value}, # for RDF version
-                name  => CGI->escapeHTML("Fuzzy Title Match on '$args{value}'")
+                name  => CGI->escapeHTML("Fuzzy Title Match on '$args{value}'"),
+		not_editable => 1
 	    };
         } else {
             @selnodes = $wiki->list_nodes_by_metadata(
@@ -418,6 +419,7 @@ sub show_index {
                 value => $args{value}, # for RDF version
                 name  => CGI->escapeHTML( $name ),
 	        url   => $url,
+		not_editable => 1
             };
         }
     } else {
@@ -507,6 +509,59 @@ sub list_all_versions {
     print $output;
 }
 
+=item B<display_rss>
+
+  # Last ten non-minor edits to Hammersmith pages.
+  $guide->display_rss(
+                       items              => 10,
+                       ignore_minor_edits => 1,
+                       locale             => "Hammersmith",
+                     );
+
+  # All edits bob has made to pub pages in the last week.
+  $guide->display_rss(
+                       days     => 7,
+                       username => "bob",
+                       category => "Pubs",
+                     );
+
+As with other methods, the C<return_output> parameter can be used to
+return the output instead of printing it to STDOUT.
+
+=cut
+
+sub display_rss {
+    my ($self, %args) = @_;
+    use Data::Dumper;warn Dumper \%args;
+    my $return_output = $args{return_output} ? 1 : 0;
+
+    my $items = $args{items} || "";
+    my $days  = $args{days}  || "";
+    my $ignore_minor_edits = $args{ignore_minor_edits} ? 1 : 0;
+    my $username = $args{username} || "";
+    my $category = $args{category} || "";
+    my $locale   = $args{locale}   || "";
+    my %criteria = (
+                     items              => $items,
+                     days               => $days,
+                     ignore_minor_edits => $ignore_minor_edits,
+                   );
+    my %filter;
+    $filter{username} = $username if $username;
+    $filter{category} = $category if $category;
+    $filter{locale}   = $locale   if $locale;
+    if ( scalar keys %filter ) {
+        $criteria{filter_on_metadata} = \%filter;
+    }
+
+    my $rdf_writer = OpenGuides::RDF->new( wiki   => $self->wiki,
+					   config => $self->config );
+    my $output = "Content-type: text/plain\n\n";
+    $output .= $rdf_writer->make_recentchanges_rss( %criteria );
+    return $output if $return_output;
+    print $output;
+}
+
 =item B<commit_node>
 
   $guide->commit_node(
@@ -524,6 +579,7 @@ sub commit_node {
     my ($self, %args) = @_;
     my $node = $args{id};
     my $q = $args{cgi_obj};
+    my $return_output = $args{return_output};
     my $wiki = $self->wiki;
     my $config = $self->config;
 
@@ -538,6 +594,13 @@ sub commit_node {
     );
 
     $metadata{opening_hours_text} = $q->param("hours_text") || "";
+
+    # Pick out the unmunged versions of lat/long if they're set.
+    # (If they're not, it means they weren't munged in the first place.)
+    $metadata{latitude} = delete $metadata{latitude_unmunged}
+        if $metadata{latitude_unmunged};
+    $metadata{longitude} = delete $metadata{longitude_unmunged}
+        if $metadata{longitude_unmunged};
 
     # Check to make sure all the indexable nodes are created
     foreach my $type (qw(Category Locale)) {
@@ -574,7 +637,9 @@ sub commit_node {
     my $written = $wiki->write_node($node, $content, $checksum, \%metadata );
 
     if ($written) {
-        print $self->redirect_to_node($node);
+        my $output = $self->redirect_to_node($node);
+        return $output if $return_output;
+        print $output;
     } else {
         my %node_data = $wiki->retrieve_node($node);
         my %tt_vars = ( checksum       => $node_data{checksum},

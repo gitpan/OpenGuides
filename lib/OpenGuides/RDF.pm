@@ -250,17 +250,19 @@ sub emit_rdfxml {
                                              items => 10,
                                            );
 
-  # All the changes in the past week, ignoring minor edits.
+  # All the changes made by bob in the past week, ignoring minor edits.
   print "Content-type: text/plain\n\n";
   print $rdf_writer->make_recentchanges_rss(
-                                             days               => 2,
-                                             ignore_minor_edits => 1,
+            days               => 7,
+            ignore_minor_edits => 1,
+            filter_on_metadata => { username => "bob" },
                                            );
 
 =cut
 
 sub make_recentchanges_rss {
     my ($self, %args) = @_;
+
     my $rssmaker = CGI::Wiki::Plugin::RSS::ModWiki->new(
         wiki      => $self->{wiki},
         site_name => $self->{site_name},

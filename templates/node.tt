@@ -25,15 +25,15 @@
 <div id="find_within_distance">
   <form action="supersearch.cgi">
     <label for="distance">Find all things within</label>
-    <select name="distance_in_metres" id="distance">
+    <select name="latlong_dist" id="distance">
       <option value="500">500 metres</option>
       <option value="1000">1 kilometre</option>
       <option value="1500">1.5 kilometres</option>
       <option value="2000">2 kilometres</option>
     </select>
     of here.
-    <input type="hidden" name="lat" value="[% latitude %]" />
-    <input type="hidden" name="long" value="[% longitude %]" />
+    <input type="hidden" name="lat" value="[% IF latitude_unmunged %][% latitude_unmunged %][% ELSE %][% latitude %][% END %]" />
+    <input type="hidden" name="long" value="[% IF longitude_unmunged %][% longitude_unmunged %][% ELSE %][% longitude %][% END %]" />
     <input type="submit" name="Go" value="Go" class="form_button" />
   </form>
 </div>

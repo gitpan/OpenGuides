@@ -8,7 +8,7 @@ eval { require DBD::SQLite; };
 if ( $@ ) {
     plan skip_all => "DBD::SQLite not installed";
 } else {
-    plan tests => 1;
+    plan tests => 2;
 
     # Clear out the database from any previous runs.
     unlink "t/node.db";
@@ -33,30 +33,17 @@ if ( $@ ) {
     }
 
     my $search = OpenGuides::SuperSearch->new( config => $config );
+    isa_ok( $search, "OpenGuides::SuperSearch" );
     my $wiki = $search->wiki;
-
-    foreach my $i ( 1 .. 30 ) {
-        $wiki->write_node( "Crabtree Tavern $i",
-                           "Nice pub on the riverbank.",
-                           undef,
-                           {
-                             os_x      => 523465,
-                             os_y      => 177490,
-                             latitude  => 51.482385,
-                             longitude => -0.221743,
-                             category  => "Pubs",
-                           }
-                         ) or die "Couldn't write node";
-    }
+    $wiki->write_node( "Pub Crawls", "The basic premise of the pub crawl is to visit a succession of pubs, rather than spending the entire evening or day in a single establishment. London offers an excellent choice of themes for your pub crawl.", undef, { category => "Pubs" } ) or die "Can't write node";
 
     my $output = $search->run(
                                return_output => 1,
-                               vars          => {
-                                                  os_dist => 1500,
-                                                  os_x => 523500,
-                                                  os_y => 177500,
-                                                },
+                               vars          => { search => "pub" }
                              );
-    like( $output, qr/supersearch.cgi\?.*os_x=523500.*Next.*results/s,
-          "os_x retained in next page link" );
+    SKIP: {
+        skip "TODO: summaries", 1;
+        like( $output, qr|<b>pub</b>|i,
+              "outputs at least one bolded occurence of 'pub'" );
+    } # end of SKIP
 }

@@ -1,3 +1,12 @@
+0.44    17 November 2004
+        Remove all traces of display_categories, which was obsoleted but
+          not completely removed before.
+        Improved the efficiency of the search.
+        Fixed a couple of minor bugs in the search - note that node.tt
+          and supersearch.tt have changed.
+        Change the default indexer for new installs to Plucene.	
+        Only run certain search-related tests if Plucene is installed.
+
 0.43    21 October 2004
         Fix broken navbar changes that crept into last release.
 
@@ -8,8 +17,8 @@
         Improved encapsulation in OpenGuides::Supersearch - accessors.
         *INCOMPATIBLE CHANGE* Custom templates are now stored in
           user-definable path, and their names are prefixed with custom_.
-	  This only affects you if you have used the custom template support
-	  introduced in 0.41.
+          This only affects you if you have used the custom template support
+          introduced in 0.41.
         Replace use of CGI::Wiki::Plugin::Geocache with improved node.tt.
 
 0.41    21 September 2004
