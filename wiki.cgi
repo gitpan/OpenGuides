@@ -1,10 +1,10 @@
-#!/usr/local/bin/perl -w
+#!/usr/local/bin/perl
 
 use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.30';
+$VERSION = '0.31';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -13,13 +13,13 @@ use CGI::Wiki::Search::SII;
 use CGI::Wiki::Formatter::UseMod;
 use CGI::Wiki::Plugin::GeoCache;
 use CGI::Wiki::Plugin::Locator::UK;
+use CGI::Wiki::Plugin::Diff;
 use Config::Tiny;
 use Geography::NationalGrid;
 use Geography::NationalGrid::GB;
 use OpenGuides::CGI;
 use OpenGuides::RDF;
 use OpenGuides::Utils;
-use OpenGuides::Diff;
 use OpenGuides::Template;
 use Time::Piece;
 use URI::Escape;
@@ -29,24 +29,28 @@ my $config = Config::Tiny->read('wiki.conf');
 
 # Read in configuration values from config file.
 my $script_name = $config->{_}->{script_name};
-my $script_url = $config->{_}->{script_url};
+my $script_url  = $config->{_}->{script_url};
+my $language    = $config->{_}->{default_language};
 
 # Ensure that script_url ends in a '/' - this is done in Build.PL but
 # we need to allow for people editing the config file by hand later.
 $script_url .= "/" unless $script_url =~ /\/$/;
 
-my ($wiki, $formatter, $locator, $q);
+my ($wiki, $formatter, $locator, $q, $differ);
 eval {
     $wiki = OpenGuides::Utils->make_wiki_object( config => $config );
     $formatter = $wiki->formatter;
     $locator = CGI::Wiki::Plugin::Locator::UK->new;
     $wiki->register_plugin( plugin => $locator );
 
+    $differ = CGI::Wiki::Plugin::Diff->new;
+    $wiki->register_plugin( plugin => $differ );
+
     # Get CGI object, find out what to do.
     $q = CGI->new;
 
     # Note $q->param('keywords') gives you the entire param string.
-    # We need this because usemod has URLs like foo.com/wiki.pl?This_Page
+    # We need this to do URLs like foo.com/wiki.cgi?This_Page
     my $node = $q->param('id') || $q->param('title') || $q->param('keywords') || "";
     $node = $formatter->node_param_to_node_name( $node );
 
@@ -132,10 +136,10 @@ eval {
             my $version = $q->param("version");
 	    my $other_ver = $q->param("diffversion");
 	    if ( $other_ver ) {
-                my %diff_vars = OpenGuides::Diff->formatted_diff_vars(
-                    wiki     => $wiki,
-                    node     => $node,
-                    versions => [ $version, $other_ver ]
+                my %diff_vars = $differ->differences(
+                    node          => $node,
+                    left_version  => $version, 
+		    right_version => $other_ver 
                 );
                 print OpenGuides::Template->output(
                     wiki     => $wiki,
@@ -229,14 +233,17 @@ sub display_node {
 			    config   => $config,
                             metadata => $node_data{metadata} );
 
-    %tt_vars = ( %tt_vars,
+    %tt_vars = (
+                 %tt_vars,
 		 %metadata_vars,
 		 content       => $content,
 		 geocache_link => make_geocache_link($node),
 		 last_modified => $modified,
 		 version       => $node_data{version},
 		 node_name     => $q->escapeHTML($node),
-		 node_param    => $q->escape($node) );
+		 node_param    => $q->escape($node),
+                 language      => $language, );
+
 
     # We've undef'ed $version above if this is the current version.
     $tt_vars{current} = 1 unless $version;
@@ -244,7 +251,7 @@ sub display_node {
     if ($node eq "RecentChanges") {
         my $minor_edits = get_cookie( "show_minor_edits_in_rc" );
         my %criteria = ( days => 7 );
-        $criteria{metadata_wasnt} = { edit_type => "Minor tidying" }
+        $criteria{metadata_was} = { edit_type => "Normal edit" }
           unless $minor_edits;
         my @recent = $wiki->list_recent_changes( %criteria );
         @recent = map { {name          => $q->escapeHTML($_->{name}),
@@ -263,7 +270,7 @@ sub display_node {
     } elsif ($node eq "Home") {
         my @recent = $wiki->list_recent_changes(
             last_n_changes => 10,
-            metadata_wasnt  => { edit_type => "Minor tidying" },
+            metadata_was   => { edit_type => "Normal edit" },
         );
         @recent = map { {name          => $q->escapeHTML($_->{name}),
                          last_modified => $q->escapeHTML($_->{last_modified}),
@@ -283,6 +290,7 @@ sub show_index {
     my %args = @_;
     my %tt_vars;
     my @selnodes;
+
     if ( $args{type} and $args{value} ) {
         if ( $args{type} eq "fuzzy_title_match" ) {
             my %finds = $wiki->fuzzy_title_match( $args{value} );
@@ -309,11 +317,16 @@ sub show_index {
     } else {
         @selnodes = $wiki->list_all_nodes();
     }
-    my @nodes = map { { name  => $_,
-			param => $formatter->node_name_to_node_param($_) }
+
+    my @nodes = map { { name      => $_,
+                        node_data => {$wiki->retrieve_node( name => $_ )},
+			param     => $formatter->node_name_to_node_param($_) }
 		    } sort @selnodes;
+
     $tt_vars{nodes} = \@nodes;
+
     my ($template, $omit_header);
+
     if ( $args{format} eq "rdf" ) {
 	$template = "rdf_index.tt";
 	$omit_header = 1;

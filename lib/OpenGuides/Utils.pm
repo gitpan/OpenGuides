@@ -4,9 +4,11 @@ use strict;
 use vars qw( $VERSION );
 $VERSION = '0.06';
 
+use lib '/home/earle/lib';
 use Carp qw( croak );
 use CGI::Wiki;
 use CGI::Wiki::Formatter::UseMod;
+use CGI::Wiki::Plugin::RSS::Reader;
 use CGI::Wiki::Search::SII;
 use Search::InvertedIndex::DB::DB_File_SplitHash;
 use URI::Escape;
@@ -104,12 +106,36 @@ sub make_wiki_object {
 
     my %macros = (
         '@SEARCHBOX' =>
-            qq(<form action="$search_url" method="get">
-	       <input type="text" size="20" name="search">
-	       <input type="submit" name="Go" value="Search"></form>),
+            qq(<form action="$search_url" method="get"><input type="text" size="20" name="search"><input type="submit" name="Go" value="Search"></form>),
         qr/\@INDEX_LINK\s+\[\[(Category|Locale)\s+([^\]|]+)\|?([^\]]+)?\]\]/ =>
-            sub { my $link_title = $_[2] || "View all pages in $_[0] $_[1]"; return qq(<a href="$script_name?action=index;index_type=) . uri_escape(lc($_[0])) . qq(;index_value=) . uri_escape($_[1]) . qq(">$link_title</a>)
-                }
+            sub {
+                  my $link_title = $_[2] || "View all pages in $_[0] $_[1]";
+                  return qq(<a href="$script_name?action=index;index_type=) . uri_escape(lc($_[0])) . qq(;index_value=) . uri_escape($_[1]) . qq(">$link_title</a>);
+                },
+	qr/\@RSS\s+\[(.*?)\]/ => sub { 
+                                      # Get the URL. It's already been formatted into a 
+                                      # hyperlink so we need to reverse that.
+                                      my $url_raw = $_[0];
+                                      $url_raw =~ />(.*?)</;
+                                      my $url = $1;
+
+                                      # Retrieve the RSS from the given URL.
+                                      my $rss = CGI::Wiki::Plugin::RSS::Reader->new(url => $url);
+                                      my @items = $rss->retrieve;
+
+                                      # Ten items only at this till.
+                                      $#items = 10 if $#items > 10;
+
+                                      # Make an HTML list with them.
+                                      my $list  = "<ul>\n";
+                                      foreach (@items)
+                                      {
+                                        my $link  = $_->{link};
+                                        my $title = $_->{title};
+                                        $list .= qq{\t<li><a href="$link">$title</a></li>\n};
+                                      }
+                                      $list .= "</ul>\n";
+                                    }
     );
 
     my $formatter = CGI::Wiki::Formatter::UseMod->new(

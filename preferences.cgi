@@ -1,8 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/local/bin/perl
 
+use warnings;
 use strict;
-use CGI;
 
+use CGI;
 use Config::Tiny;
 use OpenGuides::CGI;
 use OpenGuides::Utils;
@@ -42,7 +43,8 @@ sub set_preferences {
         config   => $config,
         template => "preferences.tt",
         cookies  => $cookie,
-	vars     => { not_editable           => 1,
+	vars     => {
+                      not_editable           => 1,
                       username               => $username,
                       include_geocache_link  => $gc_link,
                       preview_above_edit_box => $pre_above,

@@ -1,31 +1,40 @@
 [%- USE CGI -%]
 <?xml version="1.0"?>
-<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
-  	 xmlns:dc="http://purl.org/dc/1.0/"
-	 xmlns:gs="http://the.earth.li/~kake/xmlns/gs/0.1/"
-	>
+<rdf:RDF
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+  xmlns:dc="http://purl.org/dc/1.0/"
+  xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#"
+  xmlns:foaf="http://xmlns.com/foaf/0.1/"
+>
 
-[%- IF criterion -%]
-  <gs:[% criterion.type %] rdf:about="[% full_cgi_url %]?action=index;index_type=[% CGI.escape(criterion.type) %];index_value=[% CGI.escape(criterion.value) %];format=rdf">
-  <gs:name>[% CGI.escapeHTML(criterion.name) %]</gs:name>
-[% ELSE -%]
-  <gs:category rdf:about="[% full_cgi_url %]?action=index;format=rdf">
-  <gs:name>Full site index</gs:name>
-[% END -%]
+<rdf:Description rdf:about="">
+[% IF criterion %]
+  <dc:title>[% CGI.escapeHTML(criterion.name) %]</dc:title>
+[% ELSE %]
+  <dc:title>Full site index</dc:title>
+[% END %]
+  <foaf:topic rdf:resource="#listing" />
+</rdf:Description>
 
-  [%- FOREACH node = nodes %]
-    <gs:object>
-      <rdf:Description rdf:about="[% full_cgi_url %]?[% node.param %]">
-        <dc:title>[% node.name %]</dc:title>
-        <rdfs:seeAlso rdf:resource="[% full_cgi_url %]?id=[% node.param %];format=rdf" />
-      </rdf:Description>
-    </gs:object>
-  [% END %]
+[% USE Dumper %]
+<rdf:Bag rdf:ID="listing">
+[%- FOREACH node = nodes %]
+[% metadata = node.node_data.metadata %]
 
-[%- IF criterion -%]
-  </gs:[% criterion.type %]>
-[%- ELSE -%]
-  </gs:category>
-[%- END %]
+  [%- IF metadata.os_x.list.first || metadata.os_y.list.first || metadata.latitude.list.first || metadata.longitude.list.first ||
+        metadata.locale.list.first || metadata.address.list.first || metadata.postcode.list.first || metadata.map_link.list.first -%]
+    [% nodeType = 'geo:SpatialThing' %]
+  [%- ELSE -%]
+    [% nodeType = 'rdf:Description' %]
+  [%- END -%]
+
+  <rdf:li>
+    <[% nodeType %] rdf:about="[% full_cgi_url %]?id=[% node.param %];format=rdf#obj">
+      <dc:title>[% node.name %]</dc:title>
+    </[% nodeType %]>
+  </rdf:li>
+[% END %]
+</rdf:Bag>
+
 </rdf:RDF>

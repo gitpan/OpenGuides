@@ -23,7 +23,7 @@ SEE ALSO
     <http://www.earth.li/~kake/vegan-oxford/>
     * <http://www.ox.compsoc.net/oxfordguide/>, an Open Guide to Oxford run
     by Dominic Hargreaves (what a star)
-    * <http://openguides.org/london/>, the Open Guide to London, whose
+    * <http://london.openguides.org/>, the Open Guide to London, whose
     predecessor was the motivation behind OpenGuides.
 
 FEEDBACK
@@ -38,7 +38,8 @@ AUTHOR
     The OpenGuides Project (openguides-dev@openguides.org)
 
 COPYRIGHT
-         Copyright (C) 2003 The OpenGuides Project.  All Rights Reserved.
+         Copyright (C) 2003-2004 The OpenGuides Project.
+         All Rights Reserved.
 
     The OpenGuides distribution is free software; you can redistribute it
     and/or modify it under the same terms as Perl itself.
