@@ -4,19 +4,17 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.32';
+$VERSION = '0.33_02';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
 use CGI::Wiki;
 use CGI::Wiki::Search::SII;
 use CGI::Wiki::Formatter::UseMod;
-use CGI::Wiki::Plugin::GeoCache;
-use CGI::Wiki::Plugin::Locator::UK;
-use CGI::Wiki::Plugin::Diff;
 use Config::Tiny;
 use Geography::NationalGrid;
 use Geography::NationalGrid::GB;
+use OpenGuides;
 use OpenGuides::CGI;
 use OpenGuides::RDF;
 use OpenGuides::Utils;
@@ -30,21 +28,16 @@ my $config = Config::Tiny->read('wiki.conf');
 # Read in configuration values from config file.
 my $script_name = $config->{_}->{script_name};
 my $script_url  = $config->{_}->{script_url};
-my $language    = $config->{_}->{default_language};
 
 # Ensure that script_url ends in a '/' - this is done in Build.PL but
 # we need to allow for people editing the config file by hand later.
 $script_url .= "/" unless $script_url =~ /\/$/;
 
-my ($wiki, $formatter, $locator, $q, $differ);
+my ($guide, $wiki, $formatter, $q);
 eval {
-    $wiki = OpenGuides::Utils->make_wiki_object( config => $config );
+    $guide = OpenGuides->new( config => $config );
+    $wiki = $guide->wiki;
     $formatter = $wiki->formatter;
-    $locator = CGI::Wiki::Plugin::Locator::UK->new;
-    $wiki->register_plugin( plugin => $locator );
-
-    $differ = CGI::Wiki::Plugin::Diff->new;
-    $wiki->register_plugin( plugin => $differ );
 
     # Get CGI object, find out what to do.
     $q = CGI->new;
@@ -77,38 +70,21 @@ eval {
     } elsif ($action eq 'show_wanted_pages') {
         show_wanted_pages();
     } elsif ($action eq 'index') {
-        show_index( type   => $q->param("index_type") || "Full",
-                    value  => $q->param("index_value") || "",
-                    format => $format );
-    } elsif ($action eq "catindex") {
-        # This is for backwards compatibility with pre-0.04 versions.
-        show_index( type   => "category",
-                    value  => $q->param("category") || "",
-                    format => $format );
+        $guide->show_index(
+                            type   => $q->param("index_type") || "Full",
+                            value  => $q->param("index_value") || "",
+                            format => $format,
+                          );
     } elsif ($action eq 'random') {
         my @nodes = $wiki->list_all_nodes();
         $node = $nodes[int(rand(scalar(@nodes) + 1)) + 1];
         redirect_to_node($node);
         exit 0;
     } elsif ($action eq 'find_within_distance') {
-        my $metres = $q->param("distance_in_metres");
-        my @finds = $locator->find_within_distance( node => $node,
-			 		            metres => $metres );
-        my @nodes;
-        foreach my $find ( @finds ) {
-            my $distance = $locator->distance( from_node => $node,
-					       to_node   => $find,
-                                               unit      => "metres" );
-            push @nodes, { name => $find,
-			   param => $formatter->node_name_to_node_param($find),
-                           distance => $distance };
-	}
-        @nodes = sort { $a->{distance} <=> $b->{distance} } @nodes;
-        process_template("site_index.tt", "index",
-                         { nodes  => \@nodes,
-			   origin => $node,
-			   origin_param => $formatter->node_name_to_node_param($node),
-			   limit  => "$metres metres" } );
+        $guide->find_within_distance(
+                                      id => $node,
+                                      metres => $q->param("distance_in_metres")
+                                    );
     } elsif ( $action eq 'delete'
               and ( lc($config->{_}->{enable_page_deletion}) eq "y"
                     or $config->{_}->{enable_page_deletion} eq "1" )
@@ -117,7 +93,7 @@ eval {
     } elsif ($action eq 'userstats') {
         show_userstats( $username );
     } elsif ($action eq 'list_all_versions') {
-        list_all_versions($node);
+        $guide->list_all_versions( id => $node );
     } elsif ($action eq 'rss') {
         my $feed = $q->param("feed");
         if ( !defined $feed or $feed eq "recent_changes" ) {
@@ -135,21 +111,14 @@ eval {
         } else {
             my $version = $q->param("version");
 	    my $other_ver = $q->param("diffversion");
-	    if ( $other_ver ) {
-                my %diff_vars = $differ->differences(
-                    node          => $node,
-                    left_version  => $version, 
-		    right_version => $other_ver 
-                );
-                print OpenGuides::Template->output(
-                    wiki     => $wiki,
-                    config   => $config,
-                    node     => $node,
-                    template => "differences.tt",
-                    vars     => \%diff_vars
-                );
-	    } else {
-        	display_node($node, $version);
+            if ( $other_ver ) {
+                $guide->display_diffs(
+                                       id            => $node,
+                                       version       => $version,
+                                       other_version => $other_ver,
+                                     );
+            } else {
+                $guide->display_node( id => $node, version => $version );
 	    }
         }
     }
@@ -177,177 +146,6 @@ sub redirect_to_node {
     my $node = shift;
     print $q->redirect("$script_url$script_name?" . $q->escape($formatter->node_name_to_node_param($node)));
     exit 0;
-}
-
-sub display_node {
-    my ($node, $version) = @_;
-    $node ||= "Home";
-
-    my %tt_vars;
-
-    if ( $node =~ /^(Category|Locale) (.*)$/ ) {
-        my $type = $1;
-        $tt_vars{is_indexable_node} = 1;
-        $tt_vars{index_type} = lc($type);
-        $tt_vars{index_value} = $2;
-    }
-
-    my %current_data = $wiki->retrieve_node( $node );
-    my $current_version = $current_data{version};
-    undef $version if ($version && $version == $current_version);
-    my %criteria = ( name => $node );
-    $criteria{version} = $version if $version;#retrieve_node default is current
-
-    my %node_data = $wiki->retrieve_node( %criteria );
-    my $raw = $node_data{content};
-    if ( $raw =~ /^#REDIRECT\s+(.+?)\s*$/ ) {
-        my $redirect = $1;
-        # Strip off enclosing [[ ]] in case this is an extended link.
-        $redirect =~ s/^\[\[//;
-        $redirect =~ s/\]\]\s*$//;
-        # See if this is a valid node, if not then just show the page as-is.
-	if ( $wiki->node_exists($redirect) ) {
-            redirect_to_node($redirect);
-	}
-    }
-    my $content    = $wiki->format($raw);
-    my $modified   = $node_data{last_modified};
-    my %metadata   = %{$node_data{metadata}};
-
-    my %metadata_vars = OpenGuides::Template->extract_metadata_vars(
-                            wiki     => $wiki,
-			    config   => $config,
-                            metadata => $node_data{metadata} );
-
-    %tt_vars = (
-                 %tt_vars,
-		 %metadata_vars,
-		 content       => $content,
-		 geocache_link => make_geocache_link($node),
-		 last_modified => $modified,
-		 version       => $node_data{version},
-		 node_name     => $q->escapeHTML($node),
-		 node_param    => $q->escape($node),
-                 language      => $language, );
-
-
-    # We've undef'ed $version above if this is the current version.
-    $tt_vars{current} = 1 unless $version;
-
-    if ($node eq "RecentChanges") {
-        my $minor_edits = get_cookie( "show_minor_edits_in_rc" );
-        my %criteria = ( days => 7 );
-        $criteria{metadata_was} = { edit_type => "Normal edit" }
-          unless $minor_edits;
-        my @recent = $wiki->list_recent_changes( %criteria );
-        @recent = map { {name          => $q->escapeHTML($_->{name}),
-                         last_modified => $q->escapeHTML($_->{last_modified}),
-                         comment       => $q->escapeHTML($_->{metadata}{comment}[0]),
-                         username      => $q->escapeHTML($_->{metadata}{username}[0]),
-                         host          => $q->escapeHTML($_->{metadata}{host}[0]),
-                         username_param => $q->escape($_->{metadata}{username}[0]),
-                         edit_type     => $q->escapeHTML($_->{metadata}{edit_type}[0]),
-                         url           => "$script_name?"
-          . $q->escape($formatter->node_name_to_node_param($_->{name})) }
-                       } @recent;
-        $tt_vars{recent_changes} = \@recent;
-        $tt_vars{days} = 7;
-        process_template("recent_changes.tt", $node, \%tt_vars);
-    } elsif ($node eq "Home") {
-        my @recent = $wiki->list_recent_changes(
-            last_n_changes => 10,
-            metadata_was   => { edit_type => "Normal edit" },
-        );
-        @recent = map { {name          => $q->escapeHTML($_->{name}),
-                         last_modified => $q->escapeHTML($_->{last_modified}),
-                         comment       => $q->escapeHTML($_->{metadata}{comment}[0]),
-                         username      => $q->escapeHTML($_->{metadata}{username}[0]),
-                         url           => "$script_name?"
-          . $q->escape($formatter->node_name_to_node_param($_->{name})) }
-                       } @recent;
-        $tt_vars{recent_changes} = \@recent;
-        process_template("home_node.tt", $node, \%tt_vars);
-    } else {
-        process_template("node.tt", $node, \%tt_vars);
-    }
-}
-
-sub show_index {
-    my %args = @_;
-    my %tt_vars;
-    my @selnodes;
-
-    if ( $args{type} and $args{value} ) {
-        if ( $args{type} eq "fuzzy_title_match" ) {
-            my %finds = $wiki->fuzzy_title_match( $args{value} );
-            @selnodes = sort { $finds{$a} <=> $finds{$b} } keys %finds;
-            $tt_vars{criterion} = {
-                type  => $args{type},  # for RDF version
-                value => $args{value}, # for RDF version
-                name  => $q->escapeHTML( "Fuzzy Title Match on '$args{value}'")
-	    };
-        } else {
-            @selnodes = $wiki->list_nodes_by_metadata(
-                metadata_type  => $args{type},
-	        metadata_value => $args{value},
-                ignore_case    => 1,
-            );
-            $tt_vars{criterion} = {
-                type  => $args{type},
-                value => $args{value}, # for RDF version
-                name => $q->escapeHTML(ucfirst($args{type}) . " $args{value}"),
-	        url  => "$script_name?" . ucfirst($args{type}) . "_" .
-                  uri_escape($formatter->node_name_to_node_param($args{value}))
-            };
-        }
-    } else {
-        @selnodes = $wiki->list_all_nodes();
-    }
-
-    my @nodes = map { { name      => $_,
-                        node_data => {$wiki->retrieve_node( name => $_ )},
-			param     => $formatter->node_name_to_node_param($_) }
-		    } sort @selnodes;
-
-    $tt_vars{nodes} = \@nodes;
-
-    my ($template, $omit_header);
-
-    if ( $args{format} eq "rdf" ) {
-	$template = "rdf_index.tt";
-	$omit_header = 1;
-	print "Content-type: text/plain\n\n";
-    } else {
-	$template = "site_index.tt";
-    }
-
-    process_template($template,
-		     "$args{type} index",
-                     \%tt_vars,
-		     {},
-		     $omit_header,
-    );
-}
-
-sub list_all_versions {
-    my $node = shift;
-    my %curr_data = $wiki->retrieve_node($node);
-    my $curr_version = $curr_data{version};
-    croak "This is the first version" unless $curr_version > 1;
-    my @history;
-    for my $version ( 1 .. $curr_version ) {
-        my %node_data = $wiki->retrieve_node( name    => $node,
-					      version => $version );
-	push @history, { version  => $version,
-			 modified => $node_data{last_modified},
-		         username => $node_data{metadata}{username}[0],
-		         comment  => $node_data{metadata}{comment}[0]   };
-    }
-    @history = reverse @history;
-    my %tt_vars = ( node    => $node,
-		    version => $curr_version,
-		    history => \@history );
-    process_template("node_history.tt", $node, \%tt_vars );
 }
 
 sub show_userstats {
@@ -481,31 +279,6 @@ sub display_node_rdf {
     print "Content-type: text/plain\n\n";
     print $rdf_writer->emit_rdfxml( node => $args{node} );
     exit 0;
-}
-
-sub make_geocache_link {
-    return "" unless get_cookie( "include_geocache_link" );
-    my $node = shift || $config->{_}->{home_name};
-    my %current_data = $wiki->retrieve_node( $node );
-    my %criteria     = ( name => $node );
-    my %node_data    = $wiki->retrieve_node( %criteria );
-    my %metadata     = %{$node_data{metadata}};
-    my $latitude     = $metadata{latitude}[0];
-    my $longitude    = $metadata{longitude}[0];
-    my $geocache     = CGI::Wiki::Plugin::GeoCache->new();
-    my $link_text    = "Look for nearby geocaches";
-
-    if ($latitude && $longitude) {
-        my $cache_url    = $geocache->make_link(
-					latitude  => $latitude,
-					longitude => $longitude,
-					link_text => $link_text
-				);
-        return $cache_url;
-    }
-    else {
-        return "";
-    }
 }
 
 sub process_template {
