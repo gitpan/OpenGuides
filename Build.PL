@@ -48,9 +48,13 @@ my @questions = (
   default  => "n",
   type     => "y_n"
   },
+{ question => "Please specify a password for the site admin:",
+  variable => "admin_pass",
+  default  => "Change this!"
+  },
 { question => "What's the URL of the site's stylesheet?",
   variable => "stylesheet_url"
-},
+  },
 { question => "What's the site called? (should be unique)",
   variable => "site_name",
   default  => "My OpenGuides Site"
@@ -225,7 +229,7 @@ my $build = OpenGuides::Build->new(
 	'CGI::Wiki::Plugin::GeoCache'     => 0,
 	'CGI::Wiki::Plugin::Locator::UK'  => '0.06',
 	'CGI::Wiki::Plugin::RSS::ModWiki' => '0.02',
-        'CGI::Wiki::Plugin::RSS::Reader'  => '1.2',  # earlier versions don't support RSS 2.0
+        'CGI::Wiki::Plugin::RSS::Reader'  => '1.3',  # earlier versions don't support RSS 2.0
 	'Config::Tiny'                    => 0,
 	'Data::Dumper'                    => 0,
         $drivers{$dbtype}                 => 0,
