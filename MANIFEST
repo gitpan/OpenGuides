@@ -7,7 +7,8 @@ META.yml
 PREREQUISITES
 README
 TROUBLESHOOTING
-examples/oxfordguide.css
+examples/london.css
+examples/vegan-oxford.css
 lib/OpenGuides/Build.pm
 lib/OpenGuides/CGI.pm
 lib/OpenGuides/Diff.pm
@@ -19,9 +20,12 @@ lib/OpenGuides/Utils.pm
 lib/OpenGuides.pm
 newpage.cgi
 preferences.cgi
-pubcrawl.cgi
 supersearch.cgi
 templates/backlink_results.tt
+templates/banner.tt
+templates/delete_confirm.tt
+templates/delete_done.tt
+templates/delete_password_wrong.tt
 templates/differences.tt
 templates/display_categories.tt
 templates/display_metadata.tt
@@ -37,7 +41,6 @@ templates/node.tt
 templates/node_history.tt
 templates/openguides_information_boxes.tt
 templates/preferences.tt
-templates/pubcrawl.tt
 templates/rdf_index.tt
 templates/recent_changes.tt
 templates/search_results.tt
@@ -57,7 +60,7 @@ t/21_wiki.conf
 t/22_rss_modwiki.t
 t/31_supersearch.t
 t/32_supersearch_simple_metadata.t
-t/41_pubcrawl.t
+t/41_deletion.t
 t/51_diff.t
 t/61_bug_textareas.t
 t/62_bug_os_coords.t

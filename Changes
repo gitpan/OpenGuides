@@ -1,3 +1,28 @@
+0.30    29 December 2003
+        Added method to allow admins to delete nodes.  You will need to
+          explicitly enable this option in your wiki.conf, since it brings
+          with it the risk of accidental data loss.
+        Major overhaul of templates - added numerous style hooks.  See
+          examples/ for two stylesheet designs that take advantage of these.
+          Added new banner template for page headers. Also ensured presence
+          of navigation bar is consistent.
+          *** INCOMPATIBLE CHANGE: *** The navbar class in the stylesheet
+          has been renamed to, unsurprisingly, "navbar", for consistency 
+          (from "toolbar"). *** YOU WILL NEED TO REWRITE YOUR STYLESHEET. ***
+          You are advised to create a duplicate wiki.cgi that reads its data
+          from your database but its stylesheet and templates from the new
+          ones in order to test them *before* deploying them.
+        Added "FAQ", "How To Get Started" and "Wiki Etiquette" to the
+          navigation, under "Help" - these won't exist unless you create them 
+          on your site, so at first the links serve as examples of 
+          documentation you can provide.
+        Modified preferences.cgi so that all the help links in the navbar
+          can be hidden, not just the text formatting link.
+        Fixed some HTML validation bugs.
+	Added multiple install and pretty URL notes to INSTALL.
+	Removed pubcrawl stuff from distro for now - it doesn't really work.
+	Changed to use CGI::Wiki::Plugin::Diff instead of OpenGuides::Diff.
+
 0.29    8 November 2003
         Expanded section in TROUBLESHOOTING about permissions problems.
         Diff.pm now absorbs trailing punctuation and spaces into words

@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.29';
+$VERSION = '0.30';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -105,6 +105,11 @@ eval {
 			   origin => $node,
 			   origin_param => $formatter->node_name_to_node_param($node),
 			   limit  => "$metres metres" } );
+    } elsif ( $action eq 'delete'
+              and ( lc($config->{_}->{enable_page_deletion}) eq "y"
+                    or $config->{_}->{enable_page_deletion} eq "1" )
+            ) {
+        delete_node($node);
     } elsif ($action eq 'userstats') {
         show_userstats( $username );
     } elsif ($action eq 'list_all_versions') {
@@ -185,7 +190,6 @@ sub display_node {
         $tt_vars{index_value} = $2;
 
         unless ( $wiki->node_exists($node) ) {
-            warn "Creating default node $node";
             my $category = $type eq "Category" ? "Category" : "Locales";
             $wiki->write_node( $node,
                                "\@INDEX_LINK [[$node]]",
@@ -432,6 +436,28 @@ sub edit_node {
     );
 
     process_template("edit_form.tt", $node, \%tt_vars);
+}
+
+sub delete_node {
+    my $node = shift;
+
+    my %tt_vars = (
+                    not_editable   => 1,
+                    page_deletable => 0,
+                  );
+
+    my $password = $q->param('password');
+
+    if ($password) {
+        if ($password ne $config->{_}->{admin_pass}) {
+            process_template("delete_password_wrong.tt", $node, \%tt_vars); 
+        } else {
+            $wiki->delete_node($node);
+            process_template("delete_done.tt", $node, \%tt_vars);
+        }
+    } else {
+        process_template("delete_confirm.tt", $node, \%tt_vars);
+    }
 }
 
 sub get_cookie {

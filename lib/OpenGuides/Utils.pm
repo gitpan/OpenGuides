@@ -44,6 +44,24 @@ Croaks unless a C<Config::Tiny> object is supplied.  Returns a
 C<CGI::Wiki> object made from the given config file on success,
 croaks if any other error occurs.
 
+The config file needs to define at least the following variables:
+
+=over
+
+=item *
+
+dbtype - one of C<postgres>, C<mysql> and C<sqlite>
+
+=item *
+
+dbname
+
+=item *
+
+indexing_directory - for the L<Search::InvertedIndex> files to go
+
+=back
+
 =cut
 
 sub make_wiki_object {
