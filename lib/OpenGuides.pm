@@ -12,7 +12,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.36';
+$VERSION = '0.37';
 
 =head1 NAME
 
@@ -176,8 +176,7 @@ sub display_node {
 		 geocache_link => $self->make_geocache_link($id),
 		 last_modified => $modified,
 		 version       => $node_data{version},
-		 node_name     => CGI->escapeHTML($id),
-		 node_param    => CGI->escape($id),
+                 node          => $id,
                  language      => $config->{_}->{default_language},
                );
 
@@ -193,6 +192,7 @@ sub display_node {
         my @recent = $wiki->list_recent_changes( %criteria );
         @recent = map { {name          => CGI->escapeHTML($_->{name}),
                          last_modified => CGI->escapeHTML($_->{last_modified}),
+                         version       => CGI->escapeHTML($_->{version}),
                          comment       => CGI->escapeHTML($_->{metadata}{comment}[0]),
                          username      => CGI->escapeHTML($_->{metadata}{username}[0]),
                          host          => CGI->escapeHTML($_->{metadata}{host}[0]),
@@ -641,10 +641,10 @@ and/or modify it under the same terms as Perl itself.
 
 =head1 CREDITS
 
-Programming by Earle Martin, Kake Pugh, Ivor Williams.  Testing and
-bug reporting by Cal Henderson, Bob Walker, Kerry Bosworth, Dominic
-Hargreaves, Simon Cozens, among others.  Much of the Module::Build
-stuff copied from the Siesta project L<http://siesta.unixbeard.net/>
+Programming by Dominic Hargreaves, Earle Martin, Kake Pugh, Ivor Williams.
+Testing and bug reporting by Cal Henderson, Bob Walker, Kerry Bosworth,
+Simon Cozens, among others.  Much of the Module::Build stuff copied from
+the Siesta project L<http://siesta.unixbeard.net/>
 
 =cut
 
