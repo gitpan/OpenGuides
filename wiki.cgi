@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.08';
+$VERSION = '0.09';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -14,86 +14,33 @@ use CGI::Wiki::Search::SII;
 use CGI::Wiki::Formatter::UseMod;
 use CGI::Wiki::Plugin::GeoCache;
 use CGI::Wiki::Plugin::Locator::UK;
-use CGI::Wiki::Plugin::RSS::ModWiki;
 use Config::Tiny;
 use Geography::NationalGrid;
 use Geography::NationalGrid::GB;
 use OpenGuides::RDF;
+use OpenGuides::Utils;
 use Template;
 use Time::Piece;
 use URI::Escape;
 
 # config vars
-my $config = Config::Tiny->new;
-$config = Config::Tiny->read('wiki.conf');
+my $config = Config::Tiny->read('wiki.conf');
 
 # Read in configuration values from config file.
 my $script_name = $config->{_}->{script_name};
 my $script_url = $config->{_}->{script_url};
-my $stylesheet_url = $config->{_}->{stylesheet_url};
 my $site_name = $config->{_}->{site_name};
 my $home_name = $config->{_}->{home_name};
-my $site_desc = $config->{_}->{site_desc};
-my $default_city = $config->{_}->{default_city};
-my $default_country = $config->{_}->{default_country};
 my $contact_email = $config->{_}->{contact_email};
 my $search_url = $config->{_}->{script_url} . "supersearch.cgi";
 my $template_path = $config->{_}->{template_path};
 
-# Require in the right database module.
-my $dbtype = $config->{_}->{dbtype};
-
-my %cgi_wiki_exts = ( postgres => "Pg",
-		      mysql    => "MySQL" );
-
-my $cgi_wiki_module = "CGI::Wiki::Store::" . $cgi_wiki_exts{$dbtype};
-eval "require $cgi_wiki_module";
-die "Can't 'require' $cgi_wiki_module.\n" if $@;
-
-# Make store.
-my $store = $cgi_wiki_module->new(
-    dbname => $config->{_}{dbname},
-    dbuser => $config->{_}{dbuser},
-    dbpass => $config->{_}{dbpass},
-);
-
-# Make search.
-my $indexdb = Search::InvertedIndex::DB::DB_File_SplitHash->new(
-    -map_name  => $config->{_}{indexing_directory},
-    -lock_mode => "EX"
-);
-my $search  = CGI::Wiki::Search::SII->new( indexdb => $indexdb );
-
-# Make formatter.
-my %macros = (
-    '@SEARCHBOX' =>
-        qq(<form action="$search_url" method="get">
-	   <input type="text" size="20" name="search">
-	   <input type="submit" name="Go" value="Search"></form>),
-    qr/\@INDEX_LINK\s+\[\[(Category|Locale)\s+([^\]]+)\]\]/ =>
-        sub { return qq(<a href="$script_name?action=index;index_type=) . uri_escape(lc($_[0])) . qq(;index_value=) . uri_escape($_[1]) . qq(">View all pages in $_[0] $_[1]</a>)
-            }
-);
-
-my $formatter = CGI::Wiki::Formatter::UseMod->new(
-    extended_links      => 1,
-    implicit_links      => 0,
-    allowed_tags        => [qw(a p b strong i em pre small img table td tr th
-			       br hr ul li center blockquote kbd div code
-			       strike sub sup font)],
-    macros              => \%macros,
-    node_prefix         => "$script_name?",
-    edit_prefix         => "$script_name?action=edit&id="
-);
-
-my %conf = ( store     => $store,
-             search    => $search,
-             formatter => $formatter );
-
-my ($wiki, $locator, $q);
+my ($wiki, $formatter, $locator, $q);
 eval {
-    $wiki = CGI::Wiki->new(%conf);
-    $locator = CGI::Wiki::Plugin::Locator::UK->new( wiki => $wiki );
+    $wiki = OpenGuides::Utils->make_wiki_object( config => $config );
+    $formatter = $wiki->formatter;
+    $locator = CGI::Wiki::Plugin::Locator::UK->new;
+    $wiki->register_plugin( plugin => $locator );
 
     # Get CGI object, find out what to do.
     $q = CGI->new;
@@ -163,7 +110,9 @@ eval {
     } elsif ($action eq 'rss') {
         my $feed = $q->param("feed");
         if ( !defined $feed or $feed eq "recent_changes" ) {
-            emit_recent_changes_rss();
+            my $items = $q->param("items") || "";
+            my $days  = $q->param("days")  || "";
+            emit_recent_changes_rss( items => $items, days => $days);
         } elsif ( $feed eq "chef_dan" ) {
             display_node_rdf( node => $node );
         } else {
@@ -428,8 +377,20 @@ sub preview_node {
     # Multiple categories and locales can be supplied, one per line.
     my $categories_text = $q->param('categories');
     my $locales_text    = $q->param('locales');
-    my @categories = sort split("\r\n", $categories_text);
-    my @locales    = sort split("\r\n", $locales_text);
+    my @catlist = sort split("\r\n", $categories_text);
+    my @loclist = sort split("\r\n", $locales_text);
+
+    my @categories = map { { name => $_,
+                             url  => "$script_name?Category_"
+ 		          . uri_escape($formatter->node_name_to_node_param($_))
+			   }
+		         } @catlist;
+
+    my @locales    = map { { name => $_,
+                             url  => "$script_name?Locale_"
+			  . uri_escape($formatter->node_name_to_node_param($_))
+                           }
+                         } @loclist;
 
     # The 'website' attribute might contain a URL so we wiki-format it here
     # rather than just CGI::escapeHTMLing it all in the template.
@@ -449,11 +410,23 @@ sub preview_node {
 		        hours_text   => $q->param("hours_text"),
 			address      => $q->param("address"),
                         postcode     => $q->param("postcode"),
-			os_x         => $q->param("os_x"),
-			os_y         => $q->param("os_y"),
 			username     => $q->param("username"),
 			comment      => $q->param("comment")
      );
+
+    my $os_x = $q->param("os_x");
+    my $os_y = $q->param("os_y");
+    # Work out latitude and longitude for the preview display.
+    if ($os_x and $os_y) {
+        my $point = Geography::NationalGrid::GB->new( Easting  => $os_x,
+						      Northing => $os_y );
+        %tt_metadata_vars = ( %tt_metadata_vars,
+  		              latitude  => $point->latitude,
+			      longitude => $point->longitude,
+			      os_x      => $os_x,
+			      os_y      => $os_y
+	);
+    }
 
     if ($wiki->verify_checksum($node, $checksum)) {
         my %tt_vars = ( content      => $q->escapeHTML($content),
@@ -521,54 +494,20 @@ sub get_cookie {
 }
 
 sub emit_recent_changes_rss {
-    my $rss = CGI::Wiki::Plugin::RSS::ModWiki->new(
-        wiki      => $wiki,
-        site_name => $site_name,
-        site_description => $site_desc,
-        make_node_url => sub {
-            my ( $node_name, $version ) = @_;
-            return "$script_url$script_name?id="
-                 . uri_escape(
-                        $wiki->formatter->node_name_to_node_param( $node_name )
-			     )
-                 . ";version=" . uri_escape($version);
-	  },
-        recent_changes_link =>
-            "$script_url$script_name?RecentChanges"
-     );
-
+    my %args = @_;
+    my $rdf_writer = OpenGuides::RDF->new( wiki      => $wiki,
+					   config => $config );
     print "Content-type: text/plain\n\n";
-    print $rss->recent_changes;
+    print $rdf_writer->make_recentchanges_rss( %args );
     exit 0;
 }
 
 sub display_node_rdf {
     my %args = @_;
-    my $node = $args{node};
-    my $rdf_writer = OpenGuides::RDF->new(
-        wiki      => $wiki,
-        site_name => $site_name,
-        site_description => $site_desc,
-        make_node_url => sub {
-            my ( $node_name, $version ) = @_;
-            if ( defined $version ) {
-               return "$script_url$script_name?id="
-                 . uri_escape(
-                        $wiki->formatter->node_name_to_node_param( $node_name )
-			     )
-                 . ";version=" . uri_escape($version);
-	     } else {
-                return "$script_url$script_name?"
-                 . uri_escape(
-                        $wiki->formatter->node_name_to_node_param( $node_name )			     );
-             }
-        },
-	default_city => $default_city,
-        default_country => $default_country
-     );
-
+    my $rdf_writer = OpenGuides::RDF->new( wiki      => $wiki,
+					   config => $config );
     print "Content-type: text/plain\n\n";
-    print $rdf_writer->emit_rdfxml( node => $node );
+    print $rdf_writer->emit_rdfxml( node => $args{node} );
     exit 0;
 }
 
@@ -610,7 +549,7 @@ sub process_template {
                     contact_email => $contact_email,
                     description   => "",
                     keywords      => "",
-                    stylesheet    => $stylesheet_url,
+                    stylesheet    => $config->{_}->{stylesheet_url},
                     home_link     => $script_name,
                     home_name     => $home_name );
 

@@ -178,11 +178,12 @@ my $build = OpenGuides::Build->new(
 	'CGI' => 0,
 	'CGI::Carp' => 0,
 	'CGI::Cookie' => 0,
-	'CGI::Wiki' => '0.33',
+	'CGI::Wiki' => '0.36',
 	'CGI::Wiki::Formatter::UseMod' => '0.03',
+        'CGI::Wiki::Plugin::Categoriser' => 0,
 	'CGI::Wiki::Plugin::GeoCache' => 0,
-	'CGI::Wiki::Plugin::Locator::UK' => '0.04',
-	'CGI::Wiki::Plugin::RSS::ModWiki' => '0.01',
+	'CGI::Wiki::Plugin::Locator::UK' => '0.06',
+	'CGI::Wiki::Plugin::RSS::ModWiki' => '0.02',
 	'Config::Tiny' => 0,
 	'Data::Dumper' => 0,
         $drivers{$dbtype} => 0,
@@ -204,9 +205,11 @@ $build->add_to_cleanup( "wiki.conf" );
 
 # Tell OpenGuides::Build which additional scripts and templates to install.
 $build->{config}{__extra_scripts}     = 
-                      [ "wiki.conf", "preferences.cgi", "supersearch.cgi" ];
+                      [ "wiki.conf", "preferences.cgi", "supersearch.cgi",
+                        "pubcrawl.cgi" ];
 $build->{config}{__templates}         = [
 		      "backlink_results.tt",
+		      "display_categories.tt",
 		      "display_metadata.tt",
                       "edit_conflict.tt",
                       "edit_form.tt",
@@ -217,6 +220,7 @@ $build->{config}{__templates}         = [
                       "node.tt",
                       "node_history.tt",
 		      "preferences.tt",
+                      "pubcrawl.tt",
                       "rdf_index.tt",
                       "recent_changes.tt",
                       "search_results.tt",

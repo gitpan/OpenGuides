@@ -1,17 +1,18 @@
 --- #YAML:1.0
 name: OpenGuides
-version: 0.08
+version: 0.09
 license: perl
 distribution_type: module
 requires:
   CGI: 0
   CGI::Carp: 0
   CGI::Cookie: 0
-  CGI::Wiki: 0.33
+  CGI::Wiki: 0.36
   CGI::Wiki::Formatter::UseMod: 0.03
+  CGI::Wiki::Plugin::Categoriser: 0
   CGI::Wiki::Plugin::GeoCache: 0
-  CGI::Wiki::Plugin::Locator::UK: 0.04
-  CGI::Wiki::Plugin::RSS::ModWiki: 0.01
+  CGI::Wiki::Plugin::Locator::UK: 0.06
+  CGI::Wiki::Plugin::RSS::ModWiki: 0.02
   Config::Tiny: 0
   DBD::Pg: 0
   Data::Dumper: 0
@@ -30,11 +31,17 @@ dynamic_config: 1
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.08
+    version: 0.09
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
     version: ~
   OpenGuides::RDF:
     file: lib/OpenGuides/RDF.pm
-    version: 0.03
+    version: 0.04
+  OpenGuides::UK::PubCrawl:
+    file: lib/OpenGuides/UK/PubCrawl.pm
+    version: 0.01
+  OpenGuides::Utils:
+    file: lib/OpenGuides/Utils.pm
+    version: 0.01
 generated_by: Module::Build version 0.18
