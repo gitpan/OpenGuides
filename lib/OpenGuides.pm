@@ -4,7 +4,6 @@ use strict;
 use Carp "croak";
 use CGI;
 use CGI::Wiki::Plugin::Diff;
-use CGI::Wiki::Plugin::GeoCache;
 use CGI::Wiki::Plugin::Locator::UK;
 use OpenGuides::CGI;
 use OpenGuides::Template;
@@ -14,7 +13,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.41';
+$VERSION = '0.42';
 
 =head1 NAME
 
@@ -139,7 +138,8 @@ sub display_node {
         $tt_vars{is_indexable_node} = 1;
         $tt_vars{index_type} = lc($type);
         $tt_vars{index_value} = $2;
-        $tt_vars{rss_link} = $config->{_}{script_name} . "?action=rss;"
+        $tt_vars{"rss_".lc($type)."_url"} =
+                           $config->{_}{script_name} . "?action=rss;"
                            . lc($type) . "=" . lc(CGI->escape($2));
     }
 
@@ -177,7 +177,6 @@ sub display_node {
                  %tt_vars,
 		 %metadata_vars,
 		 content       => $content,
-		 geocache_link => $self->make_geocache_link($id),
 		 last_modified => $modified,
 		 version       => $node_data{version},
                  node          => $id,
@@ -354,38 +353,11 @@ sub find_within_distance {
     my ($self, %args) = @_;
     my $node = $args{id};
     my $metres = $args{metres};
-    my $formatter = $self->wiki->formatter;
-    my @finds = $self->locator->find_within_distance(
-                                                      node   => $node,
-			 		              metres => $metres,
-                                                    );
-    my @nodes;
-    foreach my $find ( @finds ) {
-        my $distance = $self->locator->distance(
-                                                 from_node => $node,
-					         to_node   => $find,
-                                                 unit      => "metres"
-                                               );
-        push @nodes, {
-                       name     => $find,
-	               param    => $formatter->node_name_to_node_param($find),
-                       distance => $distance,
-                     };
-    }
-    @nodes = sort { $a->{distance} <=> $b->{distance} } @nodes;
-
-    my %tt_vars = (
-                    nodes        => \@nodes,
-                    origin       => $node,
-                    origin_param => $formatter->node_name_to_node_param($node),
-                    limit        => "$metres metres",
-                  );
-
-    print $self->process_template(
-                                   id       => "index", # KLUDGE
-                                   template => "site_index.tt",
-                                   tt_vars  => \%tt_vars,
-                                 );
+    my %data = $self->wiki->retrieve_node( $node );
+    my $lat = $data{metadata}{latitude}[0];
+    my $long = $data{metadata}{longitude}[0];
+    my $script_url = $self->config->{_}{script_url};
+    print CGI->redirect( $script_url . "supersearch.cgi?lat=$lat;long=$long;distance_in_metres=$metres" );
 }
 
 =item B<show_index>
@@ -730,33 +702,6 @@ sub get_cookie {
     return $cookie_data{$pref_name};
 }
 
-sub make_geocache_link {
-    my $self = shift;
-    my $wiki = $self->wiki;
-    my $config = $self->config;
-    return "" unless $self->get_cookie( "include_geocache_link" );
-    my $node = shift || $config->{_}->{home_name};
-    my %current_data = $wiki->retrieve_node( $node );
-    my %criteria     = ( name => $node );
-    my %node_data    = $wiki->retrieve_node( %criteria );
-    my %metadata     = %{$node_data{metadata}};
-    my $latitude     = $metadata{latitude}[0];
-    my $longitude    = $metadata{longitude}[0];
-    my $geocache     = CGI::Wiki::Plugin::GeoCache->new();
-    my $link_text    = "Look for nearby geocaches";
-
-    if ($latitude && $longitude) {
-        my $cache_url    = $geocache->make_link(
-					latitude  => $latitude,
-					longitude => $longitude,
-					link_text => $link_text
-				);
-        return $cache_url;
-    }
-    else {
-        return "";
-    }
-}
 
 =back
 

@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: OpenGuides
-version: 0.41
+version: 0.42
 license: perl
 distribution_type: module
 requires:
@@ -12,7 +12,6 @@ requires:
   CGI::Wiki::Formatter::UseMod: 0.16
   CGI::Wiki::Plugin::Categoriser: 0
   CGI::Wiki::Plugin::Diff: 0.07
-  CGI::Wiki::Plugin::GeoCache: 0
   CGI::Wiki::Plugin::Locator::UK: 0.09
   CGI::Wiki::Plugin::RSS::ModWiki: 0.06
   CGI::Wiki::Plugin::RSS::Reader: 1.3
@@ -37,7 +36,7 @@ dynamic_config: 1
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.41
+    version: 0.42
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
   OpenGuides::CGI:

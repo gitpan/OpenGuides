@@ -4,10 +4,12 @@
 <div id="content">
 [% INCLUDE navbar.tt %]
 [% IF current %]
-  [% IF is_indexable_node %]
+  [% IF backlinks_in_title AND is_indexable_node %]
     <h2 class="node_name"><a href="[% cgi_url %]?action=index;index_type=[% CGI.escape(index_type) %];index_value=[% CGI.escape(index_value) %]">[% node_name %]</a></h2>
-  [% ELSE %]
+  [% ELSIF backlinks_in_title %]
     <h2 class="node_name"><a href="[% cgi_url %]?action=show_backlinks&id=[% CGI.escape(node_name) %]">[% node_name %]</a></h2>
+  [% ELSE %]
+    <h2 class="node_name">[% node_name %]</h2>
   [% END %]
 [% ELSE %]
   <h2><em>Historical version [% version %] of [% node_name %]</em></h2>
@@ -18,20 +20,20 @@
 [% content %]
 <!-- NODE CONTENT ENDS -->
 
-[% IF os_x AND os_y %]
+[% IF latitude AND longitude %]
 <br clear="all" />
 <div id="find_within_distance">
-  <form action="[% cgi_url %]">
+  <form action="supersearch.cgi">
     <label for="distance">Find all things within</label>
     <select name="distance_in_metres" id="distance">
-      <option value="200">200 metres</option>
       <option value="500">500 metres</option>
       <option value="1000">1 kilometre</option>
+      <option value="1500">1.5 kilometres</option>
       <option value="2000">2 kilometres</option>
     </select>
     of here.
-    <input type="hidden" name="id" value="[% node_name %]" />
-    <input type="hidden" name="action" value="find_within_distance" />
+    <input type="hidden" name="lat" value="[% latitude %]" />
+    <input type="hidden" name="long" value="[% longitude %]" />
     <input type="submit" name="Go" value="Go" class="form_button" />
   </form>
 </div>
@@ -54,8 +56,11 @@
 <div id="rdf_link">
   <a href="[% cgi_url %]?id=[% node_param %];format=rdf">RDF/XML for this
   node</a>
-  [% IF rss_link %]
-    / <a href="[% rss_link %]">RSS feed for this node</a>
+  [% IF rss_locale_url %]
+    / <a href="[% rss_locale_url %]">RSS feed for this locale</a>
+  [% END %]
+  [% IF rss_category_url %]
+    / <a href="[% rss_category_url %]">RSS feed for this category</a>
   [% END %]
 </div>
 <div id="version">
