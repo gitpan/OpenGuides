@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: OpenGuides
-version: 0.33_02
+version: 0.33_03
 license: perl
 distribution_type: module
 requires:
@@ -37,7 +37,7 @@ dynamic_config: 1
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.33_02
+    version: 0.33_03
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
   OpenGuides::CGI:
@@ -52,9 +52,6 @@ provides:
   OpenGuides::Template:
     file: lib/OpenGuides/Template.pm
     version: 0.12
-  OpenGuides::UK::PubCrawl:
-    file: lib/OpenGuides/UK/PubCrawl.pm
-    version: 0.02
   OpenGuides::Utils:
     file: lib/OpenGuides/Utils.pm
     version: 0.06
