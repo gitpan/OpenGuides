@@ -12,6 +12,7 @@ lib/OpenGuides/Build.pm
 lib/OpenGuides/CGI.pm
 lib/OpenGuides/Diff.pm
 lib/OpenGuides/RDF.pm
+lib/OpenGuides/SuperSearch.pm
 lib/OpenGuides/Template.pm
 lib/OpenGuides/UK/PubCrawl.pm
 lib/OpenGuides/Utils.pm
@@ -41,6 +42,7 @@ templates/rdf_index.tt
 templates/recent_changes.tt
 templates/search_results.tt
 templates/site_index.tt
+templates/supersearch.tt
 templates/userstats.tt
 templates/wanted_pages.tt
 t/00_setup.t
@@ -53,8 +55,10 @@ t/15_wiki.conf
 t/21_rdf.t
 t/21_wiki.conf
 t/22_rss_modwiki.t
+t/31_supersearch.t
 t/41_pubcrawl.t
 t/51_diff.t
 t/61_bug_textareas.t
+t/62_bug_os_coords.t
 t/templates/15_test.tt
 wiki.cgi
