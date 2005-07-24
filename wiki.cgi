@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.47';
+$VERSION = '0.48';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -20,7 +20,8 @@ use OpenGuides::Template;
 use Time::Piece;
 use URI::Escape;
 
-my $config = OpenGuides::Config->new( file => "wiki.conf" );
+my $config_file = $ENV{OPENGUIDES_CONFIG_FILE} || "wiki.conf";
+my $config = OpenGuides::Config->new( file => $config_file );
 
 my $script_name = $config->script_name;
 my $script_url  = $config->script_url;
@@ -39,11 +40,12 @@ eval {
     my $node = $q->param('id') || $q->param('title') || $q->param('keywords') || "";
     $node = $formatter->node_param_to_node_name( $node );
 
-    my $action = $q->param('action') || 'display';
-    my $commit = $q->param('Save') || 0;
-    my $preview = $q->param('preview') || 0;
-    my $search_terms = $q->param('terms') || $q->param('search') || '';
-    my $format = $q->param('format') || '';
+    my $action       = $q->param('action')  || 'display';
+    my $commit       = $q->param('Save')    || 0;
+    my $preview      = $q->param('preview') || 0;
+    my $search_terms = $q->param('terms')   || $q->param('search') || '';
+    my $format       = $q->param('format')  || '';
+    my $oldid        = $q->param('oldid')   || '';
 
     # Alternative method of calling search, supported by usemod.
     $action = 'search' if $q->param("search");
@@ -120,7 +122,12 @@ eval {
                                        other_version => $other_ver,
                                      );
             } else {
-                $guide->display_node( id => $node, version => $version );
+                $guide->display_node(
+                                      id      => $node,
+                                      version => $version,
+                                      oldid   => $oldid,
+                );
+                
 	    }
         }
     }
@@ -287,9 +294,12 @@ sub do_search {
 
 sub show_wanted_pages {
     my @dangling = $wiki->list_dangling_links;
-    @dangling = sort @dangling;
     my @wanted;
+    my %backlinks_count;
     foreach my $node_name (@dangling) {
+        $backlinks_count{$node_name} = scalar($wiki->list_backlinks( node => $node_name ));
+    }
+    foreach my $node_name (sort { $backlinks_count{$b} <=> $backlinks_count{$a} } @dangling) {
         my $node_param =
  	    uri_escape($formatter->node_name_to_node_param($node_name));
         push @wanted, {
@@ -297,7 +307,8 @@ sub show_wanted_pages {
             edit_link     => $script_url . uri_escape($script_name)
                            . "?action=edit;id=$node_param",
             backlink_link => $script_url . uri_escape($script_name)
- 		           . "?action=show_backlinks;id=$node_param"
+ 		           . "?action=show_backlinks;id=$node_param",
+            backlinks_count => $backlinks_count{$node_name}
         };
     }
     process_template( "wanted_pages.tt",

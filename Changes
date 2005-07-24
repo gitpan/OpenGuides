@@ -1,3 +1,34 @@
+0.48    22 July 2005
+        RDF enhancements:
+          Removed redundant "id" parameter specification from dc:source in
+            rdf:Description in RDF node listings.
+          Fixed bug that was causing all nodes to be flagged as a
+            geo:SpatialThing whether they were or not.
+          Ensured that ampersands and greater/less than symbols were properly 
+            escaped so as not to be XML-toxic.
+          Added geo:lat, geo:long and RSS link attributes to items in 
+            category/locale listings to facilitate integration with mapping
+            applications.
+          Added owl:sameAs property to RDF output for nodes that are redirects
+            to other nodes.
+          RSS feed now has correct timestamp (matching most recent item) and
+            matching Last-Modified HTTP header.
+        Reorder navigation bar to provide more logical groupings.
+        Add "format=plain" option for all-nodes index listing and associated
+          template plain_index.tt.
+        New message to appear on pages when you have been redirected
+          informing you of the fact.
+        Stop showing potentially very long map URLs in metadata section of
+          node display.
+        Replace ugly obliques in display of categories and locales with more
+          natural commas; change "locale" to "locales" in label.
+        Replace <label> tags in display_metadata.tt with <span
+          class="metadata_label">.
+        Wanted pages listing now displays, and sorts by, the number of nodes
+        pointing to each node.
+        Prevent redirect loops.
+        Add _ to the list of forbidden characters in node names
+
 0.47    15 January 2005
         Fixed bug with list_all_versions for nodes with only one version.
         Extended config changes to examples/reindex.pl (thanks jimbo).

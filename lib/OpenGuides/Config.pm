@@ -82,7 +82,8 @@ sub _init {
     # See if we already have some config variables set.
     my %stored;
     if ( $args{file} ) {
-        my $read_config = Config::Tiny->read( $args{file} );
+        my $read_config = Config::Tiny->read( $args{file} ) or
+            warn "Cannot read config file $args{file}";
         %stored = $read_config ? %{ $read_config->{_} } : ();
     } elsif ( $args{vars} ) {
         %stored = %{ $args{vars} };
@@ -229,7 +230,7 @@ The OpenGuides Project (openguides-dev@openguides.org)
 
 =head1 COPYRIGHT
 
-     Copyright (C) 2004 The OpenGuides Project.  All Rights Reserved.
+     Copyright (C) 2004-2005 The OpenGuides Project.  All Rights Reserved.
 
 The OpenGuides distribution is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

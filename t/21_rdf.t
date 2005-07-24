@@ -5,7 +5,7 @@ use OpenGuides::RDF;
 use OpenGuides::Utils;
 use OpenGuides::Test;
 use URI::Escape;
-use Test::More tests => 24;
+use Test::More tests => 25;
 
 eval { require DBD::SQLite; };
 my $have_sqlite = $@ ? 0 : 1;
@@ -65,9 +65,9 @@ SKIP: {
 
     like( $rdfxml, qr|<\?xml version="1.0"\?>|, "RDF is encoding-neutral" );
 
-    like( $rdfxml, qr|<foaf:based_near><wn:Neighborhood><foaf:name>Bloomsbury</foaf:name></wn:Neighborhood></foaf:based_near>|,
+    like( $rdfxml, qr|<foaf:name>Bloomsbury</foaf:name>|,
 	  "finds the first locale" );
-    like( $rdfxml, qr|<foaf:based_near><wn:Neighborhood><foaf:name>St Pancras</foaf:name></wn:Neighborhood></foaf:based_near>|,
+    like( $rdfxml, qr|<foaf:name>St Pancras</foaf:name>|,
          "finds the second locale" );
 
     like( $rdfxml, qr|<phone>test phone number</phone>|,
@@ -76,7 +76,7 @@ SKIP: {
     like( $rdfxml, qr|<chefmoz:Hours>test hours</chefmoz:Hours>|,
 	  "picks up opening hours text" );
 
-    like( $rdfxml, qr|<homePage>test website</homePage>|, "picks up website" );
+    like( $rdfxml, qr|<foaf:homepage rdf:resource="test website" />|, "picks up website" );
 
     like( $rdfxml,
 	  qr|<dc:title>CGI::Wiki Test Site: Calthorpe Arms</dc:title>|,
@@ -90,7 +90,7 @@ SKIP: {
     like( $rdfxml, qr|<rdf:Description rdf:about="">|,
           "sets the 'about' correctly" );
 
-    like( $rdfxml, qr|<dc:source rdf:resource="http://wiki.example.com/mywiki.cgi\?id=Calthorpe_Arms" />|,
+    like( $rdfxml, qr|<dc:source rdf:resource="http://wiki.example.com/mywiki.cgi\?Calthorpe_Arms" />|,
 	  "set the dc:source with the version-independent uri" );
 
     like( $rdfxml, qr|<country>United Kingdom</country>|, "country" ).
@@ -125,4 +125,20 @@ SKIP: {
 
     like( $rdfxml, qr|<wiki:version>0</wiki:version>|,
           "...and wiki:version is 0" );
+
+    # Test the data for a node that redirects.
+    $wiki->write_node( "Calthorpe Arms Pub",
+		       "#REDIRECT [[Calthorpe Arms]]",
+		       undef,
+		       {
+                         comment            => "Created as redirect to Calthorpe Arms page.",
+		         username           => "Earle",
+                       }
+    );
+
+    my $redirect_rdf = $rdf_writer->emit_rdfxml( node => "Calthorpe Arms Pub" );
+
+    like( $redirect_rdf, qr|<owl:sameAs rdf:resource="/\?id=Calthorpe_Arms;format=rdf#obj" />|,
+	  "redirecting node gets owl:sameAs to target" );
+
 }

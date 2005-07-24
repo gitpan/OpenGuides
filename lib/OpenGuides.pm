@@ -13,7 +13,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.47';
+$VERSION = '0.48';
 
 =head1 NAME
 
@@ -142,6 +142,7 @@ sub display_node {
     my $id = $args{id} || $self->config->home_name;
     my $wiki = $self->wiki;
     my $config = $self->config;
+    my $oldid = $args{oldid} || '';
 
     my %tt_vars;
 
@@ -169,12 +170,15 @@ sub display_node {
         $redirect =~ s/^\[\[//;
         $redirect =~ s/\]\]\s*$//;
         # See if this is a valid node, if not then just show the page as-is.
-	if ( $wiki->node_exists($redirect) ) {
-            my $output = $self->redirect_to_node($redirect);
+
+        # Avoid loops by not generating redirects to the same node or the
+        # previous node.
+        if ( $wiki->node_exists($redirect) && $redirect ne $id && $redirect ne $oldid ) {
+            my $output = $self->redirect_to_node($redirect, $id);
             return $output if $return_output;
             print $output;
             exit 0;
-	}
+        }
     }
     my $content    = $wiki->format($raw);
     my $modified   = $node_data{last_modified};
@@ -193,6 +197,7 @@ sub display_node {
 		 version       => $node_data{version},
                  node          => $id,
                  language      => $config->default_language,
+                 oldid         => $oldid,
                );
 
     # We've undef'ed $version above if this is the current version.
@@ -484,11 +489,22 @@ sub show_index {
 
     my ($template, %conf);
 
-    if ( $args{format} and $args{format} eq "rdf" ) {
+    if ( $args{format} )
+    {
+      if ( $args{format} eq "rdf" )
+      {
 	$template = "rdf_index.tt";
         $conf{content_type} = "text/plain";
-    } else {
-	$template = "site_index.tt";
+      }
+      elsif ( $args{format} eq "plain" )
+      {
+        $template = "plain_index.tt";
+        $conf{content_type} = "text/plain";
+      }
+    }
+    else
+    {
+      $template = "site_index.tt";
     }
 
     %conf = (
@@ -604,7 +620,8 @@ sub display_rss {
 
     my $rdf_writer = OpenGuides::RDF->new( wiki   => $self->wiki,
 					   config => $self->config );
-    my $output = "Content-type: text/plain\n\n";
+    my $output = "Content-Type: text/plain\n";
+    $output .= "Last-Modified: " . $rdf_writer->rss_timestamp( %criteria ) . "\n\n";
     $output .= $rdf_writer->make_recentchanges_rss( %criteria );
     return $output if $return_output;
     print $output;
@@ -838,12 +855,22 @@ sub process_template {
 }
 
 sub redirect_to_node {
-    my ($self, $node) = @_;
+    my ($self, $node, $redirected_from) = @_;
+    
     my $script_url = $self->config->script_url;
     my $script_name = $self->config->script_name;
     my $formatter = $self->wiki->formatter;
-    my $param = $formatter->node_name_to_node_param( $node );
-    return CGI->redirect( "$script_url$script_name?$param" );
+
+    my $id = $formatter->node_name_to_node_param( $node );
+    my $oldid;
+    $oldid = $formatter->node_name_to_node_param( $redirected_from ) if $redirected_from;
+
+    my $redir_param = "$script_url$script_name?";
+    $redir_param .= 'id=' if $oldid;
+    $redir_param .= $id;
+    $redir_param .= ";oldid=$oldid" if $oldid;
+    
+    return CGI->redirect( $redir_param );
 }
 
 sub get_cookie {
@@ -890,7 +917,7 @@ The OpenGuides Project (openguides-dev@openguides.org)
 
 =head1 COPYRIGHT
 
-     Copyright (C) 2003-2004 The OpenGuides Project.  All Rights Reserved.
+     Copyright (C) 2003-2005 The OpenGuides Project.  All Rights Reserved.
 
 The OpenGuides distribution is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.
