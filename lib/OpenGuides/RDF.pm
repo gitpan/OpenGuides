@@ -3,7 +3,7 @@ package OpenGuides::RDF;
 use strict;
 
 use vars qw( $VERSION );
-$VERSION = '0.071';
+$VERSION = '0.08';
 
 use CGI::Wiki::Plugin::RSS::ModWiki;
 use Time::Piece;
@@ -50,6 +50,7 @@ sub _init {
     $self->{default_city}     = $config->default_city     || "";
     $self->{default_country}  = $config->default_country  || "";
     $self->{site_description} = $config->site_desc        || "";
+    $self->{og_version}       = $args{og_version};
 
     $self;
 }
@@ -65,6 +66,7 @@ sub emit_rdfxml {
     my $fax                = $node_data{metadata}{fax}[0]                || '';
     my $website            = $node_data{metadata}{website}[0]            || '';
     my $opening_hours_text = $node_data{metadata}{opening_hours_text}[0] || '';
+    my $address            = $node_data{metadata}{address}[0]            || '';
     my $postcode           = $node_data{metadata}{postcode}[0]           || '';
     my $city               = $node_data{metadata}{city}[0]               || $self->{default_city};
     my $country            = $node_data{metadata}{country}[0]            || $self->{default_country};
@@ -74,12 +76,14 @@ sub emit_rdfxml {
     my $username           = $node_data{metadata}{username}[0]           || '';
     my $os_x               = $node_data{metadata}{os_x}[0]               || '';
     my $os_y               = $node_data{metadata}{os_y}[0]               || '';
-    my $catrefs            = $node_data{metadata}{category};
+    my @categories         = @{ $node_data{metadata}{category} || [] };
     my @locales            = @{ $node_data{metadata}{locale} || [] };
+    my $summary            = $node_data{metadata}{summary}[0]            || '';
 
     # replace any errant characters in data to prevent illegal XML
-    foreach ($phone, $fax, $website, $opening_hours_text, $postcode, $city, $country,
-    $latitude, $longitude, $version, $os_x, $os_y, $catrefs, @locales)
+    foreach ($phone, $fax, $website, $opening_hours_text, $address, $postcode, 
+             $city, $country, $latitude, $longitude, $version, $os_x, $os_y, 
+             @categories, @locales, $summary)
     {
       if ($_)
       {
@@ -91,7 +95,7 @@ sub emit_rdfxml {
     
     my ($is_geospatial, $objType);
 
-    if ($latitude || $longitude || $postcode || @locales) {
+    if ($os_x || $os_y || $latitude || $longitude || $address || $postcode || @locales) {
         $is_geospatial = 1;
         $objType    = 'geo:SpatialThing';
     } else {
@@ -138,32 +142,39 @@ sub emit_rdfxml {
 
   <$objType rdf:ID="obj" dc:title="$node_name">
 };
-    $rdf .= "\n    <!-- categories -->\n\n" if $catrefs;
-    $rdf .= "    <dc:subject>$_</dc:subject>\n" foreach @{$catrefs};
-    $rdf .= "\n    <!-- address and geospatial data -->\n\n" if $is_geospatial;
-    $rdf .= "    <city>$city</city>\n"                 if $city     && $is_geospatial;
-    $rdf .= "    <postalCode>$postcode</postalCode>\n" if $postcode && $is_geospatial;
-    $rdf .= "    <country>$country</country>\n"        if $country  && $is_geospatial;
+    $rdf .= "    <dc:description>$summary</dc:description>\n" if $summary;
 
-    $rdf .= qq{
+    $rdf .= "\n    <!-- categories -->\n\n" if @categories;
+    $rdf .= "    <dc:subject>$_</dc:subject>\n" foreach @categories;
+    
+    if ($is_geospatial)
+    {
+      $rdf .= "\n    <!-- address and geospatial data -->\n\n";
+      $rdf .= "    <address>$address</address>\n"        if $address;
+      $rdf .= "    <city>$city</city>\n"                 if $city;
+      $rdf .= "    <postalCode>$postcode</postalCode>\n" if $postcode;
+      $rdf .= "    <country>$country</country>\n"        if $country;
+
+      $rdf .= qq{
     <foaf:based_near>
       <wn:Neighborhood>
         <foaf:name>$_</foaf:name>
       </wn:Neighborhood>
     </foaf:based_near>\n} foreach @locales;
 
-    if ( $latitude && $longitude ) {
-        $rdf .= qq{
+      if ( $latitude && $longitude ) {
+          $rdf .= qq{
     <geo:lat>$latitude</geo:lat>
     <geo:long>$longitude</geo:long>\n};
-    }
+      }
 
-    if ( $os_x && $os_y ) {
-        $rdf .= qq{
+      if ( $os_x && $os_y ) {
+          $rdf .= qq{
     <os:x>$os_x</os:x>
     <os:y>$os_y</os:y>};
+      }
     }
-
+    
     $rdf .= "\n\n    <!-- contact information -->\n\n" if ($phone || $fax || $website || $opening_hours_text);
     $rdf .= "    <phone>$phone</phone>\n"                              if $phone;
     $rdf .= "    <fax>$fax</fax>\n"                                    if $fax;
@@ -197,9 +208,13 @@ sub rss_maker {
         $self->{rss_maker} = CGI::Wiki::Plugin::RSS::ModWiki->new(
           wiki                => $self->{wiki},
           site_name           => $self->{site_name},
+          site_url            => $self->{config}->script_url,
           site_description    => $self->{site_description},
           make_node_url       => $self->{make_node_url},
-          recent_changes_link => $self->{config}->script_url . uri_escape($self->{config}->script_name) . "?RecentChanges"
+          recent_changes_link => $self->{config}->script_url . '?action=rss',
+          software_name       => 'OpenGuides',
+          software_homepage   => 'http://openguides.org/',
+          software_version    => $self->{og_version},
         );
     }
     

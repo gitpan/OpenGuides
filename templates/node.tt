@@ -5,7 +5,7 @@
 [% INCLUDE navbar.tt %]
 <div id="maincontent">
 [% IF oldid %]
-<div id="redirect_message">(redirected from <a href="[% full_cgi_url %]?action=edit&id=[% oldid %]">[% oldid %]</a></div>
+<div id="redirect_message">(redirected from <a href="[% full_cgi_url %]?id=[% oldid %];redirect=0">[% oldid.replace('_', ' ') %]</a></div>
 [% END %]
 
 [% IF current %]
@@ -22,6 +22,9 @@
     <span class="node_name">[% node_name %]</span></em>
   </h2>
 [% END %]
+[% IF not (content || coord_field_1_value || coord_field_2_value || latitude || longitude) %]
+We don't have a node called "[% node_param %]". Would you like to <a href="[% full_cgi_url %]?action=edit;id=[% node_param %]">make
+[% ELSE %]
 [% INCLUDE display_metadata.tt %]
 
 <!-- NODE CONTENT STARTS -->
@@ -46,7 +49,7 @@
     </form>
   </div>
 [% END %]
-[% IF (latitude AND longitude) OR (os_x AND os_y) %]
+[% IF (latitude AND longitude) OR (os_x AND os_y) OR (osie_x AND osie_y) %]
 <div id="coordinates">
 [% END %]
 [% IF os_x AND os_y %]
@@ -54,11 +57,16 @@
   &nbsp;&nbsp;&nbsp;
   <small>OS Y co-ord: [% CGI.escapeHTML(os_y) %]</small>
   &nbsp;&nbsp;&nbsp;
+[% ELSIF osie_x AND osie_y %]
+  <small>OS IE X co-ord: [% CGI.escapeHTML(osie_x) %]</small>
+  &nbsp;&nbsp;&nbsp;
+  <small>OS IE Y co-ord: [% CGI.escapeHTML(osie_y) %]</small>
+  &nbsp;&nbsp;&nbsp;
 [% END %]
 [% IF latitude AND longitude %]
   <small>(Latitude: [% latitude %] Longitude: [% longitude %])</small>
 [% END %]
-[% IF (latitude AND longitude) OR (os_x AND os_y) %]
+[% IF (latitude AND longitude) OR (os_x AND os_y) OR (osie_x AND osie_y)%]
 </div>
 [% END %]
 <div id="rdf_link">
@@ -89,6 +97,6 @@
 versions.</a>
 [% END %]
 </div>
-
+[% END %]
 </div>
 [% INCLUDE footer.tt %]

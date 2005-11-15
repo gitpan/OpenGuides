@@ -14,27 +14,27 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 8c1ce003173ed52b0317d4cacb10e9437cfd5072 Build.PL
+SHA1 01da0cdcf854c5c9c515d6e0f6ccd4aef92d7f4b Build.PL
 SHA1 951320614ad08a0d8f8c81ee136370e1b280adcb CUSTOMISATION
-SHA1 c7205f1754ae73fcdd259f43194882902e1fd304 Changes
+SHA1 e8deaa12be84089cb6bb42c6ea5fcc45c7bc6120 Changes
 SHA1 a998cf891a03373956c0a37b38611c2de927b0cf INSTALL
 SHA1 854cd36936deff08e62d9f2582057c6ba0390911 MANIFEST
-SHA1 1e01722492d113da2e49e43a62edf9a24e29d7a1 META.yml
+SHA1 84de5efde3584b9c20f3b9732f5bf3d6af557f05 META.yml
 SHA1 3fff2be7caf1a8c45b8abf1afcdd316e7b20f09b Makefile.PL
-SHA1 5c683c6936a981830d61617261c52c2b914b7856 PREREQUISITES
+SHA1 14f0c77f65a8b4baa7832458ad9086af3911a1f2 PREREQUISITES
 SHA1 d6e9d4a4dd165b4fa8534557f154413be7b9a1ae README
-SHA1 de351682f3ea2ff274fb104732d1ea6476505b5f README.CSS
+SHA1 c7ea7afd49d464a3a1d9a5a803de2b42994ec02d README.CSS
 SHA1 dcc5ea9e9d4c4abd91c6a1ac67a58670a4ce0595 TROUBLESHOOTING
 SHA1 9d8d2ae49622cdd3d1af93eb51e93859e2ceb55b examples/london.css
 SHA1 2e306b428715a94e230044f4f31b004e4000d1fc examples/reindex.pl
 SHA1 ee8715aaecef4577fcf3902078b88f2ec63cbf31 examples/vegan-oxford.css
-SHA1 bb1c7e7eb148af518ecdbc0f4447d10b0e2ad55d lib/OpenGuides.pm
+SHA1 772c56e2222064f0d59b371af0bc269261e91fcd lib/OpenGuides.pm
 SHA1 83c7d227a32aa6defcbb1ea3503de38a44e53df8 lib/OpenGuides/Build.pm
 SHA1 3173fb85451308e41e85ead6cd0653ab98eeb8bd lib/OpenGuides/CGI.pm
 SHA1 187e85b4f2200c7bd9ec784cbd6a28de1aa63293 lib/OpenGuides/Config.pm
-SHA1 c260ef5b93a96bcc470f0914d4928bb31c3398a0 lib/OpenGuides/RDF.pm
-SHA1 b247da5fb7a7fdd70c11e11a30c094a061b60c6c lib/OpenGuides/SuperSearch.pm
-SHA1 adffbe79969b07d8c6a1231bfd5e55653475665e lib/OpenGuides/Template.pm
+SHA1 6bdb540745eff98f6b1d9e3afd383be4cbb6f182 lib/OpenGuides/RDF.pm
+SHA1 822c8c172654b5202340aa075ab341664f6d48d9 lib/OpenGuides/SuperSearch.pm
+SHA1 67b459d47c3d2be76440c87804e083bd7b9b8d9f lib/OpenGuides/Template.pm
 SHA1 cc32282469f0f0dcf66e3679ce77837c58e30943 lib/OpenGuides/Test.pm
 SHA1 dd2923c65c6a8ccae156431f6aa38b24820706bc lib/OpenGuides/Utils.pm
 SHA1 7dea66c162f18b8528914e856939600563876dd1 newpage.cgi
@@ -47,7 +47,7 @@ SHA1 d4d7862c25991fcae98cc2dbb619b13a70afbdb2 t/13_cookies.t
 SHA1 1540eff4d84c0a91e5b6dc39504c561451c99444 t/14_recent_changes_cookies.t
 SHA1 c4a17cbea0b063ee1f568a444f64515a5ea08b25 t/15_template.t
 SHA1 d634cfc4f51596956af3350449968660fbdc024c t/16_test_tester.t
-SHA1 010b1d315e4fb46c58e2999dda2351e65f32908f t/21_rdf.t
+SHA1 6ee3f89e34c8eee27ec818c62d793737a0135b41 t/21_rdf.t
 SHA1 cbbd574624699dac4837a3965b21c53e3eefdeb2 t/22_rss_modwiki.t
 SHA1 0bef9209f690c3d56daf7dc326a0acbc3629fae1 t/25_write_geo_data.t
 SHA1 26c74bfc8ef37354debf94ccc43e935ddf9c7302 t/26_geo_data_search_form.t
@@ -85,30 +85,30 @@ SHA1 b87db1175fc9d6ca3298b8fd8b36c2bdafd0430e templates/delete_password_wrong.tt
 SHA1 e09325c54114c321ef766746a57ac3e63187cd0f templates/differences.tt
 SHA1 e5bc608cca7fc527d1d9d3c6f57b57517553ca55 templates/display_metadata.tt
 SHA1 24bd80b4f8a0f8ec3516ade329750df802fa846e templates/edit_conflict.tt
-SHA1 480b858ba51d19979371457bd085180dae7be2ec templates/edit_form.tt
+SHA1 c23ce5702e49ce8617b905c34ce8d7e14d02fd19 templates/edit_form.tt
 SHA1 9fd61428d329f5f66d329c2f865b305a1b8cc639 templates/error.tt
 SHA1 f15e7c7d3e4684f92bf2a36726f084e7dc6ba200 templates/footer.tt
-SHA1 d339095f17e3d2f1bc3b1045bca5a57870daac11 templates/header.tt
-SHA1 a21b7afb58db6cc5cc92fc113c0773e2c22385fe templates/home_node.tt
-SHA1 e2cca1a61819b2bc348dc0c2b201cb9e4297a226 templates/navbar.tt
+SHA1 e63bbf7041b67262f5b8ef83d11dc8e661d3c4eb templates/header.tt
+SHA1 07d3f52088c11b506133a8edc5ab4ff790631dd8 templates/home_node.tt
+SHA1 9dcf833d4f313c6aa8d1abc861b97acc94d806dd templates/navbar.tt
 SHA1 9e5147da0a4b84ed9e9a7a38952182549768682c templates/newpage.tt
-SHA1 16e78f84aee13af7ae6d823d0bfa7fc39d25787c templates/node.tt
+SHA1 854c983f4b6c9438f2fb45df12f26cac5d754a9b templates/node.tt
 SHA1 95a7309033fac39b66e44d6e70c1c9fc8aa7a927 templates/node_history.tt
 SHA1 0f744279824348145df1598dfe5dba6c076ed3dc templates/openguides_information_boxes.tt
 SHA1 f03bb3973c4edc15aa538adc02fe3aa3cb6224ed templates/plain_index.tt
 SHA1 6a986c8b30bcc60e9afb3e8982d355344639eb99 templates/preferences.tt
-SHA1 4f01446d4422ad1f958b81c6f28e3fba1579eb45 templates/rdf_index.tt
-SHA1 6f7cc3b95d0aa8be3a5e80742df1ac9865f4490b templates/recent_changes.tt
+SHA1 bc1971e12b4c07e2499015b5c99066292141332f templates/rdf_index.tt
+SHA1 20da4b8687534a10212020438c1f882d2122d88e templates/recent_changes.tt
 SHA1 dac4189f5ab16c80202be08ce8bb35fd1ab368e7 templates/search_results.tt
 SHA1 65def8a2165424753100fdaae95c9e495c195691 templates/site_index.tt
-SHA1 84cc84f4190d627d59be6e25ffed37954422ac03 templates/supersearch.tt
-SHA1 535e6a04257ab5d5652d2a14ca4204174a99713f templates/userstats.tt
+SHA1 792043e2e7386f768bf4006c6e1bf3da788544e3 templates/supersearch.tt
+SHA1 603d7c89a53dca5a57e5a735aff9b74fe13bcfb3 templates/userstats.tt
 SHA1 778881b68d86bebc1cfba9e49d3e3e1d524514f9 templates/wanted_pages.tt
-SHA1 e5df99d90b577eca0da609220e3d3fba7e1ae763 wiki.cgi
+SHA1 a558d9f0039a23391e67b8c409a5e6ab6f1ebd28 wiki.cgi
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.1 (GNU/Linux)
 
-iD8DBQFDQCo7YzuFKFF44qURAq1cAJ9gfY96MGDY59LHw7MkrBqfdOMnNwCgj2vF
-5+LW7yOjqdXC/f/bwtaiRYI=
-=FnxS
+iD8DBQFDehwEYzuFKFF44qURAqCsAJ4g5OiGv1TKypPiq+MtEuAcFw0M/ACg0FJ9
+qw5NYEs9XYRsDs3WMyivgrM=
+=fPB+
 -----END PGP SIGNATURE-----
