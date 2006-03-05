@@ -5,7 +5,24 @@
 [% INCLUDE navbar.tt %]
 <div id="maincontent">
 [% IF oldid %]
-<div id="redirect_message">(redirected from <a href="[% full_cgi_url %]?id=[% oldid %];redirect=0">[% oldid.replace('_', ' ') %]</a></div>
+<div id="redirect_message">(redirected from <a href="[% full_cgi_url %]?id=[% oldid %];redirect=0">[% oldid.replace('_', ' ') %]</a>)</div>
+[% END %]
+
+[% IF wgs84_lat AND wgs84_long AND display_google_maps and gmaps_api_key %]
+  <div id="map" style="float:right; width: 300px; height: 200px"></div>
+  <script defer="defer" type="text/javascript">
+  //<![CDATA[
+    var map = new GMap(document.getElementById("map"));
+    map.addControl(new GSmallMapControl());
+    map.centerAndZoom(new GPoint([% longitude %], [% latitude %]), 3);
+    var point0 = new GPoint([% wgs84_long %], [% wgs84_lat %]);
+    var marker0 = new GMarker(point0,baseIcon);
+    GEvent.addListener(marker0, "click", function() {
+      marker0.openInfoWindowHtml("[% node_name %]");
+      });
+    map.addOverlay(marker0);
+  //]]>
+  </script>
 [% END %]
 
 [% IF current %]
@@ -23,7 +40,7 @@
   </h2>
 [% END %]
 [% IF not (content || coord_field_1_value || coord_field_2_value || latitude || longitude) %]
-We don't have a node called "[% node_param %]". Would you like to <a href="[% full_cgi_url %]?action=edit;id=[% node_param %]">make
+We don't have a node called "[% node_param %]". Would you like to <a href="[% full_cgi_url %]?action=edit;id=[% node_param %]">create it</a>?
 [% ELSE %]
 [% INCLUDE display_metadata.tt %]
 
@@ -31,10 +48,15 @@ We don't have a node called "[% node_param %]". Would you like to <a href="[% fu
 [% content %]
 <!-- NODE CONTENT ENDS -->
 
+[% TRY %]
+  [% INCLUDE custom_node.tt %]
+[% CATCH %]
+[% END %]
+                          
 [% IF coord_field_1_value AND coord_field_2_value %]
   <br clear="all" />
   <div id="find_within_distance">
-    <form action="supersearch.cgi">
+    <form action="search.cgi">
       <label for="distance">Find all things within</label>
       <select name="[% dist_field %]" id="distance">
         <option value="500">500 metres</option>

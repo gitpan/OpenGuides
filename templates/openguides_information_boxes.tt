@@ -1,6 +1,12 @@
 <fieldset>
   <legend>OpenGuides information</legend>
-  <table summary="Fields for entering information about the changes being made to this page">
+  <table summary="Fields for entering additional information summarising the node and the change being made to it">
+    <tr>
+      <td colspan="2"><label for="summary">One-line summary of this node:</label></td>
+    </tr>
+    <tr>
+      <td colspan="2"><input type="text" size="50" id="summary" name="summary" value="[% summary %]" /></td>
+    </tr>
     <tr>
       <td>
         <strong><label for="username">Your username</label> (<a href="preferences.cgi">set</a>)</strong>
@@ -24,3 +30,5 @@
     </tr>
   </table>
 </fieldset>
+
+

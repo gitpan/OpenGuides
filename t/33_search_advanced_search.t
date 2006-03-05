@@ -1,7 +1,8 @@
 use strict;
+use CGI::Wiki::Plugin::Locator::Grid; # use directly to help debug
 use CGI::Wiki::Setup::SQLite;
 use OpenGuides::Config;
-use OpenGuides::SuperSearch;
+use OpenGuides::Search;
 use OpenGuides::Test;
 use Test::More;
 
@@ -15,12 +16,12 @@ if ( $@ ) {
     plan skip_all => "Plucene not installed";
 }
 
-eval { require Geo::Coordinates::UTM; };
+eval { require Geography::NationalGrid::GB; };
 if ( $@ ) {
-    plan skip_all => "Geo::Coordinates::UTM not installed";
+    plan skip_all => "Geography::NationalGrid::GB not installed";
 }
 
-plan tests => 4;
+plan tests => 8;
 
 # Clear out the database from any previous runs.
 unlink "t/node.db";
@@ -37,51 +38,52 @@ my $config = OpenGuides::Config->new(
                  site_name          => "Test Site",
                  template_path      => "./templates",
                  use_plucene        => 1,
-                 geo_handler        => 3,
-                 ellipsoid          => "Airy",
+                 geo_handler        => 1,
            }
 );
-my $search = OpenGuides::SuperSearch->new( config => $config );
+my $search = OpenGuides::Search->new( config => $config );
 my $guide = OpenGuides->new( config => $config );
 
 # Write some data.
 OpenGuides::Test->write_data(
                               guide      => $guide,
                               node       => "Crabtree Tavern",
-                              latitude   => 51.482385,
-                              longitude  => -0.221743,
+                              os_x       => 523465,
+                              os_y       => 177490,
                               categories => "Pubs",
                             );
 
 OpenGuides::Test->write_data(
                               guide      => $guide,
                               node       => "Blue Anchor",
-                              latitude   => 51.489176,
-                              longitude  => -0.229488,
+                              os_x       => 522909,
+                              os_y       => 178232,
                               categories => "Pubs",
                             );
 
 OpenGuides::Test->write_data(
                               guide      => $guide,
                               node       => "Star Tavern",
-                              latitude   => 51.498043,
-                              longitude  => -0.154247,
+                              os_x       => 528107,
+                              os_y       => 179347,
                               categories => "Pubs",
                             );
 
 OpenGuides::Test->write_data(
                               guide      => $guide,
                               node       => "Hammersmith Bridge",
-                              latitude   => 51.488135,
-                              longitude  => -0.228463,
+                              os_x       => 522983,
+                              os_y       => 178118,
                             );
 
 # Sanity check.
-print "# Distances should be round about:\n";
-my $locator = $guide->locator;
+print "# Distances should be:\n";
+my $locator = CGI::Wiki::Plugin::Locator::Grid->new(x => "os_x", y => "os_y");
+my $wiki = $guide->wiki;
+$wiki->register_plugin( plugin => $locator );
 foreach my $node ( "Blue Anchor", "Crabtree Tavern", "Hammersmith Bridge"){
-    print "# $node: " . $locator->distance( from_x  => 692756,
-                                            from_y  => 5706917,
+    print "# $node: " . $locator->distance( from_x  => 523450,
+                                            from_y  => 177650,
                                             to_node => $node ) . "\n";
 }
 
@@ -119,6 +121,41 @@ is_deeply( \@found,
            "...still works if whitespace-only search text supplied" );
 
 %tt_vars = $search->run(
+                         return_tt_vars => 1,
+                         vars => {
+                                   os_x    => 523450,
+                                   os_y    => 177650,
+                                   os_dist => 1000,
+                                   search  => " ",
+                                 },
+                       );
+@ordered = map { $_->{name} } @{ $tt_vars{results} || [] };
+@found = sort @ordered;
+is_deeply( \@found,
+       [ "Blue Anchor", "Crabtree Tavern", "Hammersmith Bridge" ],
+       "...works with OS co-ords" );
+
+%tt_vars = eval {
+       $search->run(
+                     return_tt_vars => 1,
+                     vars => {
+                               os_x      => 523450,
+                               os_y      => 177650,
+                               os_dist   => 1000,
+                               search    => " ",
+                               latitude  => " ",
+                               longitude => " ",
+                             },
+                   );
+};
+is( $@, "", "...works with OS co-ords and whitespace-only lat/long" );
+@ordered = map { $_->{name} } @{ $tt_vars{results} || [] };
+@found = sort @ordered;
+is_deeply( \@found,
+       [ "Blue Anchor", "Crabtree Tavern", "Hammersmith Bridge" ],
+         "...returns the right stuff" );
+
+%tt_vars = $search->run(
                      return_tt_vars => 1,
                      vars => {
                                latitude     => 51.484320,
@@ -130,3 +167,16 @@ is_deeply( \@found,
 @found = sort map { $_->{name} } @{ $tt_vars{results} || [] };
 is_deeply( \@found, [ "Blue Anchor", "Crabtree Tavern", ],
        "distance search in combination with text search works" );
+
+%tt_vars = $search->run(
+                     return_tt_vars => 1,
+                     vars => {
+                               os_x    => 523450,
+                               os_y    => 177650,
+                               os_dist => 1000,
+                               search  => "pubs",
+                             },
+                   );
+@found = sort map { $_->{name} } @{ $tt_vars{results} || [] };
+is_deeply( \@found, [ "Blue Anchor", "Crabtree Tavern", ],
+       "...works with OS co-ords too" );

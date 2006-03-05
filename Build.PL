@@ -76,7 +76,8 @@ foreach my $var ( qw(
    custom_lib_path use_plucene indexing_directory enable_page_deletion
    admin_pass stylesheet_url site_name navbar_on_home_page home_name
    site_desc default_city default_country contact_email default_language
-   formatting_rules_node backlinks_in_title
+   formatting_rules_node backlinks_in_title gmaps_api_key centre_long
+   centre_lat default_gmaps_zoom default_gmaps_search_zoom force_wgs84
   ) ) {
     my $q_method = $var . "__qu";
     my $qu  = $existing_config->$q_method;
@@ -220,9 +221,9 @@ my $build = OpenGuides::Build->new(
         'CGI::Wiki'                       => '0.62',  # fixed delete version
         'CGI::Wiki::Formatter::UseMod'    => '0.16',  # macros
         'CGI::Wiki::Plugin::Categoriser'  => 0,
-        'CGI::Wiki::Plugin::Diff'         => '0.07',  # earlier buggy
+        'CGI::Wiki::Plugin::Diff'         => '0.08',  # earlier buggy
         'CGI::Wiki::Plugin::Locator::Grid'=> '0.02',  # cope with sqlite 3
-        'CGI::Wiki::Plugin::RSS::ModWiki' => '0.081', # supports DOAP metadata
+        'CGI::Wiki::Plugin::RSS::ModWiki' => '0.09',  # fixes date formatting bug
         'CGI::Wiki::Plugin::RSS::Reader'  => '1.3',   # earlier versions don't support RSS 2.0
         'Class::Accessor'                 => 0,
         'Config::Tiny'                    => 0,
@@ -234,6 +235,7 @@ my $build = OpenGuides::Build->new(
         'LWP::Simple'                     => 0,
         'Parse::RecDescent'               => 0,
         $search_module                    => 0,
+        'POSIX'                           => 0,
         'Template'                        => 0,
         'Test::MockObject'                => '0.07', # earlier doesn't use 'mock'
         'Time::Piece'                     => 0,
@@ -256,7 +258,7 @@ $build->add_to_cleanup( "t/node.db" );
 
 # Tell OpenGuides::Build which additional scripts and templates to install.
 $build->{config}{__extra_scripts}     = 
-                      [ "wiki.conf", "preferences.cgi", "supersearch.cgi",
+                      [ "wiki.conf", "preferences.cgi", "search.cgi",
                         "newpage.cgi" ];
 $build->{config}{__templates}         = [
                       "backlink_results.tt",
@@ -272,6 +274,7 @@ $build->{config}{__templates}         = [
                       "footer.tt",
                       "header.tt",
                       "home_node.tt",
+                      "map_index.tt",
                       "navbar.tt",
                       "newpage.tt",
                       "node.tt",
@@ -282,7 +285,7 @@ $build->{config}{__templates}         = [
                       "recent_changes.tt",
                       "search_results.tt",
                       "site_index.tt",
-                      "supersearch.tt",
+                      "search.tt",
                       "userstats.tt",
                       "wanted_pages.tt"
     ];

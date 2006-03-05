@@ -1,11 +1,10 @@
 #!/usr/local/bin/perl
 
 use strict;
-use lib qw( /home/earle/openguides.org/testing/lib );
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.51';
+$VERSION = '0.52';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -256,6 +255,8 @@ sub edit_node {
                              config   => $config,
                  metadata => $node_data{metadata} );
 
+    $metadata_vars{website} ||= 'http://';
+
     my %tt_vars = ( content         => $q->escapeHTML($content),
                     checksum        => $q->escapeHTML($checksum),
                     %metadata_vars,
@@ -277,7 +278,7 @@ sub display_node_rdf {
     my %args = @_;
     my $rdf_writer = OpenGuides::RDF->new( wiki      => $wiki,
                        config => $config );
-    print "Content-type: text/plain\n\n";
+    print "Content-type: application/rdf+xml\n\n";
     print $rdf_writer->emit_rdfxml( node => $args{node} );
     exit 0;
 }

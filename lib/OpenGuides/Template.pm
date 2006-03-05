@@ -86,6 +86,8 @@ in the config object or the user cookies.
 
 =item * C<home_name>
 
+=item * C<gmaps_api_key>
+
 =back
 
 =over
@@ -153,6 +155,7 @@ sub output {
         enable_page_deletion  => $enable_page_deletion,
         language              => $config->default_language,
         default_city          => $default_city,
+        gmaps_api_key         => $config->gmaps_api_key
     };
 
     if ($args{node}) {
@@ -166,7 +169,13 @@ sub output {
 
     my $header = "";
     unless ( defined $args{content_type} and $args{content_type} eq "" ) {
-        $header = CGI::header( -cookie => $args{cookies} );
+        my $content_type;
+        if ($args{content_type}) {
+            $content_type = $args{content_type};
+        } else {
+            $content_type = "text/html";
+        }
+        $header = CGI::header( -type => $content_type, -cookie => $args{cookies} );
     }
 
     # vile hack
@@ -295,6 +304,10 @@ sub extract_metadata_vars {
         summary                => $summary,
     );
 
+    if (exists $metadata{source}) {
+        ($vars{source_site}) = $metadata{source}[0] =~ /^(.*?)(?:\?|$)/;
+    }
+    
     if ( $args{metadata} ) {
         foreach my $var ( qw( phone fax address postcode os_x os_y osie_x
                               osie_y latitude longitude map_link website

@@ -95,7 +95,7 @@ sub emit_rdfxml {
     
     my ($is_geospatial, $objType);
 
-    if ($os_x || $os_y || $latitude || $longitude || $address || $postcode || @locales) {
+    if ($os_x || $os_y || $latitude || $longitude || $address || $postcode || @locales || $opening_hours_text) {
         $is_geospatial = 1;
         $objType    = 'geo:SpatialThing';
     } else {
@@ -114,7 +114,6 @@ sub emit_rdfxml {
 
     my $url               = $self->{make_node_url}->( $node_name, $version );
     my $version_indpt_url = $self->{make_node_url}->( $node_name );
-
     my $rdf = qq{<?xml version="1.0"?>
 <rdf:RDF
   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -134,7 +133,7 @@ sub emit_rdfxml {
     <dc:title>} . $self->{site_name} . qq{: $node_name</dc:title>
     <dc:date>$timestamp</dc:date>
     <dcterms:modified>$timestamp</dcterms:modified>
-    <dc:contributor>$username</dc:contributor>
+    <dc:contributor foaf:nick="$username" />
     <dc:source rdf:resource="$version_indpt_url" />
     <wiki:version>$version</wiki:version>
     <foaf:topic rdf:resource="#obj" />
@@ -158,7 +157,7 @@ sub emit_rdfxml {
       $rdf .= qq{
     <foaf:based_near>
       <wn:Neighborhood>
-        <foaf:name>$_</foaf:name>
+        <dc:title>$_</dc:title>
       </wn:Neighborhood>
     </foaf:based_near>\n} foreach @locales;
 
@@ -211,7 +210,7 @@ sub rss_maker {
           site_url            => $self->{config}->script_url,
           site_description    => $self->{site_description},
           make_node_url       => $self->{make_node_url},
-          recent_changes_link => $self->{config}->script_url . '?action=rss',
+          recent_changes_link => $self->{config}->script_url . '?action=rc',
           software_name       => 'OpenGuides',
           software_homepage   => 'http://openguides.org/',
           software_version    => $self->{og_version},
@@ -256,11 +255,11 @@ developers.
                                          config => $config ); 
 
     # RDF version of a node.
-    print "Content-Type: text/plain\n\n";
+    print "Content-Type: application/rdf+xml\n\n";
     print $rdf_writer->emit_rdfxml( node => "Masala Zone, N1 0NU" );
 
     # Ten most recent changes.
-    print "Content-Type: text/plain\n";
+    print "Content-Type: application/rdf+xml\n";
     print "Last-Modified: " . $self->rss_timestamp( items => 10 ) . "\n\n";
     print $rdf_writer->make_recentchanges_rss( items => 10 );
 
@@ -287,7 +286,7 @@ L<OpenGuides::Config> object.  Both arguments mandatory.
 		       locale   => "Islington" }
     );
 
-    print "Content-Type: text/plain\n\n";
+    print "Content-Type: application/rdf+xml\n\n";
     print $rdf_writer->emit_rdfxml( node => "Masala Zone, N1 0NU" );
 
 B<Note:> Some of the fields emitted by the RDF/XML generator are taken
@@ -323,7 +322,7 @@ invoked this module with.
 =item B<make_recentchanges_rss>
 
     # Ten most recent changes.
-    print "Content-Type: text/plain\n";
+    print "Content-Type: application/rdf+xml\n";
     print "Last-Modified: " . $rdf_writer->rss_timestamp( items => 10 ) . "\n\n";
     print $rdf_writer->make_recentchanges_rss( items => 10 );
 
@@ -335,7 +334,7 @@ invoked this module with.
                  filter_on_metadata => { username => "bob" },
                );
 
-    print "Content-Type: text/plain\n";
+    print "Content-Type: application/rdf+xml\n";
     print "Last-Modified: " . $rdf_writer->rss_timestamp( %args ) . "\n\n";
     print $rdf_writer->make_recentchanges_rss( %args );
 

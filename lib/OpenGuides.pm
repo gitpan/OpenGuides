@@ -13,7 +13,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.51';
+$VERSION = '0.52';
 
 =head1 NAME
 
@@ -171,6 +171,10 @@ sub display_node {
     my $modified   = $node_data{last_modified};
     my %metadata   = %{$node_data{metadata}};
 
+    my ($wgs84_long, $wgs84_lat) = OpenGuides::Utils->get_wgs84_coords(
+                                        longitude => $metadata{longitude}[0],
+                                        latitude => $metadata{latitude}[0],
+                                        config => $config);
     if ($args{format} && $args{format} eq 'raw') {
       print "Content-Type: text/plain\n\n";
       print $raw;
@@ -192,6 +196,10 @@ sub display_node {
                    node          => $id,
                    language      => $config->default_language,
                    oldid         => $oldid,
+                   enable_gmaps  => 1,
+                   display_google_maps => $self->get_cookie("display_google_maps"),
+                   wgs84_long    => $wgs84_long,
+                   wgs84_lat     => $wgs84_lat
                );
 
     if ( $raw =~ /^#REDIRECT\s+(.+?)\s*$/ ) {
@@ -415,7 +423,8 @@ sub find_within_distance {
     my $lat = $data{metadata}{latitude}[0];
     my $long = $data{metadata}{longitude}[0];
     my $script_url = $self->config->script_url;
-    print CGI->redirect( $script_url . "supersearch.cgi?lat=$lat;long=$long;distance_in_metres=$metres" );
+    my $q = CGI->new;
+    print $q->redirect( $script_url . "search.cgi?lat=$lat;long=$long;distance_in_metres=$metres" );
 }
 
 =item B<show_backlinks>
@@ -537,11 +546,23 @@ sub show_index {
     if ( $args{format} ) {
         if ( $args{format} eq "rdf" ) {
             $template = "rdf_index.tt";
-            $conf{content_type} = "text/plain";
+            $conf{content_type} = "application/rdf+xml";
         }
         elsif ( $args{format} eq "plain" ) {
             $template = "plain_index.tt";
             $conf{content_type} = "text/plain";
+        } elsif ( $args{format} eq "map" ) {
+            my $q = CGI->new;
+            $tt_vars{zoom} = $q->param('zoom') || '';
+            $tt_vars{lat} = $q->param('lat') || '';
+            $tt_vars{long} = $q->param('long') || '';
+            $tt_vars{centre_long} = $self->config->centre_long;
+            $tt_vars{centre_lat} = $self->config->centre_lat;
+            $tt_vars{default_gmaps_zoom} = $self->config->default_gmaps_zoom;
+            $tt_vars{enable_gmaps} = 1;
+            $tt_vars{display_google_maps} = 1; # override for this page
+            $template = "map_index.tt";
+            
         }
     } else {
         $template = "site_index.tt";
@@ -665,7 +686,7 @@ sub display_rss {
                                              config     => $self->config,
                                              og_version => $VERSION,
                                          );
-    my $output = "Content-Type: text/plain\n";
+    my $output = "Content-Type: application/rdf+xml\n";
     $output .= "Last-Modified: " . $rdf_writer->rss_timestamp( %criteria ) . "\n\n";
     $output .= $rdf_writer->make_recentchanges_rss( %criteria );
     return $output if $return_output;
@@ -726,6 +747,8 @@ sub commit_node {
         config  => $config,
     cgi_obj => $q
     );
+
+    delete $metadata{website} if $metadata{website} eq 'http://';
 
     $metadata{opening_hours_text} = $q->param("hours_text") || "";
 
@@ -894,12 +917,9 @@ sub process_template {
                           cookies  => $args{cookies},
                       );
     if ( $args{content_type} ) {
-        $output_conf{content_type} = "";
-        my $output = "Content-Type: $args{content_type}\n\n"
-                     . OpenGuides::Template->output( %output_conf );
-    } else {
-        return OpenGuides::Template->output( %output_conf );
+        $output_conf{content_type} = $args{content_type};
     }
+    return OpenGuides::Template->output( %output_conf );
 }
 
 sub redirect_to_node {
@@ -917,8 +937,9 @@ sub redirect_to_node {
     $redir_param .= 'id=' if $oldid;
     $redir_param .= $id;
     $redir_param .= ";oldid=$oldid" if $oldid;
-
-    return CGI->redirect( $redir_param );
+    
+    my $q = CGI->new;
+    return $q->redirect( $redir_param );
 }
 
 sub get_cookie {
@@ -929,7 +950,6 @@ sub get_cookie {
     return $cookie_data{$pref_name};
 }
 
-
 =back
 
 =head1 BUGS AND CAVEATS
@@ -937,7 +957,7 @@ sub get_cookie {
 UTF8 data are currently not handled correctly throughout.
 
 Other bugs are documented at
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=OpenGuides>
+L<http://dev.openguides.org/>
 
 =head1 SEE ALSO
 
@@ -957,7 +977,7 @@ If you have a question, a bug report, or a patch, or you're interested
 in joining the development team, please contact openguides-dev@openguides.org
 (moderated mailing list, will reach all current developers but you'll have
 to wait for your post to be approved) or file a bug report at
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=OpenGuides>
+L<http://dev.openguides.org/>
 
 =head1 AUTHOR
 
@@ -965,7 +985,7 @@ The OpenGuides Project (openguides-dev@openguides.org)
 
 =head1 COPYRIGHT
 
-     Copyright (C) 2003-2005 The OpenGuides Project.  All Rights Reserved.
+     Copyright (C) 2003-2006 The OpenGuides Project.  All Rights Reserved.
 
 The OpenGuides distribution is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

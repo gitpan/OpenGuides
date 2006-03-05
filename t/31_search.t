@@ -1,6 +1,6 @@
 use strict;
 use CGI::Wiki::Setup::SQLite;
-use OpenGuides::SuperSearch;
+use OpenGuides::Search;
 use OpenGuides::Test;
 use Test::More;
 
@@ -23,8 +23,8 @@ if ( $@ ) {
     eval { require CGI::Wiki::Search::Plucene; };
     if ( $@ ) { $config->use_plucene( 0 ) };
 
-    my $search = OpenGuides::SuperSearch->new( config => $config );
-    isa_ok( $search, "OpenGuides::SuperSearch" );
+    my $search = OpenGuides::Search->new( config => $config );
+    isa_ok( $search, "OpenGuides::Search" );
 
     my $output = $search->run( return_output => 1 );
     unlike( $output, qr/no items matched/i,
@@ -81,7 +81,7 @@ if ( $@ ) {
                             return_output => 1,
                             vars          => { search => "weebl" },
                           );
-    unlike( $output, qr/Status: 302 Moved/,
+    unlike( $output, qr/Status: 302/,
             "no redirect if match only in body");
 
     # One hit in title should redirect to that page.
@@ -89,7 +89,7 @@ if ( $@ ) {
                             return_output => 1,
                             vars          => { search => "want pie now" },
                           );
-    like( $output, qr/Status: 302 Moved/,
+    like( $output, qr/Status: 302/,
           "prints redirect on single hit and match in title" );
     # Old versions of CGI.pm mistakenly print location: instead of Location:
     like( $output,
