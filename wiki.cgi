@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.52';
+$VERSION = '0.53';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -75,7 +75,6 @@ eval {
         my @nodes = $wiki->list_all_nodes();
         $node = $nodes[int(rand(scalar(@nodes) + 1)) + 1];
         print $guide->redirect_to_node($node);
-        exit 0;
     } elsif ($action eq 'find_within_distance') {
         $guide->find_within_distance(
                                       id => $node,
@@ -104,7 +103,8 @@ eval {
                 my %args = map { $_ => ( $q->param($_) || "" ) }
                            qw( feed items days ignore_minor_edits username
                                category locale );
-                $guide->display_rss( %args );
+                $args{feed_type} = 'rss';
+                $guide->display_feed( %args );
             } elsif ( $feed eq "chef_dan" ) {
                 display_node_rdf( node => $node );
             } else {
@@ -114,7 +114,18 @@ eval {
             $guide->display_node( id => 'RecentChanges' );
         }
     } elsif ($action eq 'rss') {
-        print $q->redirect( $script_url . '?action=rc;format=rss' );
+        my $redir_target = $script_url . $script_name . '?action=rc;format=rss';
+        my %args = map { $_ => ( $q->param($_) || "" ) }
+            qw( feed items days ignore_minor_edits username
+                category locale );
+        foreach my $arg (sort keys %args) {
+            if ($args{$arg} ne "") {
+                $redir_target .= ";$arg=$args{$arg}";
+            }
+        }
+        print $q->redirect( $redir_target );
+    } elsif ($action eq 'about') {
+        $guide->display_about(format => $format);
     } else { # Default is to display a node.
         if ( $format and $format eq "rdf" ) {
             display_node_rdf( node => $node );
@@ -166,7 +177,6 @@ if ($@) {
       . qq(</blockquote><p><a href="$script_name">Return to the Wiki home page</a>
            </body></html>);
 }
-exit 0;
 
 ############################ subroutines ###################################
 
@@ -280,7 +290,6 @@ sub display_node_rdf {
                        config => $config );
     print "Content-type: application/rdf+xml\n\n";
     print $rdf_writer->emit_rdfxml( node => $args{node} );
-    exit 0;
 }
 
 sub process_template {

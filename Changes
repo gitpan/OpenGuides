@@ -1,3 +1,19 @@
+"#" items refer to tickets. See <http://dev.openguides.org/report/9> for details.
+
+0.53    20 April 2006
+        Miscellanous fixes for mod_perl.
+        #42 New "About" screen. Try action=about and action=about;format=rdf.
+        #97 Use "summary" metadata to generate HTML meta descriptions.
+        New OpenGuides::Feed module to handle feed generation (code was
+          previously in OpenGuides::RDF).
+        Generate URIs for locales and contributors in RDF output.
+        #107 Don't display partial http:// URL in preview.
+        #93 Upgrade to new Google Maps API (for smaller javascript download)
+        #103 Fix empty Category/Locale list bug.
+        #54 Fix RSS redirection for backwards compatibility.
+        #79 Partial fix to help combat HTML spam
+        #56 Add licence config variables
+
 0.52    5 March 2006
         IMPORTANT CHANGE: "supersearch.cgi" is now simply "search.cgi". If you
           have customisations to your templates, you may need to make changes
@@ -8,8 +24,8 @@
         Fix missing bracket in node.tt.
         Add custom_node template just below main content in node.tt.
         Google Maps support! There is a new index type,
-        wiki.cgi?action=index;format=map, and maps appear in the node listings
-        (the latter feature is user-configurable).
+          wiki.cgi?action=index;format=map, and maps appear in the node listings
+          (the latter feature is user-configurable).
         Fix <link> in RSS to point to RecentChanges page, not the feed itself.
         #67 Default website for a page is now http://
         Fix mod_perl redirect bug.

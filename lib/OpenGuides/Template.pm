@@ -88,6 +88,12 @@ in the config object or the user cookies.
 
 =item * C<gmaps_api_key>
 
+=item * C<licence_name>
+
+=item * C<licence_url>
+
+=item * C<licence_info_url>
+
 =back
 
 =over
@@ -155,7 +161,10 @@ sub output {
         enable_page_deletion  => $enable_page_deletion,
         language              => $config->default_language,
         default_city          => $default_city,
-        gmaps_api_key         => $config->gmaps_api_key
+        gmaps_api_key         => $config->gmaps_api_key,
+        licence_name          => $config->licence_name,
+        licence_url           => $config->licence_url,
+        licence_info_url      => $config->licence_info_url
     };
 
     if ($args{node}) {
@@ -262,9 +271,16 @@ sub extract_metadata_vars {
     } else {
         my $categories_text = $q->param('categories');
         my $locales_text    = $q->param('locales');
-        @catlist = sort map { s/^\s+//; s/\s+$//; $_; } # trim lead/trail space
+
+        # Basic sanity-checking. Probably lives elsewhere.
+        $categories_text =~ s/</&lt;/g;
+        $categories_text =~ s/>/&gt;/g;
+        $locales_text =~ s/</&lt;/g;
+        $locales_text =~ s/>/&gt;/g;
+
+        @catlist = sort grep { s/^\s+//; s/\s+$//; $_; } # trim lead/trail space
                         split("\r\n", $categories_text);
-        @loclist = sort map { s/^\s+//; s/\s+$//; $_; } # trim lead/trail space
+        @loclist = sort grep { s/^\s+//; s/\s+$//; $_; } # trim lead/trail space
                         split("\r\n", $locales_text);
     }
 
@@ -281,7 +297,7 @@ sub extract_metadata_vars {
     my $website = $args{metadata} ? $metadata{website}[0]
                                   : $q->param("website");
     my $formatted_website_text = "";
-    if ( $website ) {
+    if ( $website && $website != "http://" ) {
         $formatted_website_text = $class->format_website_text(
             formatter => $formatter,
             text      => $website
