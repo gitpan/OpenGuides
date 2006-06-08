@@ -14,7 +14,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.54_01';
+$VERSION = '0.54_02';
 
 =head1 NAME
 
@@ -645,6 +645,7 @@ sub list_all_versions {
   # Last ten non-minor edits to Hammersmith pages in RSS 1.0 format
   $guide->display_feed(
                          feed_type          => 'rss',
+                         feed_listing       => 'recent_changes',
                          items              => 10,
                          ignore_minor_edits => 1,
                          locale             => "Hammersmith",
@@ -652,14 +653,18 @@ sub list_all_versions {
 
   # All edits bob has made to pub pages in the last week in Atom format
   $guide->display_feed(
-                         feed_type => 'atom',
-                         days      => 7,
-                         username  => "bob",
-                         category  => "Pubs",
+                         feed_type    => 'atom',
+                         feed_listing => 'recent_changes',
+                         days         => 7,
+                         username     => "bob",
+                         category     => "Pubs",
                      );
 
 C<feed_type> is a mandatory parameter. Supported values at present are 
 "rss" and "atom".
+
+C<feed_listing> is a mandatory parameter. Supported values at present 
+are "recent_changes". (More values are coming soon though!)
 
 As with other methods, the C<return_output> parameter can be used to
 return the output instead of printing it to STDOUT.
@@ -671,28 +676,41 @@ sub display_feed {
 
     my $feed_type = $args{feed_type};
     croak "No feed type given" unless $feed_type;
+
+    my $feed_listing = $args{feed_listing};
+    croak "No feed listing given" unless $feed_listing;
     
     my $return_output = $args{return_output} ? 1 : 0;
 
-    my $items = $args{items} || "";
-    my $days  = $args{days}  || "";
-    my $ignore_minor_edits = $args{ignore_minor_edits} ? 1 : 0;
-    my $username = $args{username} || "";
-    my $category = $args{category} || "";
-    my $locale   = $args{locale}   || "";
+    # Basic criteria, whatever the feed listing type is
     my %criteria = (
-                       items              => $items,
-                       days               => $days,
-                       ignore_minor_edits => $ignore_minor_edits,
-                       feed_type          => $feed_type,
+                       feed_type             => $feed_type,
+                       feed_listing          => $feed_listing,
+                       also_return_timestamp => 1,
                    );
-    my %filter;
-    $filter{username} = $username if $username;
-    $filter{category} = $category if $category;
-    $filter{locale}   = $locale   if $locale;
-    if ( scalar keys %filter ) {
-        $criteria{filter_on_metadata} = \%filter;
+
+    # Feed listing specific criteria
+    if($feed_listing eq "recent_changes") {
+        $criteria{items} = $args{items} || "";
+        $criteria{days}  = $args{days}  || "";
+        $criteria{ignore_minor_edits} = $args{ignore_minor_edits} ? 1 : 0;
+
+        my $username = $args{username} || "";
+        my $category = $args{category} || "";
+        my $locale   = $args{locale}   || "";
+
+        my %filter;
+        $filter{username} = $username if $username;
+        $filter{category} = $category if $category;
+        $filter{locale}   = $locale   if $locale;
+        if ( scalar keys %filter ) {
+            $criteria{filter_on_metadata} = \%filter;
+        }
     }
+    elsif($feed_listing eq "node_all_versions") {
+        $criteria{name} = $args{name};
+    }
+
 
     my $feed = OpenGuides::Feed->new(
                                         wiki       => $self->wiki,
@@ -712,9 +730,12 @@ sub display_feed {
         croak "Unknown feed type given: $feed_type";
     }
     
-    $output .= "Last-Modified: " . $feed->feed_timestamp( %criteria ) . "\n\n";
+    # Get the feed, and the timestamp, in one go
+    my ($feed_output, $feed_timestamp) = 
+        $feed->make_feed( %criteria );
 
-    $output .= $feed->make_feed( %criteria );
+    $output .= "Last-Modified: " . $feed_timestamp . "\n\n";
+    $output .= $feed_output;
 
     return $output if $return_output;
     print $output;
@@ -800,7 +821,6 @@ body        { margin: 0px; }
 h1          { margin-bottom: 0px; font-style: italic; }
 h2          { margin-top: 0px; }
 #logo       { text-align: center; }
-#logo a img { border: 1px solid #000; }
 #about      { margin: 0em 0em 1em 0em; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; }
 #meta       { font-size: small; text-align: center;}
 </style>
@@ -813,10 +833,10 @@ h2          { margin-top: 0px; }
 <div id="content">
 <div id="logo">
 <a href="http://openguides.org/"><img 
-src="http://openguides.org/img/logo.jpg" alt="OpenGuides.org"></a>
+src="http://openguides.org/img/logo.png" alt="OpenGuides"></a>
 <h1><a href="$script_name">$site_name</a></h1>
 <h2>is powered by <a href="http://openguides.org/">OpenGuides</a> -<br>
-the guides built by you.</h2>
+the guides made by you.</h2>
 <h3>version <a href="http://search.cpan.org/~dom/OpenGuides-$VERSION">$VERSION</a></h3>
 </div>
 <div id="about">
@@ -843,7 +863,7 @@ development site</a>.
 </p>
 <p>
 Copyright &copy;2003-2006, <a href="http://openguides.org/">The OpenGuides
-Project</a>. "OpenGuides", "[The] Open Guide To..." and "The guides built by
+Project</a>. "OpenGuides", "[The] Open Guide To..." and "The guides made by
 you" are trademarks of The OpenGuides Project. Any uses on this site are made 
 with permission.
 </p>

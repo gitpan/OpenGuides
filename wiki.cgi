@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.54_01';
+$VERSION = '0.54_02';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -95,7 +95,16 @@ eval {
                         host     => $q->param("host") || "",
                       );
     } elsif ($action eq 'list_all_versions') {
-        $guide->list_all_versions( id => $node );
+        if($format && ($format eq "rss" || $format eq "atom")) {
+            my %args = (
+                            feed_type    => $format,
+                            feed_listing => 'node_all_versions',
+                            name         => $node
+            );
+            $guide->display_feed( %args );
+        } else {
+            $guide->list_all_versions( id => $node );
+        }
     } elsif ($action eq 'rc') {
         if ($format && $format eq 'rss') {
             my $feed = $q->param("feed");
@@ -104,6 +113,7 @@ eval {
                            qw( feed items days ignore_minor_edits username
                                category locale );
                 $args{feed_type} = 'rss';
+                $args{feed_listing} = 'recent_changes';
                 $guide->display_feed( %args );
             } elsif ( $feed eq "chef_dan" ) {
                 display_node_rdf( node => $node );
@@ -115,6 +125,7 @@ eval {
                        qw( feed items days ignore_minor_edits username
                            category locale );
             $args{feed_type} = 'atom';
+            $args{feed_listing} = 'recent_changes';
             $guide->display_feed( %args );
         } else {
             $guide->display_node( id => 'RecentChanges' );

@@ -18,7 +18,8 @@ if ( $@ ) {
     exit 0;
 }
 
-plan tests => 7;
+
+plan tests => 5;
 
 # Clear out the database from any previous runs.
 unlink "t/node.db";
@@ -45,10 +46,8 @@ my $wiki = OpenGuides::Utils->make_wiki_object( config => $config );
 my $feed = OpenGuides::Feed->new( wiki   => $wiki,
                                   config => $config );
 
-my $rss = eval { $feed->make_feed(feed_type => 'rss'); };
-is( $@, "", "->make_feed for rss doesn't croak" );
 
-# Now write some data, first a minor edit then a non-minor one.
+# Write the first version
 my $guide = OpenGuides->new( config => $config );
     
 # Set up CGI parameters ready for a node write.
@@ -77,35 +76,24 @@ my $output = $guide->commit_node(
                                   cgi_obj => $q,
                                 );
 
-$q->param( -name => "edit_type", -value => "Normal edit" );
-$output = $guide->commit_node(
-                               return_output => 1,
-                               id => "Badgers",
-                               cgi_obj => $q,
-                             );
-
-$q->param( -name => "username", -value => "Kake" );
-$output = $guide->commit_node(
-                               return_output => 1,
-                               id => "Wombles",
-                               cgi_obj => $q,
-                             );
-
-# Check that the writes went in.
+# Check we have it
 ok( $wiki->node_exists( "Wombats" ), "Wombats written" );
-ok( $wiki->node_exists( "Badgers" ), "Badgers written" );
-ok( $wiki->node_exists( "Wombles" ), "Wombles written" );
 
-# Check that the minor edits can be filtered out.
-$output = $guide->display_feed(
-                               feed_type          => "rss",
-                               items              => 5,
-                               username           => "bob",
-                               ignore_minor_edits => 1,
-                               return_output      => 1,
+my %node = $wiki->retrieve_node("Wombats");
+is( $node{version}, 1, "First version" );
+is( $node{metadata}->{edit_type}[0], "Minor tidying", "Right edit type" );
+
+
+# Now write a second version of it
+$q->param( -name => "edit_type", -value => "Normal edit" );
+$q->param( -name => "checksum", -value => $node{checksum} );
+$output = $guide->commit_node(
+                               return_output => 1,
+                               id => "Wombats",
+                               cgi_obj => $q,
                              );
-unlike( $output, qr/Wombats/, "minor edits filtered out when required" );
-like( $output, qr/Badgers/, "but normal edits still in" );
 
-# Check that the username parameter is taken notice of.
-unlike( $output, qr/Wombles/, "username parameter taken note of" );
+# Check it's as expected
+%node = $wiki->retrieve_node("Wombats");
+is( $node{version}, 2, "First version" );
+is( $node{metadata}->{edit_type}[0], "Normal edit", "Right edit type" );
