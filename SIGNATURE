@@ -16,12 +16,12 @@ Hash: SHA1
 
 SHA1 6283848f67b0691721aa50f8cd8526d121f8a520 Build.PL
 SHA1 266045c5119163981060fd6ccc1cf3b5276a5ba8 CUSTOMISATION
-SHA1 7613650cb4e82e04a48ebb71cb273cd0163d91d7 Changes
+SHA1 53cf2710340af583a438ae82bf1950d040c9c5f2 Changes
 SHA1 8e356cdf3f32c47af422a8f07494ba2dbe5c1ade INSTALL
 SHA1 aef9cc915a6656679d97e1e1571e3f4c80e12dd7 MANIFEST
-SHA1 29e7371eb7e717fd4e8eaf5d5a92f8c0b65cb00c META.yml
+SHA1 6d219058d587adef49d8565a67d8cdfb43f95806 META.yml
 SHA1 3fff2be7caf1a8c45b8abf1afcdd316e7b20f09b Makefile.PL
-SHA1 300aa2dedb40eacb589637127035b14492cf493a PREREQUISITES
+SHA1 363f9a9a4b8fe62d2c1faa93e39637b71954dd9a PREREQUISITES
 SHA1 5b398128c488b91d42c466644fb3df0e2faaab1d README
 SHA1 2c6147dda0199235fed988aa1441ef762634a8aa README.CSS
 SHA1 27acdfdbc51d546b38edb6c0d61021b45138bfe7 README.GMAPS
@@ -29,11 +29,11 @@ SHA1 dcc5ea9e9d4c4abd91c6a1ac67a58670a4ce0595 TROUBLESHOOTING
 SHA1 9d8d2ae49622cdd3d1af93eb51e93859e2ceb55b examples/london.css
 SHA1 2e306b428715a94e230044f4f31b004e4000d1fc examples/reindex.pl
 SHA1 ee8715aaecef4577fcf3902078b88f2ec63cbf31 examples/vegan-oxford.css
-SHA1 6d67810db240f31624ae47aa3100cb6a78bbbaeb lib/OpenGuides.pm
+SHA1 3a9547b6824d1d308ab9aefaef07f007ff76acfc lib/OpenGuides.pm
 SHA1 770d75b20831c3bf38d4bd1eb7db217cc1d0c99e lib/OpenGuides/Build.pm
 SHA1 4da4c605a41fd2d2ff598ff8a7d6f6b4021ac9ef lib/OpenGuides/CGI.pm
 SHA1 662cc61e42fbe11bd2077243a91046fc6d69d726 lib/OpenGuides/Config.pm
-SHA1 45b6d1feee59b0373c9596564d4c3de6439dea31 lib/OpenGuides/Feed.pm
+SHA1 31c6dbe2b9cc7ebc3a5961da7d5520ade843cb81 lib/OpenGuides/Feed.pm
 SHA1 34356ab380c95ee930770502e5b683ff5794aca3 lib/OpenGuides/RDF.pm
 SHA1 23c0a546e1f074cb485977fcc54fca97820e2ebe lib/OpenGuides/Search.pm
 SHA1 8ae4abc91940305f2a5cc9d924463a83c9861aaf lib/OpenGuides/Template.pm
@@ -51,8 +51,8 @@ SHA1 e2ae41e18446f24192cd1a8d3af14f68e22d6259 t/15_template.t
 SHA1 cc91c98561a9a4e683679a2a0d54d0d89492c734 t/16_test_tester.t
 SHA1 14500ccf037816d4830ac2fa5802a248418a5737 t/17_commit_node.t
 SHA1 fb90c145991ee70393f18f5c10e966e90472f4b1 t/21_rdf.t
-SHA1 fcff91d63e38b89c6553aab816ea6052db38d69c t/22_feed_recent_changes.t
-SHA1 4c304a5a99cec95d0c0ff9a8d4726f7bb6d59243 t/23_feed_node_all_versions.t
+SHA1 01106bfa41420bbab77a0066b6eaf0dd61a02cde t/22_feed_recent_changes.t
+SHA1 377303616b78ebce591f553f57003867acd38a34 t/23_feed_node_all_versions.t
 SHA1 df93e8b4f6358152d3b386cd90d7bb8b97ff15e5 t/25_write_geo_data.t
 SHA1 14b295412dcd6975382b42680eb207a58873f42a t/26_geo_data_search_form.t
 SHA1 f99e9f482ae3ac829789346f8db8152021f5bfa2 t/27_geo_data_edit_form.t
@@ -111,11 +111,11 @@ SHA1 dac4189f5ab16c80202be08ce8bb35fd1ab368e7 templates/search_results.tt
 SHA1 65def8a2165424753100fdaae95c9e495c195691 templates/site_index.tt
 SHA1 603d7c89a53dca5a57e5a735aff9b74fe13bcfb3 templates/userstats.tt
 SHA1 778881b68d86bebc1cfba9e49d3e3e1d524514f9 templates/wanted_pages.tt
-SHA1 d3fde7b69d3811d7a178ce5e127ff712719a4128 wiki.cgi
+SHA1 fe9191a422900eabb333df7e26e524d7020f84c6 wiki.cgi
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.1 (GNU/Linux)
 
-iD8DBQFEjrRGYzuFKFF44qURAu21AJ9pVd+v7QWvLDj7VARlJBPZgmbzWwCgubVV
-V+9nfPcXCJk0BEv1NwmaSi0=
-=KroA
+iD8DBQFEkH9vYzuFKFF44qURAqHEAKDb30KzyXPPEu/lasH6C9rGIO1E5QCg/d4B
+be49Ls/WJgep2ZAQY/VVwDs=
+=agvQ
 -----END PGP SIGNATURE-----

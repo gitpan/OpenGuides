@@ -1,8 +1,15 @@
 "#" items refer to tickets. See <http://dev.openguides.org/report/9> for details.
 
+0.56    14 June 2006
+        Fix bug introduced in feed formatting where Atom feeds would be
+        produced when asked for RSS and vice versa.
+
 0.55    13 June 2006
         Versioned dependency on Wiki::Toolkit to avoid development
         versions
+        Support generating feeds of a node's version listing, in addition
+        to feeds of the recent changes. For more information on OpenGuides 
+        feeds, see http://dev.openguides.org/wiki/FeedsIntro
 
 0.54_02 8 June 2006
         Pass the feed_listing (currently just recent_changes) through all
