@@ -1,5 +1,8 @@
 [% IF criterion %]
-  [% INCLUDE header.tt page_title = "Index of $criterion.name - $site_name" %]
+  [% INCLUDE header.tt 
+      page_title = "Index of $criterion.name - $site_name"
+	  feed_base = "$cgi_url?action=index;index_type=$criterion.type;index_value=$criterion.value"
+   %]
 [% ELSE %]
   [% INCLUDE header.tt page_title = "Things within $limit of $origin - $site_name" %]
 [% END %]
@@ -27,4 +30,14 @@
   [% END %]
 </ol>
 </div>
+
+<p>
+  This list is available as
+  <a href="[% cgi_url %]?action=index;index_type=[% criterion.type %];index_value=[% criterion.value %];format=rdf">rdf</a>,
+  or as a
+  <a href="[% cgi_url %]?action=index;index_type=[% criterion.type %];index_value=[% criterion.value %];format=rss">rss feed</a>,
+  or as an
+  <a href="[% cgi_url %]?action=index;index_type=[% criterion.type %];index_value=[% criterion.value %];format=atom">atom feed</a>.
+</p>
+
 [% INCLUDE footer.tt %]

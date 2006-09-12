@@ -1,5 +1,5 @@
 This file contains message digests of all files listed in MANIFEST,
-signed via the Module::Signature module, version 0.44.
+signed via the Module::Signature module, version 0.55.
 
 To verify the content in this distribution, first make sure you have
 Module::Signature installed, then type:
@@ -14,29 +14,29 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 6283848f67b0691721aa50f8cd8526d121f8a520 Build.PL
+SHA1 878587d36a2475f2132efaefa64682b79dfdbb6e Build.PL
 SHA1 266045c5119163981060fd6ccc1cf3b5276a5ba8 CUSTOMISATION
-SHA1 53cf2710340af583a438ae82bf1950d040c9c5f2 Changes
-SHA1 8e356cdf3f32c47af422a8f07494ba2dbe5c1ade INSTALL
-SHA1 aef9cc915a6656679d97e1e1571e3f4c80e12dd7 MANIFEST
-SHA1 6d219058d587adef49d8565a67d8cdfb43f95806 META.yml
+SHA1 8df2360c6b8ad169536db6597ed687c1f208f04b Changes
+SHA1 b456ccc39ec3da4c3be0c68a563a614afef2f0c9 INSTALL
+SHA1 66288cdf9ff23c2c808416643d6ac806d3f5c206 MANIFEST
+SHA1 353c0d1c506f4fdea240c166574750f9802da542 META.yml
 SHA1 3fff2be7caf1a8c45b8abf1afcdd316e7b20f09b Makefile.PL
-SHA1 363f9a9a4b8fe62d2c1faa93e39637b71954dd9a PREREQUISITES
+SHA1 da8201f6701cd3d06262c5267223189f3cdaecfa PREREQUISITES
 SHA1 5b398128c488b91d42c466644fb3df0e2faaab1d README
-SHA1 2c6147dda0199235fed988aa1441ef762634a8aa README.CSS
+SHA1 5e6c991b59fa467cdf955cd134708a86ded4e4e3 README.CSS
 SHA1 27acdfdbc51d546b38edb6c0d61021b45138bfe7 README.GMAPS
 SHA1 dcc5ea9e9d4c4abd91c6a1ac67a58670a4ce0595 TROUBLESHOOTING
 SHA1 9d8d2ae49622cdd3d1af93eb51e93859e2ceb55b examples/london.css
 SHA1 2e306b428715a94e230044f4f31b004e4000d1fc examples/reindex.pl
 SHA1 ee8715aaecef4577fcf3902078b88f2ec63cbf31 examples/vegan-oxford.css
-SHA1 3a9547b6824d1d308ab9aefaef07f007ff76acfc lib/OpenGuides.pm
+SHA1 5de27ccadc96d600073a0bda9a35a2ed51ec508a lib/OpenGuides.pm
 SHA1 770d75b20831c3bf38d4bd1eb7db217cc1d0c99e lib/OpenGuides/Build.pm
 SHA1 4da4c605a41fd2d2ff598ff8a7d6f6b4021ac9ef lib/OpenGuides/CGI.pm
-SHA1 662cc61e42fbe11bd2077243a91046fc6d69d726 lib/OpenGuides/Config.pm
-SHA1 31c6dbe2b9cc7ebc3a5961da7d5520ade843cb81 lib/OpenGuides/Feed.pm
+SHA1 b272ed72d5625875ae41cf8f89127155298a6418 lib/OpenGuides/Config.pm
+SHA1 319a2b3922877f275ccb68ac5c3b32115dd5e2dd lib/OpenGuides/Feed.pm
 SHA1 34356ab380c95ee930770502e5b683ff5794aca3 lib/OpenGuides/RDF.pm
-SHA1 23c0a546e1f074cb485977fcc54fca97820e2ebe lib/OpenGuides/Search.pm
-SHA1 8ae4abc91940305f2a5cc9d924463a83c9861aaf lib/OpenGuides/Template.pm
+SHA1 2d9d3d26a732e02a0b0dbf783150025a57cb1a32 lib/OpenGuides/Search.pm
+SHA1 877229dd8390158796c1635c32b907ec078a82da lib/OpenGuides/Template.pm
 SHA1 f63e661da7a82c3149b4b1bd40fc4207ae4ae78e lib/OpenGuides/Test.pm
 SHA1 3f2b4ade4c233dd4542f1523a805a484e70e7612 lib/OpenGuides/Utils.pm
 SHA1 0db4ef27f91b9d85b43c509e70ca9568e1f35aa0 newpage.cgi
@@ -49,10 +49,11 @@ SHA1 cef92500525faa40a172a2e45bef22cac55bd9cb t/13_cookies.t
 SHA1 d7ea837d8358245128fae6edd0ee3d3621bab6d5 t/14_recent_changes_cookies.t
 SHA1 e2ae41e18446f24192cd1a8d3af14f68e22d6259 t/15_template.t
 SHA1 cc91c98561a9a4e683679a2a0d54d0d89492c734 t/16_test_tester.t
-SHA1 14500ccf037816d4830ac2fa5802a248418a5737 t/17_commit_node.t
+SHA1 36daf36ba61b1214cea5dafbdf0be4c1ab0db73f t/17_commit_node.t
 SHA1 fb90c145991ee70393f18f5c10e966e90472f4b1 t/21_rdf.t
-SHA1 01106bfa41420bbab77a0066b6eaf0dd61a02cde t/22_feed_recent_changes.t
+SHA1 25eae5af73093fb29888f782c765d15fcf63a73b t/22_feed_recent_changes.t
 SHA1 377303616b78ebce591f553f57003867acd38a34 t/23_feed_node_all_versions.t
+SHA1 9dc1ca55e4163a21b63cf16e0b5001174e4a5fbd t/24_feed_node_listings.t
 SHA1 df93e8b4f6358152d3b386cd90d7bb8b97ff15e5 t/25_write_geo_data.t
 SHA1 14b295412dcd6975382b42680eb207a58873f42a t/26_geo_data_search_form.t
 SHA1 f99e9f482ae3ac829789346f8db8152021f5bfa2 t/27_geo_data_edit_form.t
@@ -67,10 +68,11 @@ SHA1 0a98c772b036feb4abe13bce9b903272c64e724c t/36_search_order.t
 SHA1 e377d0a6c54fc2cb9994bd54999945470b17685b t/37_search_summaries.t
 SHA1 2de6953b74d0349138f306a6e09dbacc9b01998b t/38_search_params.t
 SHA1 83c01e63b8ba76fb7949602b9f34cabc9daaca74 t/39_search_form.t
+SHA1 1ca5a4d73f157b8bcbba399a67ed07f3dbc2a719 t/40_search_as_feed.t
 SHA1 fb394102d1d9c3ba1831547ac97a27bb17fa28b4 t/41_deletion.t
 SHA1 83eb51c1d42dfffdce99d7083f6fbe0d3aa32485 t/51_display_node.t
 SHA1 09e5f8dcfcbc517b8618fe39d07f8b57715f96e8 t/52_display_diffs.t
-SHA1 a1a78306a424fc8f52d9c44e33230158366abce6 t/53_show_index.t
+SHA1 c968b9410d5d1c37526b66400f3485d2b48007b3 t/53_show_index.t
 SHA1 0f1581794e2e68792bf281c9552f8a40aaa8f8ca t/54_redirect.t
 SHA1 4718431fbeba885979028e5ff9756161ba9579cd t/55_node_history.t
 SHA1 81a6670e521d4112a3b478cf76d974bdb7fea204 t/56_diffs_with_macros.t
@@ -81,41 +83,53 @@ SHA1 388d549ca8258a3094bbf6e9ce32846901ee3bc4 t/64_bug_node_history.t
 SHA1 f8f456d62f623098587bbd23ed62175271dabd99 t/65_bug_metadata_escape.t
 SHA1 9116375161d0591f4a0151fd7f46a2d84eb6ffe0 t/66_bug_latlong_representation.t
 SHA1 fcfb779a083ea845d1dea943e2d86e00b17e2ac3 t/67_bug_first_version.t
-SHA1 b9e87c6fb97b10106ed753b3862beef2b7452a3b t/68_bug_website_displayed.t
+SHA1 7d3b22c6fd9e4379123dcfed05035bda6a90e203 t/68_bug_website_displayed.t
+SHA1 c3ce4e84d9c0d7191b0f49bd4130b13ce0d22ca1 t/70_admin_home.t
+SHA1 92b4b92ee47200c33283fef9149b8f07bf03f723 t/71_missing_metadata.t
+SHA1 e69e882517af9d2aba53dcbda40ca28b709f8588 t/72_node_moderation.t
+SHA1 2663b88c646be696d0b1af8d112322c92cb1aa28 t/73_toggle_moderation.t
 SHA1 7b7516a7b3f7f8f49bd455957dda73607cca3c0c t/templates/15_test.tt
-SHA1 c1d6491dbc897b6990dbf0bb1502a7ca846a43b6 templates/backlink_results.tt
+SHA1 e3c053a04907728c8d98bd8405d45af6fceca80e templates/admin_home.tt
+SHA1 cce56a774414dbf049c36754b1681b2fbabc3232 templates/backlink_results.tt
 SHA1 5b2934c53c934235fa6c505e05d74bcff40afb34 templates/banner.tt
+SHA1 dfbde9ae2c85b6749987644ca760034d004d7652 templates/common_categories.tt
+SHA1 0d80b712a557d22840c55fef6837cbb39433430c templates/common_locales.tt
 SHA1 17feb029eac8abe973a71ae2e51448271e97c953 templates/delete_confirm.tt
 SHA1 6f1a2af753659e9a27b7a76f6de800e61c20566a templates/delete_done.tt
 SHA1 b87db1175fc9d6ca3298b8fd8b36c2bdafd0430e templates/delete_password_wrong.tt
-SHA1 2d75f2c150b8606aed2772b56093792d3f50a96b templates/differences.tt
-SHA1 e5bc608cca7fc527d1d9d3c6f57b57517553ca55 templates/display_metadata.tt
-SHA1 24bd80b4f8a0f8ec3516ade329750df802fa846e templates/edit_conflict.tt
-SHA1 480b858ba51d19979371457bd085180dae7be2ec templates/edit_form.tt
+SHA1 ee3f99700eec3b7a1cac930e99d39d98bec3bee0 templates/differences.tt
+SHA1 7a622a714437d44913e81c6acc944095ff500aa7 templates/display_metadata.tt
+SHA1 a5b3dac5f5ded0a68a66e5c132b0ebdef2bb096a templates/edit_conflict.tt
+SHA1 1274e23c44ed81a64ad8a74f826672a7d6e7c1d1 templates/edit_form.tt
 SHA1 9fd61428d329f5f66d329c2f865b305a1b8cc639 templates/error.tt
 SHA1 4634ac8fac988119d183bd93f008a10bf5ff1835 templates/footer.tt
-SHA1 3ad479c05b68ab9e6f1be24d4f185fdbaf347e6b templates/header.tt
+SHA1 5c5e035185c05a8fdbb825a2fa280efb22f673ba templates/header.tt
 SHA1 e51c5d6311a8142fb524f8c214ad82eefca79711 templates/home_node.tt
 SHA1 782505bcd3936ee843c3af1e31cf4b7a6f4b0e88 templates/map_index.tt
+SHA1 2864548d09ebf7fbb3cf539cc8cdb8167cc57769 templates/missing_metadata.tt
+SHA1 65a8cebff7960ef7a18f082814d50355acf57fba templates/moderate_confirm.tt
+SHA1 e0c37cfb27b4f60e5105fa900f5ea513910441fe templates/moderate_password_wrong.tt
 SHA1 c49cbe67c54e9f2c66559edf1992cbaaa893d45a templates/navbar.tt
+SHA1 cd438cebb2517681a1512a08123247cca6ba3601 templates/needing_moderation.tt
 SHA1 9e5147da0a4b84ed9e9a7a38952182549768682c templates/newpage.tt
-SHA1 c235c96407b2292a7d075692fa9af57d4ea57df7 templates/node.tt
-SHA1 95a7309033fac39b66e44d6e70c1c9fc8aa7a927 templates/node_history.tt
+SHA1 797f0e2e241bcfbcae76f468ddb88b48fac3c75e templates/node.tt
+SHA1 b39d12e76d3fbe944ae409cc6a15b12a359a3a2a templates/node_history.tt
+SHA1 d0bc10b8a4a599916b6626c97e46339ffba840e8 templates/node_photo_notes.tt
 SHA1 cc5aee1e46b11d15dd3a8153ecad247d977926a2 templates/openguides_information_boxes.tt
 SHA1 f03bb3973c4edc15aa538adc02fe3aa3cb6224ed templates/plain_index.tt
-SHA1 1659f28355d39b8a1ce226da3ca9cdae62b6aae5 templates/preferences.tt
+SHA1 e9b0d76682b4fa988f8c4c350f19d8ad06b4ccaa templates/preferences.tt
 SHA1 bc1971e12b4c07e2499015b5c99066292141332f templates/rdf_index.tt
-SHA1 20da4b8687534a10212020438c1f882d2122d88e templates/recent_changes.tt
+SHA1 7b28d4a537d6a1bc3e934d0f9d8e948b21203ab1 templates/recent_changes.tt
 SHA1 524108c1597507974a3a98d80fa7ddafc67720d6 templates/search.tt
 SHA1 dac4189f5ab16c80202be08ce8bb35fd1ab368e7 templates/search_results.tt
-SHA1 65def8a2165424753100fdaae95c9e495c195691 templates/site_index.tt
+SHA1 27bdf668f837d61ed7fb39bd4a8c65cc5ff95778 templates/site_index.tt
 SHA1 603d7c89a53dca5a57e5a735aff9b74fe13bcfb3 templates/userstats.tt
 SHA1 778881b68d86bebc1cfba9e49d3e3e1d524514f9 templates/wanted_pages.tt
-SHA1 fe9191a422900eabb333df7e26e524d7020f84c6 wiki.cgi
+SHA1 1ef230f474326008c3bcab5a24a3b9fd7b2a41b6 wiki.cgi
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.1 (GNU/Linux)
+Version: GnuPG v1.4.5 (GNU/Linux)
 
-iD8DBQFEkH9vYzuFKFF44qURAqHEAKDb30KzyXPPEu/lasH6C9rGIO1E5QCg/d4B
-be49Ls/WJgep2ZAQY/VVwDs=
-=agvQ
+iD8DBQFFBv7BYzuFKFF44qURAp6VAJsFQj8li91iwVIKuoQ6OiLOrksuPgCguJvL
+C9YtTFsd6eQfboTbRu69umA=
+=RU6s
 -----END PGP SIGNATURE-----

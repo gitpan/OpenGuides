@@ -1,6 +1,6 @@
 ---
 name: OpenGuides
-version: 0.56
+version: 0.57
 author: ~
 abstract: ~
 license: perl
@@ -11,7 +11,7 @@ requires:
   CGI::Cookie: 0
   Class::Accessor: 0
   Config::Tiny: 0
-  DBD::Pg: 0
+  DBD::SQLite: 0
   Data::Dumper: 0
   File::Spec::Functions: 0
   File::Temp: 0
@@ -24,7 +24,7 @@ requires:
   Test::MockObject: 0.07
   Time::Piece: 0
   URI::Escape: 0
-  Wiki::Toolkit: 0.70
+  Wiki::Toolkit: 0.71
   Wiki::Toolkit::Feed::Atom: 0
   Wiki::Toolkit::Feed::RSS: 0
   Wiki::Toolkit::Formatter::UseMod: 0
@@ -42,7 +42,7 @@ dynamic_config: 1
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.56
+    version: 0.57
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
   OpenGuides::CGI:

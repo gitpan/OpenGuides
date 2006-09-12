@@ -22,7 +22,9 @@ exit 0 unless $continue;
 my $existing_config = OpenGuides::Config->new( file => "wiki.conf" );
 
 my %yn_vars = map { $_ => 1 }
-   qw(use_plucene enable_page_deletion navbar_on_home_page backlinks_in_title);
+   qw(use_plucene enable_page_deletion navbar_on_home_page backlinks_in_title
+      moderation_requires_password enable_node_image enable_common_categories
+      enable_common_locales);
 
 my $skip_config = Module::Build->y_n("Skip OpenGuides configuration?", "n");
 if ( $skip_config ) {
@@ -69,7 +71,7 @@ push @answers, { question => $dbtype_qu,
                  value    => $dbtype };
 
 my $install_directory; # used to suggest template paths
-my $use_plucene; # keep track of this so we know what to put in prereqs
+my $use_plucene = 1; # keep track of this so we know what to put in prereqs
 foreach my $var ( qw(
    dbname dbuser dbpass dbhost script_name
    install_directory template_path custom_template_path script_url
@@ -78,7 +80,8 @@ foreach my $var ( qw(
    site_desc default_city default_country contact_email default_language
    formatting_rules_node backlinks_in_title gmaps_api_key centre_long
    centre_lat default_gmaps_zoom default_gmaps_search_zoom force_wgs84
-   licence_name licence_url licence_info_url
+   licence_name licence_url licence_info_url moderation_requires_password
+   enable_node_image enable_common_categories enable_common_locales
   ) ) {
     my $q_method = $var . "__qu";
     my $qu  = $existing_config->$q_method;
@@ -98,6 +101,16 @@ foreach my $var ( qw(
         push @answers, { question => $qu,
                             variable => $var,
                          value    => "not-used" };
+        next;
+    }
+
+    # We don't ask this for new installs as Search::InvertedIndex is
+    # deprecated
+    if ( $var eq "use_plucene" and $existing_config->$var == 1) {
+        print "Skipping question about plucene\n";
+        push @answers, { question => $qu,
+                         variable => $var,
+                         value => 1 };
         next;
     }
 
@@ -206,6 +219,8 @@ close FILE or die "Can't close wiki.conf: $!";
 ##### When updating the prereqs PLEASE REMEMBER to update PREREQUISITES.
 #####
 
+# We currently only support Plucene for new installs, but may support
+# others in future
 my $search_module = $use_plucene ? "Plucene" : "Search::InvertedIndex";
 
 # Create the build object.
@@ -219,7 +234,7 @@ my $build = OpenGuides::Build->new(
         'CGI'                                 => '2.92',  # avoid escapeHTML bug
         'CGI::Carp'                           => 0,
         'CGI::Cookie'                         => 0,
-        'Wiki::Toolkit'                       => '0.70',
+        'Wiki::Toolkit'                       => '0.71',
         'Wiki::Toolkit::Feed::Atom'           => 0,
         'Wiki::Toolkit::Feed::RSS'            => 0,
         'Wiki::Toolkit::Formatter::UseMod'    => 0,
@@ -263,8 +278,11 @@ $build->{config}{__extra_scripts}     =
                       [ "wiki.conf", "preferences.cgi", "search.cgi",
                         "newpage.cgi" ];
 $build->{config}{__templates}         = [
+                      "admin_home.tt",
                       "backlink_results.tt",
                       "banner.tt",
+                      "common_categories.tt",
+                      "common_locales.tt",
                       "delete_confirm.tt",
                       "delete_done.tt",
                       "delete_password_wrong.tt",
@@ -277,10 +295,15 @@ $build->{config}{__templates}         = [
                       "header.tt",
                       "home_node.tt",
                       "map_index.tt",
+                      "missing_metadata.tt",
+                      "moderate_confirm.tt",
+                      "moderate_password_wrong.tt",
                       "navbar.tt",
+                      "needing_moderation.tt",
                       "newpage.tt",
                       "node.tt",
                       "node_history.tt",
+                      "node_photo_notes.tt",
                       "openguides_information_boxes.tt",
                       "preferences.tt",
                       "rdf_index.tt",

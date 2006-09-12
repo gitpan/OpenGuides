@@ -60,7 +60,7 @@ span.hidden
 
 span.node_name
     Used in: backlink_results.tt delete_confirm.tt delete_done.tt
-             differences.tt node_history.tt
+             differences.tt node_history.tt, edit_conflict.tt
     Purpose: Inlines a node name in a snippet of explanatory text,
              without linking to it.
 
@@ -99,9 +99,9 @@ div#content
 div#maincontent
     Used in: backlink_results.tt, delete_confirm.tt, delete_done.tt,
 	     delete_password_wrong.tt, edit_conflict.tt, edit_form.tt,
-	     home_node.tt, newpage.tt, node.tt, preferences.tt,
+	     home_node.tt, newpage.tt, node.tt, node_history.tt, preferences.tt,
 	     recent_changes.tt, search_results.tt, site_index.tt,
-	     search.tt, userstats.tt, wanted_pages.tt
+	     search.tt, userstats.tt, wanted_pages.tt, differences.tt
     Purpose: Defines the main textual content of the page
              content includes the navbar and footer; maincontent does not
 
@@ -143,8 +143,55 @@ div#search_form
     Purpose: The search form at the bottom of the page
 
 div#version
-    Used it: node.tt
+    Used in: node.tt
     Purpose: Text describing the version of the node being displayed
+
+div#node_image_box
+    Used in: display_metadata.tt
+    Purpose: Hold the image for a node.
+    Note: If there is no node image, span#node_no_image will exist instead
+span#node_no_image
+    Used in: display_metadata.tt
+    Purpose: To indicate that there is no image for the node
+img#node_image
+    Used in: display_metadata.tt
+    Purpose: To display the image for a node
+
+div#common_navigation
+    Used in: node.tt
+    Purpose: Hold the common locales and categories, if enabled
+
+div#common_categories
+    Used in: common_categories.tt
+    Purpose: Hold the common categories, if enabled
+h3#common_categories_title
+    Used in: common_categories.tt
+    Purpose: Title for the common categories
+ul#common_categories_list
+    Used in: common_categories.tt
+    Purpose: Parent list for the common categories
+li.common_category
+    Used in: common_categories.tt
+    Purpose: A common category
+a.common_category_link
+    Used in: common_categories.tt
+    Purpose: A link to a common category
+
+div#common_locales
+    Used in: common_locales.tt
+    Purpose: Hold the common locales, if enabled
+h3#common_locales_title
+    Used in: common_locales.tt
+    Purpose: Title for the common locales
+ul#common_locales_list
+    Used in: common_locales.tt
+    Purpose: Parent list for the common locales
+li.common_locale
+    Used in: common_locales.tt
+    Purpose: A common locale
+a.common_locale_link
+    Used in: common_locales.tt
+    Purpose: A link to a common locale
 
 input#address
     Used in: edit_conflict.tt, edit_form.tt
@@ -256,9 +303,11 @@ textarea#categories
     Used in: edit_conflict.tt, edit_form.tt
     Purpose: An box to enter the categories of the node
 
-textarea#content
+textarea#content_textarea
     Used in: edit_conflict.tt, edit_form.tt
     Purpose: A box to enter the main conent of the node
+    Note: ID doesn't match class, as IDs have to be globally unique, and we
+           already have a div with ID content
 
 textarea#locales
     Used in: edit_conflict.tt, edit_form.tt

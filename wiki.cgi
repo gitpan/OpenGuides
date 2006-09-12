@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.56';
+$VERSION = '0.57';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -65,6 +65,8 @@ eval {
         $guide->show_backlinks( id => $node );
     } elsif ($action eq 'show_wanted_pages') {
         show_wanted_pages();
+    } elsif ($action eq 'show_needing_moderation') {
+        show_needing_moderation();
     } elsif ($action eq 'index') {
         $guide->show_index(
                             type   => $q->param("index_type") || "Full",
@@ -80,6 +82,29 @@ eval {
                                       id => $node,
                                       metres => $q->param("distance_in_metres")
                                     );
+    } elsif ( $action eq 'admin' ) {
+        $guide->display_admin_interface(
+                             moderation_completed => $q->param("moderation"),
+        );
+    } elsif ( $action eq 'show_missing_metadata' ) {
+        $guide->show_missing_metadata(
+                   metadata_type  => $q->param("metadata_type") || "",
+                   metadata_value => $q->param("metadata_value") || "",
+                   exclude_locales => $q->param("exclude_locales") || "",
+                   exclude_categories => $q->param("exclude_categories") || ""
+        );
+    } elsif ( $action eq 'set_moderation' ) {
+        $guide->set_node_moderation(
+                             id       => $node,
+                             password => $q->param("password") || "",
+                             moderation_flag => $q->param("moderation_flag") || "",
+                           );
+    } elsif ( $action eq 'moderate' ) {
+        $guide->moderate_node(
+                             id       => $node,
+                             version  => $q->param("version") || "",
+                             password => $q->param("password") || "",
+                           );
     } elsif ( $action eq 'delete'
               and ( lc($config->enable_page_deletion) eq "y"
                     or $config->enable_page_deletion eq "1" )
@@ -239,15 +264,17 @@ sub preview_node {
     if ($wiki->verify_checksum($node, $checksum)) {
         my %tt_vars = (
             %tt_metadata_vars,
+            config                 => $config,
             content                => $q->escapeHTML($content),
             preview_html           => $wiki->format($content),
             preview_above_edit_box => get_cookie( "preview_above_edit_box" ),
             checksum               => $q->escapeHTML($checksum)
-    );
+        );
         process_template("edit_form.tt", $node, \%tt_vars);
     } else {
         my %node_data = $wiki->retrieve_node($node);
         my %tt_vars = ( checksum       => $node_data{checksum},
+                        config         => $config,
                         new_content    => $content,
                         stored_content => $node_data{content} );
         foreach my $mdvar ( keys %tt_metadata_vars ) {
@@ -287,7 +314,8 @@ sub edit_node {
     my %tt_vars = ( content         => $q->escapeHTML($content),
                     checksum        => $q->escapeHTML($checksum),
                     %metadata_vars,
-            username        => $username,
+                    config          => $config,
+                    username        => $username,
                     edit_type       => $edit_type,
                     deter_robots    => 1,
     );
@@ -366,3 +394,22 @@ sub show_wanted_pages {
                         wanted        => \@wanted } );
 }
 
+sub show_needing_moderation {
+    my @nodes = $wiki->list_unmoderated_nodes;
+
+    # Build the moderate links
+    foreach my $node (@nodes) {
+        my $node_param =
+            uri_escape($formatter->node_name_to_node_param($node->{'name'}));
+        $node->{'moderate_url'} = $script_name . "?action=moderate&id=".$node_param."&version=".$node->{'version'};
+        $node->{'view_url'} = $script_name . "?id=".$node_param."&version=".$node->{'version'};
+        $node->{'diff_url'} = $script_name . "?id=".$node_param."&version=".$node->{'moderated_version'}."&diffversion=".$node->{'version'};
+    }
+
+    process_template( "needing_moderation.tt",
+                      "",
+                      { not_editable  => 1,
+                        not_deletable => 1,
+                        deter_robots  => 1,
+                        nodes        => \@nodes } );
+}

@@ -14,7 +14,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.56';
+$VERSION = '0.57';
 
 =head1 NAME
 
@@ -173,6 +173,7 @@ sub display_node {
     my $raw        = $node_data{content} || " ";
     my $content    = $wiki->format($raw);
     my $modified   = $node_data{last_modified};
+    my $moderated  = $node_data{moderated};
     my %metadata   = %{$node_data{metadata}};
 
     my ($wgs84_long, $wgs84_lat) = OpenGuides::Utils->get_wgs84_coords(
@@ -199,12 +200,21 @@ sub display_node {
                    version       => $node_data{version},
                    node          => $id,
                    language      => $config->default_language,
+                   moderated     => $moderated,
                    oldid         => $oldid,
                    enable_gmaps  => 1,
                    display_google_maps => $self->get_cookie("display_google_maps"),
                    wgs84_long    => $wgs84_long,
                    wgs84_lat     => $wgs84_lat
                );
+
+    # Should we include a standard list of categories or locales?
+    if ($config->enable_common_categories || $config->enable_common_locales) {
+        $tt_vars{common_catloc} = 1;
+        $tt_vars{common_categories} = $config->enable_common_categories;
+        $tt_vars{common_locales} = $config->enable_common_locales;
+        $tt_vars{catloc_link} = $config->script_name . "?id=";
+    }
 
     if ( $raw =~ /^#REDIRECT\s+(.+?)\s*$/ ) {
         my $redirect = $1;
@@ -484,6 +494,13 @@ sub show_backlinks {
                         format => "rdf",
                     );
 
+  # RSS / Atom version (recent changes style).
+  $guide->show_index(
+                        type   => "locale",
+                        value  => "Holborn",
+                        format => "rss",
+                    );
+
   # Or return output as a string (useful for writing tests).
   $guide->show_index(
                         type          => "category",
@@ -567,6 +584,28 @@ sub show_index {
             $tt_vars{display_google_maps} = 1; # override for this page
             $template = "map_index.tt";
             
+        } elsif( $args{format} eq "rss" || $args{format} eq "atom") {
+            # They really wanted a recent changes style rss/atom feed
+            my $feed_type = $args{format};
+            my ($feed,$content_type) = $self->get_feed_and_content_type($feed_type);
+            $feed->set_feed_name_and_url_params(
+                        "Index of $args{type} $args{value}",
+                        "action=index;index_type=$args{type};index_value=$args{value}"
+            );
+
+            # Grab the actual node data out of @nodes
+            my @node_data;
+            foreach my $node (@nodes) {
+                $node->{node_data}->{name} = $node->{name};
+                push @node_data, $node->{node_data};
+            }
+
+            my $output = "Content-Type: ".$content_type."\n";
+            $output .= $feed->build_feed_for_nodes($feed_type, @node_data);
+
+            return $output if $args{return_output};
+            print $output;
+            return;
         }
     } else {
         $template = "site_index.tt";
@@ -638,6 +677,27 @@ sub list_all_versions {
                                         );
     return $output if $return_output;
     print $output;
+}
+
+=item B<get_feed_and_content_type>
+
+Fetch the OpenGuides feed object, and the output content type, for the
+supplied feed type.
+
+Handles all the setup for the OpenGuides feed object.
+=cut
+sub get_feed_and_content_type {
+    my ($self, $feed_type) = @_;
+
+    my $feed = OpenGuides::Feed->new(
+                                        wiki       => $self->wiki,
+                                        config     => $self->config,
+                                        og_version => $VERSION,
+                                    );
+
+    my $content_type = $feed->default_content_type($feed_type);
+
+    return ($feed, $content_type);
 }
 
 =item B<display_feed>
@@ -712,23 +772,10 @@ sub display_feed {
     }
 
 
-    my $feed = OpenGuides::Feed->new(
-                                        wiki       => $self->wiki,
-                                        config     => $self->config,
-                                        og_version => $VERSION,
-                                    );
+    # Get the feed object, and the content type
+    my ($feed,$content_type) = $self->get_feed_and_content_type($feed_type);
 
-    my $output;
-    
-    if ($feed_type eq 'rss') {
-        $output = "Content-Type: application/rdf+xml\n";
-    }
-    elsif ($feed_type eq 'atom') {
-        $output = "Content-Type: application/atom+xml\n";
-    }
-    else {
-        croak "Unknown feed type given: $feed_type";
-    }
+    my $output = "Content-Type: ".$content_type."\n";
     
     # Get the feed, and the timestamp, in one go
     my ($feed_output, $feed_timestamp) = 
@@ -934,7 +981,7 @@ sub commit_node {
     my %metadata = OpenGuides::Template->extract_metadata_vars(
         wiki    => $wiki,
         config  => $config,
-    cgi_obj => $q
+        cgi_obj => $q
     );
 
     delete $metadata{website} if $metadata{website} eq 'http://';
@@ -949,27 +996,13 @@ sub commit_node {
         if $metadata{longitude_unmunged};
 
     # Check to make sure all the indexable nodes are created
-    foreach my $type (qw(Category Locale)) {
-        my $lctype = lc($type);
-        foreach my $index (@{$metadata{$lctype}}) {
-            $index =~ s/(.*)/\u$1/;
-            my $node = $type . " " . $index;
-            # Uppercase the node name before checking for existence
-            $node =~ s/ (\S+)/ \u$1/g;
-            unless ( $wiki->node_exists($node) ) {
-                my $category = $type eq "Category" ? "Category" : "Locales";
-                $wiki->write_node(
-                                     $node,
-                                     "\@INDEX_LINK [[$node]]",
-                                     undef,
-                                     {
-                                         username => "Auto Create",
-                                         comment  => "Auto created $lctype stub page",
-                                         category => $category
-                                     }
-                                 );
-            }
-        }
+    # Skip this for nodes needing moderation - this occurs for them once
+    #  they've been moderated
+    unless($wiki->node_required_moderation($node)) {
+        $self->_autoCreateCategoryLocale(
+                                          id       => $node,
+                                          metadata => \%metadata
+        );
     }
     
     foreach my $var ( qw( summary username comment edit_type ) ) {
@@ -1016,6 +1049,51 @@ sub commit_node {
                                             );
         return $output if $args{return_output};
         print $output;
+    }
+}
+
+=item B<_autoCreateCategoryLocale>
+
+  $guide->_autoCreateCategoryLocale(
+                         id       => "FAQ",
+                         metadata => \%metadata,
+                     );
+
+When a new node is added, or a previously un-moderated node is moderated,
+identifies if any of its Categories or Locales are missing, and creates them.
+
+For nodes not requiring moderation, should be called on writing the node
+For nodes requiring moderation, should only be called on moderation
+=cut
+sub _autoCreateCategoryLocale {
+    my ($self, %args) = @_;
+
+    my $wiki = $self->wiki;
+    my $id = $args{'id'};
+    my %metadata = %{$args{'metadata'}};
+
+    # Check to make sure all the indexable nodes are created
+    foreach my $type (qw(Category Locale)) {
+        my $lctype = lc($type);
+        foreach my $index (@{$metadata{$lctype}}) {
+            $index =~ s/(.*)/\u$1/;
+            my $node = $type . " " . $index;
+            # Uppercase the node name before checking for existence
+            $node =~ s/ (\S+)/ \u$1/g;
+            unless ( $wiki->node_exists($node) ) {
+                my $category = $type eq "Category" ? "Category" : "Locales";
+                $wiki->write_node(
+                                     $node,
+                                     "\@INDEX_LINK [[$node]]",
+                                     undef,
+                                     {
+                                         username => "Auto Create",
+                                         comment  => "Auto created $lctype stub page",
+                                         category => $category
+                                     }
+                );
+            }
+        }
     }
 }
 
@@ -1093,6 +1171,321 @@ sub delete_node {
         return $output if $return_output;
         print $output;
     }
+}
+
+=item B<set_node_moderation>
+
+  $guide->set_node_moderation(
+                         id       => "FAQ",
+                         password => "beer",
+                         moderation_flag => 1,
+                     );
+
+Sets the moderation needed flag on a node, either on or off.
+
+If C<password> is not supplied then a form for entering the password
+will be displayed.
+=cut
+sub set_node_moderation {
+    my ($self, %args) = @_;
+    my $node = $args{id} or croak "No node ID supplied for node moderation";
+    my $return_tt_vars = $args{return_tt_vars} || 0;
+    my $return_output = $args{return_output} || 0;
+
+    # Get the moderation flag into something sane
+    if($args{moderation_flag} eq "1" || $args{moderation_flag} eq "yes" ||
+       $args{moderation_flag} eq "on" || $args{moderation_flag} eq "true") {
+        $args{moderation_flag} = 1;
+    } else {
+        $args{moderation_flag} = 0;
+    }
+
+    # Set up the TT variables
+    my %tt_vars = (
+                      not_editable  => 1,
+                      not_deletable => 1,
+                      deter_robots  => 1,
+                      moderation_action => 'set_moderation',
+                      moderation_flag   => $args{moderation_flag},
+                      moderation_url_args => 'action=set_moderation;moderation_flag='.$args{moderation_flag},
+                  );
+
+    my $password = $args{password};
+
+    if ($password) {
+        if ($password ne $self->config->admin_pass) {
+            return %tt_vars if $return_tt_vars;
+            my $output = $self->process_template(
+                                                    id       => $node,
+                                                    template => "moderate_password_wrong.tt",
+                                                    tt_vars  => \%tt_vars,
+                                                );
+            return $output if $return_output;
+            print $output;
+        } else {
+            $self->wiki->set_node_moderation(
+                                        name    => $node,
+                                        required => $args{moderation_flag},
+                                    );
+
+            # Send back to the admin interface
+            my $script_url = $self->config->script_url;
+            my $script_name = $self->config->script_name;
+            my $q = CGI->new;
+            my $output = $q->redirect( $script_url.$script_name."?action=admin&moderation=changed" );
+            return $output if $return_output;
+            print $output;
+        }
+    } else {
+        return %tt_vars if $return_tt_vars;
+        my $output = $self->process_template(
+                                                id       => $node,
+                                                template => "moderate_confirm.tt",
+                                                tt_vars  => \%tt_vars,
+                                            );
+        return $output if $return_output;
+        print $output;
+    }
+}
+
+=item B<moderate_node>
+
+  $guide->moderate_node(
+                         id       => "FAQ",
+                         version  => 12,
+                         password => "beer",
+                     );
+
+Marks a version of a node as moderated. Will also auto-create and Locales
+and Categories for the newly moderated version.
+
+If C<password> is not supplied then a form for entering the password
+will be displayed.
+=cut
+sub moderate_node {
+    my ($self, %args) = @_;
+    my $node = $args{id} or croak "No node ID supplied for node moderation";
+    my $version = $args{version} or croak "No node version supplied for node moderation";
+    my $return_tt_vars = $args{return_tt_vars} || 0;
+    my $return_output = $args{return_output} || 0;
+
+    # Set up the TT variables
+    my %tt_vars = (
+                      not_editable  => 1,
+                      not_deletable => 1,
+                      deter_robots  => 1,
+                      version       => $version,
+                      moderation_action => 'moderate',
+                      moderation_url_args => 'action=moderate&version='.$version
+                  );
+
+    my $password = $args{password};
+    unless($self->config->moderation_requires_password) {
+        $password = $self->config->admin_pass;
+    }
+
+    if ($password) {
+        if ($password ne $self->config->admin_pass) {
+            return %tt_vars if $return_tt_vars;
+            my $output = $self->process_template(
+                                                    id       => $node,
+                                                    template => "moderate_password_wrong.tt",
+                                                    tt_vars  => \%tt_vars,
+                                                );
+            return $output if $return_output;
+            print $output;
+        } else {
+            $self->wiki->moderate_node(
+                                        name    => $node,
+                                        version => $version
+                                    );
+
+            # Create any categories or locales for it
+            my %details = $self->wiki->retrieve_node(
+                                        name    => $node,
+                                        version => $version
+                                    );
+            $self->_autoCreateCategoryLocale(
+                                          id       => $node,
+                                          metadata => $details{'metadata'}
+            );
+
+            # Send back to the admin interface
+            my $script_url = $self->config->script_url;
+            my $script_name = $self->config->script_name;
+            my $q = CGI->new;
+            my $output = $q->redirect( $script_url.$script_name."?action=admin&moderation=moderated" );
+            return $output if $return_output;
+            print $output;
+        }
+    } else {
+        return %tt_vars if $return_tt_vars;
+        my $output = $self->process_template(
+                                                id       => $node,
+                                                template => "moderate_confirm.tt",
+                                                tt_vars  => \%tt_vars,
+                                            );
+        return $output if $return_output;
+        print $output;
+    }
+}
+
+=item B<show_missing_metadata>
+Search for nodes which don't have a certain kind of metadata. Optionally
+also excludes Locales and Categories
+=cut
+sub show_missing_metadata {
+    my ($self, %args) = @_;
+    my $return_tt_vars = $args{return_tt_vars} || 0;
+    my $return_output = $args{return_output} || 0;
+
+    my $wiki = $self->wiki;
+    my $formatter = $self->wiki->formatter;
+    my $script_name = $self->config->script_name;
+
+    my ($metadata_type, $metadata_value, $exclude_locales, $exclude_categories)
+        = @args{ qw( metadata_type metadata_value exclude_locales exclude_categories ) };
+
+    my @nodes;
+    my $done_search = 0;
+
+    # Only search if they supplied at least a metadata type
+    if($metadata_type) {
+        $done_search = 1;
+        @nodes = $wiki->list_nodes_by_missing_metadata(
+                            metadata_type => $metadata_type,
+                            metadata_value => $metadata_value,
+                            ignore_case    => 1,
+        );
+
+        # Do we need to filter some nodes out?
+        if($exclude_locales || $exclude_categories) {
+            my @all_nodes = @nodes;
+            @nodes = ();
+
+            foreach my $node (@all_nodes) {
+                if($exclude_locales && $node =~ /^Locale /) { next; }
+                if($exclude_categories && $node =~ /^Category /) { next; }
+                push @nodes, $node;
+            }
+        }
+    }
+
+    # Build nice edit etc links for our nodes
+    my @tt_nodes;
+    for my $node (@nodes) {
+        my %n;
+
+        # Make the URLs
+        my $node_param = uri_escape( $formatter->node_name_to_node_param( $node ) );
+
+        # Save into the hash
+        $n{'name'} = $node;
+        $n{'view_url'} = $script_name . "?id=" . $node_param;
+        $n{'edit_url'} = $script_name . "?id=" . $node_param . ";action=edit";
+        push @tt_nodes, \%n;
+    }
+
+    # Set up our TT variables, including the search parameters
+    my %tt_vars = (
+                      not_editable  => 1,
+                      not_deletable => 1,
+                      deter_robots  => 1,
+
+                      nodes => \@tt_nodes,
+                      done_search    => $done_search,
+                      metadata_type  => $metadata_type,
+                      metadata_value => $metadata_value,
+                      exclude_locales => $exclude_locales,
+                      exclude_categories => $exclude_categories
+                  );
+    return %tt_vars if $return_tt_vars;
+
+    # Render to the page
+    my $output = $self->process_template(
+                                           id       => "",
+                                           template => "missing_metadata.tt",
+                                           tt_vars  => \%tt_vars,
+                                        );
+    return $output if $return_output;
+    print $output;
+}
+
+=item B<display_admin_interface>
+Fetch everything we need to display the admin interface, and passes it off 
+ to the template
+=cut
+sub display_admin_interface {
+    my ($self, %args) = @_;
+    my $return_tt_vars = $args{return_tt_vars} || 0;
+    my $return_output = $args{return_output} || 0;
+
+    my $wiki = $self->wiki;
+    my $formatter = $self->wiki->formatter;
+    my $script_name = $self->config->script_name;
+
+    # Grab all the recent nodes
+    my @all_nodes = $wiki->list_recent_changes(last_n_changes => 100);
+
+    # Split into nodes, Locales and Categories
+    my @nodes;
+    my @categories;
+    my @locales;
+    for my $node (@all_nodes) {
+        # Add moderation status
+        $node->{'moderate'} = $wiki->node_required_moderation($node->{'name'});
+
+        # Make the URLs
+        my $node_param = uri_escape( $formatter->node_name_to_node_param( $node->{'name'} ) );
+        $node->{'view_url'} = $script_name . "?id=" . $node_param;
+        $node->{'versions_url'} = $script_name .
+                        "?action=list_all_versions;id=" . $node_param;
+        $node->{'moderation_url'} = $script_name .
+                        "?action=set_moderation;id=" . $node_param;
+
+        # Filter
+        if($node->{'name'} =~ /^Category /) {
+            $node->{'page_name'} = $node->{'name'};
+            $node->{'name'} =~ s/^Category //;
+            push @categories, $node;
+        } elsif($node->{'name'} =~ /^Locale /) {
+            $node->{'page_name'} = $node->{'name'};
+            $node->{'name'} =~ s/^Locale //;
+            push @locales, $node;
+        } else {
+            push @nodes, $node;
+        }
+    }
+
+    # Handle completed notice for actions
+    my $completed_action = "";
+    if($args{moderation_completed}) {
+        if($args{moderation_completed} eq "moderation") {
+            $completed_action = "Version moderated";
+        }
+        if($args{moderation_completed} eq "changed") {
+            $completed_action = "Node moderation flag changed";
+        }
+    }
+
+    # Render in a template
+    my %tt_vars = (
+                      not_editable  => 1,
+                      not_deletable => 1,
+                      deter_robots  => 1,
+                      nodes      => \@nodes,
+                      categories => \@categories,
+                      locales    => \@locales,
+                      completed_action => $completed_action
+                  );
+    return %tt_vars if $return_tt_vars;
+    my $output = $self->process_template(
+                                           id       => "",
+                                           template => "admin_home.tt",
+                                           tt_vars  => \%tt_vars,
+                                        );
+    return $output if $return_output;
+    print $output;
 }
 
 sub process_template {

@@ -47,15 +47,48 @@ sub _init {
 
         $node_url;
       };  
-    $self->{site_name}        = $config->site_name;
-    $self->{default_city}     = $config->default_city     || "";
-    $self->{default_country}  = $config->default_country  || "";
-    $self->{site_description} = $config->site_desc        || "";
+    $self->{site_name}        = $config->site_name . " - Recent Changes";
+    $self->{default_city}     = $config->default_city      || "";
+    $self->{default_country}  = $config->default_country   || "";
+    $self->{site_description} = $config->site_desc         || "";
     $self->{og_version}       = $args{og_version};
+    $self->{html_equiv_link}  = $self->{config}->script_url . '?action=rc';
 
     $self;
 }
 
+=item B<set_feed_name_and_url_params>
+Overrides the default feed name and default feed http equivalent url.
+Useful on custom feeds, where the defaults are incorrect.
+
+   $feed->set_feed_name_and_url("Search Results", "search=pub");
+   $feed->build_mini_feed_for_nodes("rss", @search_results);
+=cut
+sub set_feed_name_and_url_params {
+    my ($self, $name, $url) = @_;
+
+    unless($url =~ /^http/) {
+        my $b_url = $self->{config}->script_url;
+        unless($url =~ /\.cgi\?/) { $b_url .= "?"; }
+        $b_url .= $url;
+        $url = $b_url;
+    }
+
+    $self->{site_name} = $self->{config}->{site_name} . " - " . $name;
+    $self->{html_equiv_link} = $url;
+}
+
+=item B<make_feed>
+Produce one of the standard feeds, in the requested format.
+
+
+my $feed_contents = feeds->make_feed(
+                                feed_type => 'rss',
+                                feed_listing => 'recent_changes'
+                    );
+
+Passes additional arguments through to the underlying Wiki::Toolkit::Feed
+=cut
 sub make_feed {
     my ($self, %args) = @_;
     
@@ -70,8 +103,19 @@ sub make_feed {
     croak "No feed listing specified" unless $feed_listing;
     croak "Unknown feed listing: $feed_listing" unless $known_listings{$feed_listing};
 
+
+    # Tweak any settings, as required by our feed listing
+    if ($feed_listing eq 'node_all_versions') {
+        $self->set_feed_name_and_url_params(
+                    "All versions of ".$args{'name'},
+                    "action=list_all_versions;id=".$args{'name'}
+        );
+    }
+
+
     # Fetch the right Wiki::Toolkit::Feeds::Listing instance to use
     my $maker = $self->fetch_maker($feed_type);
+
 
     # Call the appropriate feed listing from it
     if ($feed_listing eq 'recent_changes') {
@@ -80,6 +124,90 @@ sub make_feed {
     elsif ($feed_listing eq 'node_all_versions') {
         return $maker->node_all_versions(%args);
     }
+}
+
+=item B<build_feed_for_nodes>
+For the given feed type, build a feed from the supplied list of nodes.
+Will figure out the feed timestamp from the newest node, and output a
+ last modified header based on this.
+
+my @nodes = $wiki->fetch_me_nodes_I_like();
+my $feed_contents = $feed->build_feed_for_nodes("rss", @nodes);
+=cut
+sub build_feed_for_nodes {
+    my ($self, $format, @nodes) = @_;
+    return $self->render_feed_for_nodes($format, undef, 1, @nodes);
+}
+=item B<build_mini_feed_for_nodes>
+For the given feed type, build a mini feed (name and distance) from the 
+ supplied list of nodes.
+Will figure out the feed timestamp from the newest node, and output a
+ last modified header based on this.
+
+my @nodes = $wiki->search_near_here();
+my $feed_contents = $feed->build_mini_feed_for_nodes("rss", @nodes);
+=cut
+sub build_mini_feed_for_nodes {
+    my ($self, $format, @nodes) = @_;
+    return $self->render_feed_for_nodes($format, undef, 0, @nodes);
+}
+
+=item B<render_feed_for_nodes>
+Normally internal method to perform the appropriate building of a feed
+ based on a list of nodes.
+=cut
+sub render_feed_for_nodes {
+    my ($self, $format, $html_url, $is_full, @nodes) = @_;
+
+    # Grab our feed maker
+    my $maker = $self->fetch_maker($format);
+
+    # Find our newest node, so we can use that for the feed timestamp
+    my $newest_node;
+    foreach my $node (@nodes) {
+        if($node->{last_modified}) {
+            if((!$newest_node) || $node->{last_modified} < $newest_node->{last_modified}) {
+                $newest_node = $node;
+            }
+        }
+    }
+
+    # Grab the timestamp, and do our header
+    my $timestamp = $maker->feed_timestamp($newest_node);
+
+    my $feed = "Last-Modified: ".$timestamp."\n\n";
+
+    # Generate the feed itself
+    if($is_full) {
+        $feed .= $maker->generate_node_list_feed($timestamp, @nodes);
+    } else {
+        $feed .= $maker->generate_node_name_distance_feed($timestamp, @nodes);
+    }
+
+    return $feed;
+}
+
+=item B<default_content_type>
+For the given feed type, return the default content type for that feed.
+
+my $content_type = $feed->default_content_type("rss");
+=cut
+sub default_content_type {
+    my ($self,$feed_type) = @_;
+
+    my $content_type;
+
+    if ($feed_type eq 'rss') {
+        $content_type = "application/rdf+xml";
+    }
+    elsif ($feed_type eq 'atom') {
+        $content_type = "application/atom+xml";
+    }
+    else {
+        croak "Unknown feed type given: $feed_type";
+    }
+
+    return $content_type;
 }
 
 =item B<fetch_maker>
@@ -115,8 +243,8 @@ sub atom_maker {
             site_url            => $self->{config}->script_url,
             site_description    => $self->{site_description},
             make_node_url       => $self->{make_node_url},
-            recent_changes_link => $self->{config}->script_url . '?action=rc',
-            atom_link           => $self->{config}->script_url . '?action=rc&format=atom',
+            html_equiv_link     => $self->{html_equiv_link},
+            atom_link           => $self->{html_equiv_link} . ";format=atom",
             software_name       => 'OpenGuides',
             software_homepage   => 'http://openguides.org/',
             software_version    => $self->{og_version},
@@ -136,7 +264,7 @@ sub rss_maker {
             site_url            => $self->{config}->script_url,
             site_description    => $self->{site_description},
             make_node_url       => $self->{make_node_url},
-            recent_changes_link => $self->{config}->script_url . '?action=rc',
+            html_equiv_link     => $self->{html_equiv_link},
             software_name       => 'OpenGuides',
             software_homepage   => 'http://openguides.org/',
             software_version    => $self->{og_version},
