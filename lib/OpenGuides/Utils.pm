@@ -83,10 +83,11 @@ sub make_wiki_object {
 
     # Make store.
     my $store = $cgi_wiki_module->new(
-        dbname => $config->dbname,
-        dbuser => $config->dbuser,
-        dbpass => $config->dbpass,
-        dbhost => $config->dbhost,
+        dbname  => $config->dbname,
+        dbuser  => $config->dbuser,
+        dbpass  => $config->dbpass,
+        dbhost  => $config->dbhost,
+        charset => $config->dbencoding,
     );
 
     # Make search.
@@ -204,7 +205,7 @@ sub make_wiki_object {
         macros              => \%macros,
         pass_wiki_to_macros => 1,
         node_prefix         => "$script_name?",
-        edit_prefix         => "$script_name?action=edit&id=",
+        edit_prefix         => "$script_name?action=edit;id=",
         munge_urls          => 1,
     );
 
@@ -235,21 +236,64 @@ sub get_wgs84_coords {
                                            $args{config})
        or croak "No longitude supplied to get_wgs84_coords";
     croak "geo_handler not defined!" unless $config->geo_handler;
+
     if ($config->force_wgs84) {
         # Only as a rough approximation, good enough for large scale guides
         return ($longitude, $latitude);
-    } elsif ($config->geo_handler == 1) {
-        # Do conversion here
+    }
+
+    # If we don't have a lat and long, return undef right away
+    unless($args{longitude} || $args{latitude}) {
         return undef;
+    }
+
+    # Try to load a provider of Helmert Transforms
+    my $helmert;
+    # First up, try the MySociety Geo::HelmertTransform
+    unless($helmert) {
+        eval {
+            require Geo::HelmertTransform;
+            $helmert = sub($$$) {
+                my ($datum,$oldlat,$oldlong) = @_;
+                if ($datum eq 'Airy') {
+                    $datum = 'Airy1830';
+                }
+                my $datum_helper = new Geo::HelmertTransform::Datum(Name=>$datum);
+                my $wgs84_helper = new Geo::HelmertTransform::Datum(Name=>'WGS84');
+                unless($datum_helper) {
+                    croak("No convertion helper for datum '$datum'");
+                    return undef;
+                }
+
+                my ($lat,$long,$h) = 
+                    Geo::HelmertTransform::convert_datum($datum_helper,$wgs84_helper,$oldlat,$oldlong,0);
+                return ($long,$lat);
+            };
+        };
+    }
+    # Next, try .....
+    unless($helmert) {
+        eval {
+        };
+    }
+    # Give up, return undef
+    unless($helmert) {
+       return undef; 
+    }
+    
+
+    if ($config->geo_handler == 1) {
+        # Do conversion here
+        return &$helmert('Airy1830',$latitude,$longitude);
     } elsif ($config->geo_handler == 2) {
         # Do conversion here
-        return undef;
+        return &$helmert('Airy1830Modified',$latitude,$longitude);
     } elsif ($config->geo_handler == 3) {
         if ($config->ellipsoid eq "WGS-84") {
             return ($longitude, $latitude);
         } else {
             # Do conversion here
-            return undef;
+            return &$helmert($config->ellipsoid,$latitude,$longitude);
         }
     } else {
         croak "Invalid geo_handler config option $config->geo_handler";
@@ -260,7 +304,7 @@ sub get_wgs84_coords {
 
 =head1 AUTHOR
 
-The OpenGuides Project (openguides-dev@openguides.org)
+The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 

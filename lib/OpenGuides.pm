@@ -14,7 +14,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.57';
+$VERSION = '0.58';
 
 =head1 NAME
 
@@ -47,6 +47,7 @@ sub new {
     my $wiki = OpenGuides::Utils->make_wiki_object( config => $args{config} );
     $self->{wiki} = $wiki;
     $self->{config} = $args{config};
+
     my $geo_handler = $self->config->geo_handler;
     my $locator;
     if ( $geo_handler == 1 ) {
@@ -61,9 +62,31 @@ sub new {
     }
     $wiki->register_plugin( plugin => $locator );
     $self->{locator} = $locator;
+
     my $differ = Wiki::Toolkit::Plugin::Diff->new;
     $wiki->register_plugin( plugin => $differ );
     $self->{differ} = $differ;
+
+    if($self->config->ping_services) {
+        require Wiki::Toolkit::Plugin::Ping;
+
+        my @ws = split(/\s*,\s*/, $self->config->ping_services);
+        my %well_known = Wiki::Toolkit::Plugin::Ping->well_known;
+        my %services;
+        foreach my $s (@ws) {
+            if($well_known{$s}) {
+                $services{$s} = $well_known{$s};
+            } else {
+                warn("Ignoring unknown ping service '$s'");
+            }
+        }
+        my $ping = Wiki::Toolkit::Plugin::Ping->new(
+            node_to_url => $self->{config}->{script_url} . $self->{config}->{script_name} . '?$node',
+            services => \%services
+        );
+        $wiki->register_plugin( plugin => $ping );
+    }
+
     return $self;
 }
 
@@ -148,6 +171,8 @@ sub display_node {
 
     my %tt_vars;
 
+    $tt_vars{home_name} = $self->config->home_name;
+    
     if ( $id =~ /^(Category|Locale) (.*)$/ ) {
         my $type = $1;
         $tt_vars{is_indexable_node} = 1;
@@ -170,8 +195,11 @@ sub display_node {
     my %node_data = $wiki->retrieve_node( %criteria );
 
     # Fixes passing undefined values to Text::Wikiformat if node doesn't exist.
-    my $raw        = $node_data{content} || " ";
-    my $content    = $wiki->format($raw);
+    my $content = '';
+    if ($node_data{content}) {
+        $content    = $wiki->format($node_data{content});
+    }
+
     my $modified   = $node_data{last_modified};
     my $moderated  = $node_data{moderated};
     my %metadata   = %{$node_data{metadata}};
@@ -181,9 +209,9 @@ sub display_node {
                                         latitude => $metadata{latitude}[0],
                                         config => $config);
     if ($args{format} && $args{format} eq 'raw') {
-      print "Content-Type: text/plain\n\n";
-      print $raw;
-      return 0;
+        print "Content-Type: text/plain\n\n";
+        print $node_data{content};
+        return 0;
     }
    
     my %metadata_vars = OpenGuides::Template->extract_metadata_vars(
@@ -215,8 +243,8 @@ sub display_node {
         $tt_vars{common_locales} = $config->enable_common_locales;
         $tt_vars{catloc_link} = $config->script_name . "?id=";
     }
-
-    if ( $raw =~ /^#REDIRECT\s+(.+?)\s*$/ ) {
+    
+    if ( $node_data{content} && $node_data{content} =~ /^#REDIRECT\s+(.+?)\s*$/ ) {
         my $redirect = $1;
         # Strip off enclosing [[ ]] in case this is an extended link.
         $redirect =~ s/^\[\[//;
@@ -355,6 +383,7 @@ sub display_recent_changes {
         }
         }
     }
+    $tt_vars{not_editable} = 1;
     $tt_vars{recent_changes} = \%recent_changes;
     my %processing_args = (
                             id            => $id,
@@ -559,6 +588,25 @@ sub show_index {
                             node_data => { $wiki->retrieve_node( name => $_ ) },
                             param     => $formatter->node_name_to_node_param($_) }
                         } sort @selnodes;
+
+    # Convert the lat+long to WGS84 as required
+    for(my $i=0; $i<scalar @nodes;$i++) {
+        my $node = $nodes[$i];
+        if($node) {
+            my %metadata = %{$node->{node_data}->{metadata}};
+            my ($wgs84_long, $wgs84_lat);
+            eval {
+                ($wgs84_long, $wgs84_lat) = OpenGuides::Utils->get_wgs84_coords(
+                                      longitude => $metadata{longitude}[0],
+                                      latitude => $metadata{latitude}[0],
+                                      config => $self->config);
+            };
+            warn $@." on ".$metadata{latitude}[0]." ".$metadata{longitude}[0] if $@;
+
+            push @{$nodes[$i]->{node_data}->{metadata}->{wgs84_long}}, $wgs84_long;
+            push @{$nodes[$i]->{node_data}->{metadata}->{wgs84_lat}},  $wgs84_lat;
+        }
+    }
 
     $tt_vars{nodes} = \@nodes;
 
@@ -775,13 +823,18 @@ sub display_feed {
     # Get the feed object, and the content type
     my ($feed,$content_type) = $self->get_feed_and_content_type($feed_type);
 
-    my $output = "Content-Type: ".$content_type."\n";
+    my $output = "Content-Type: ".$content_type;
+    if($self->config->http_charset) {
+        $output .= "; charset=".$self->config->http_charset;
+    }
+    $output .= "\n";
     
     # Get the feed, and the timestamp, in one go
     my ($feed_output, $feed_timestamp) = 
         $feed->make_feed( %criteria );
-
-    $output .= "Last-Modified: " . $feed_timestamp . "\n\n";
+    my $maker = $feed->fetch_maker($feed_type);
+ 
+    $output .= "Last-Modified: " . ($maker->parse_feed_timestamp($feed_timestamp))->strftime('%a, %d %b %Y %H:%M:%S +0000') . "\n\n";
     $output .= $feed_output;
 
     return $output if $return_output;
@@ -1223,16 +1276,21 @@ sub set_node_moderation {
             return $output if $return_output;
             print $output;
         } else {
-            $self->wiki->set_node_moderation(
+            my $worked = $self->wiki->set_node_moderation(
                                         name    => $node,
                                         required => $args{moderation_flag},
-                                    );
+                         );
+            my $moderation_flag = "changed";
+            unless($worked) {
+                $moderation_flag = "unknown_node";
+                warn("Tried to set moderation status on node '$node', which doesn't exist");
+            }
 
             # Send back to the admin interface
             my $script_url = $self->config->script_url;
             my $script_name = $self->config->script_name;
             my $q = CGI->new;
-            my $output = $q->redirect( $script_url.$script_name."?action=admin&moderation=changed" );
+            my $output = $q->redirect( $script_url.$script_name."?action=admin;moderation=".$moderation_flag );
             return $output if $return_output;
             print $output;
         }
@@ -1276,7 +1334,7 @@ sub moderate_node {
                       deter_robots  => 1,
                       version       => $version,
                       moderation_action => 'moderate',
-                      moderation_url_args => 'action=moderate&version='.$version
+                      moderation_url_args => 'action=moderate;version='.$version
                   );
 
     my $password = $args{password};
@@ -1314,7 +1372,7 @@ sub moderate_node {
             my $script_url = $self->config->script_url;
             my $script_name = $self->config->script_name;
             my $q = CGI->new;
-            my $output = $q->redirect( $script_url.$script_name."?action=admin&moderation=moderated" );
+            my $output = $q->redirect( $script_url.$script_name."?action=admin;moderation=moderated" );
             return $output if $return_output;
             print $output;
         }
@@ -1397,7 +1455,9 @@ sub show_missing_metadata {
                       metadata_type  => $metadata_type,
                       metadata_value => $metadata_value,
                       exclude_locales => $exclude_locales,
-                      exclude_categories => $exclude_categories
+                      exclude_categories => $exclude_categories,
+
+                      script_name => $script_name
                   );
     return %tt_vars if $return_tt_vars;
 
@@ -1465,6 +1525,9 @@ sub display_admin_interface {
         }
         if($args{moderation_completed} eq "changed") {
             $completed_action = "Node moderation flag changed";
+        }
+        if($args{moderation_completed} eq "unknown_node") {
+            $completed_action = "Node moderation flag not changed, node not known";
         }
     }
 
@@ -1555,14 +1618,14 @@ L<http://dev.openguides.org/>
 =head1 FEEDBACK
 
 If you have a question, a bug report, or a patch, or you're interested
-in joining the development team, please contact openguides-dev@openguides.org
+in joining the development team, please contact openguides-dev@lists.openguides.org
 (moderated mailing list, will reach all current developers but you'll have
 to wait for your post to be approved) or file a bug report at
 L<http://dev.openguides.org/>
 
 =head1 AUTHOR
 
-The OpenGuides Project (openguides-dev@openguides.org)
+The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 

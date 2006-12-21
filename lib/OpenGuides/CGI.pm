@@ -164,7 +164,7 @@ sub get_prefs_from_cookie {
              default_edit_type          => $data{defedit}    || "normal",
              cookie_expires             => $data{exp}        || "month",
              track_recent_changes_views => $data{trackrc}    || 0,
-             display_google_maps        => $data{gmaps}      || 0
+             display_google_maps        => $data{gmaps}      || 1
            );
 }
 
@@ -255,11 +255,11 @@ sub _get_rc_cookie_name {
 
 =head1 AUTHOR
 
-The OpenGuides Project (openguides-dev@openguides.org)
+The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 
-     Copyright (C) 2003-2005 The OpenGuides Project.  All Rights Reserved.
+     Copyright (C) 2003-2006 The OpenGuides Project.  All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

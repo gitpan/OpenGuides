@@ -19,7 +19,19 @@ EOF
 my $continue = Module::Build->y_n("Continue with install?", "y");
 exit 0 unless $continue;
 
-my $existing_config = OpenGuides::Config->new( file => "wiki.conf" );
+my $existing_config_file = 'wiki.conf';
+my $existing_config;
+
+if (-f $existing_config_file) {
+    $existing_config = OpenGuides::Config->new(file => $existing_config_file);
+} else {
+    print <<EOF;
+No existing configuration file found; assuming this is a new install.
+See the message above if this isn't correct.
+
+EOF
+    $existing_config = OpenGuides::Config->new();
+}
 
 my %yn_vars = map { $_ => 1 }
    qw(use_plucene enable_page_deletion navbar_on_home_page backlinks_in_title
@@ -72,6 +84,7 @@ push @answers, { question => $dbtype_qu,
 
 my $install_directory; # used to suggest template paths
 my $use_plucene = 1; # keep track of this so we know what to put in prereqs
+my $centre_lat = ''; # contains centre lat derived from Google Maps URL
 foreach my $var ( qw(
    dbname dbuser dbpass dbhost script_name
    install_directory template_path custom_template_path script_url
@@ -127,6 +140,12 @@ foreach my $var ( qw(
         $def .= "custom-templates";
     }
 
+    # If a Google Maps URL was provided last time we know the centre_lat
+    if ( $var eq 'centre_lat' && $centre_lat ) {
+        $val = $centre_lat;
+        next;
+    }    
+
     # Here is where we actually ask the questions.
     unless ( $skip_config ) {
         if ( $type eq "y_n" ) {
@@ -137,6 +156,16 @@ foreach my $var ( qw(
             $val = Module::Build->y_n("\n$qu ", $def);
         } else {
             $val = Module::Build->prompt("\n$qu ", $def);
+        }
+    }
+
+    # Allow user to use a Google Maps URL rather than enter lat/long by hand.
+    # We assume centre_long is being asked for first; ensure so in big list above.
+    if ( $var eq 'centre_long' ) {
+        if ( $val =~ /ll=([-\d.]+),([-\d.]+)/ ) {
+            print "Got a Google Maps URL with centre long,lat: [$1, $2]\n";
+            $val = $1;
+            $centre_lat = $2;
         }
     }
 
@@ -234,7 +263,7 @@ my $build = OpenGuides::Build->new(
         'CGI'                                 => '2.92',  # avoid escapeHTML bug
         'CGI::Carp'                           => 0,
         'CGI::Cookie'                         => 0,
-        'Wiki::Toolkit'                       => '0.71',
+        'Wiki::Toolkit'                       => '0.73',
         'Wiki::Toolkit::Feed::Atom'           => 0,
         'Wiki::Toolkit::Feed::RSS'            => 0,
         'Wiki::Toolkit::Formatter::UseMod'    => 0,
@@ -253,7 +282,7 @@ my $build = OpenGuides::Build->new(
         'Parse::RecDescent'                   => 0,
         $search_module                        => 0,
         'POSIX'                               => 0,
-        'Template'                            => 0,
+        'Template'                            => '2.15', # for hash.delete and string.remove vmethods
         'Test::MockObject'                    => '0.07', # earlier doesn't use 'mock'
         'Time::Piece'                         => 0,
         'URI::Escape'                         => 0,
@@ -265,6 +294,10 @@ my $build = OpenGuides::Build->new(
     recommends => {
         'DBD::SQLite'         => 0, # for testing
         'Test::HTML::Content' => 0, # for testing, oddly enough
+        'Wiki::Toolkit::Plugin::Ping' => 0, # for pinging external services
+        'Geo::HelmertTransform'  => 0,      # for correct WGS84 lat/long
+                                            # when using grid systems
+
     },
     dynamic_config => 1,
     create_makefile_pl => "passthrough"

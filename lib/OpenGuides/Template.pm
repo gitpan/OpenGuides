@@ -160,6 +160,7 @@ sub output {
         openguides_version    => $OpenGuides::VERSION,
         enable_page_deletion  => $enable_page_deletion,
         language              => $config->default_language,
+        http_charset          => $config->http_charset,
         default_city          => $default_city,
         gmaps_api_key         => $config->gmaps_api_key,
         licence_name          => $config->licence_name,
@@ -183,6 +184,9 @@ sub output {
             $content_type = $args{content_type};
         } else {
             $content_type = "text/html";
+        }
+        if ($tt_vars->{http_charset}) {
+            $content_type .= "; charset=".$tt_vars->{http_charset};
         }
         $header = CGI::header( -type => $content_type, -cookie => $args{cookies} );
     }
@@ -538,7 +542,7 @@ sub format_website_text {
 
 =head1 AUTHOR
 
-The OpenGuides Project (openguides-dev@openguides.org)
+The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 

@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.57';
+$VERSION = '0.58';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -37,9 +37,17 @@ eval {
 
     # Note $q->param('keywords') gives you the entire param string.
     # We need this to do URLs like foo.com/wiki.cgi?This_Page
-    my $node = $q->param('id') || $q->param('title') || $q->param('keywords') || "";
+    my $node = $q->param('id') || $q->param('title') || $q->param('keywords') || '';
     $node = $formatter->node_param_to_node_name( $node );
 
+    # If we did a post, then CGI->param probably hasn't fully de-escaped,
+    #  in the same way as a get would've done
+    my $request_method = $q->request_method() || '';
+    if($request_method eq 'POST') {
+        $node = uri_unescape($node);
+    }
+
+    # Grab our common parameters
     my $action       = $q->param('action')  || 'display';
     my $commit       = $q->param('Save')    || 0;
     my $preview      = $q->param('preview') || 0;
@@ -262,13 +270,15 @@ sub preview_node {
     }
 
     if ($wiki->verify_checksum($node, $checksum)) {
+        my $moderate = $wiki->node_required_moderation($node);
         my %tt_vars = (
             %tt_metadata_vars,
             config                 => $config,
             content                => $q->escapeHTML($content),
             preview_html           => $wiki->format($content),
             preview_above_edit_box => get_cookie( "preview_above_edit_box" ),
-            checksum               => $q->escapeHTML($checksum)
+            checksum               => $q->escapeHTML($checksum),
+            moderate               => $moderate
         );
         process_template("edit_form.tt", $node, \%tt_vars);
     } else {
@@ -310,6 +320,7 @@ sub edit_node {
                  metadata => $node_data{metadata} );
 
     $metadata_vars{website} ||= 'http://';
+    my $moderate = $wiki->node_required_moderation($node);
 
     my %tt_vars = ( content         => $q->escapeHTML($content),
                     checksum        => $q->escapeHTML($checksum),
@@ -317,6 +328,7 @@ sub edit_node {
                     config          => $config,
                     username        => $username,
                     edit_type       => $edit_type,
+                    moderate        => $moderate,
                     deter_robots    => 1,
     );
 
@@ -401,9 +413,10 @@ sub show_needing_moderation {
     foreach my $node (@nodes) {
         my $node_param =
             uri_escape($formatter->node_name_to_node_param($node->{'name'}));
-        $node->{'moderate_url'} = $script_name . "?action=moderate&id=".$node_param."&version=".$node->{'version'};
-        $node->{'view_url'} = $script_name . "?id=".$node_param."&version=".$node->{'version'};
-        $node->{'diff_url'} = $script_name . "?id=".$node_param."&version=".$node->{'moderated_version'}."&diffversion=".$node->{'version'};
+        $node->{'moderate_url'} = $script_name . "?action=moderate;id=".$node_param.";version=".$node->{'version'};
+        $node->{'view_url'} = $script_name . "?id=".$node_param.";version=".$node->{'version'};
+        $node->{'diff_url'} = $script_name . "?id=".$node_param.";version=".$node->{'moderated_version'}.";diffversion=".$node->{'version'};
+        $node->{'delete_url'} = $script_name . "?action=delete;version=".$node->{'version'}.";id=".$node_param;
     }
 
     process_template( "needing_moderation.tt",

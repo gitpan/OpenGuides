@@ -5,14 +5,26 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   [% IF page_title %]
     <title>[% page_title %]</title>
+    <meta name="DC.title" content="[% page_title %]" />
   [% ELSE %]
     <title>[% node_name %] - [% site_name %]</title>
+    <meta name="DC.title" content="[% node_name %] - [% site_name %]" />
   [% END %]
+    <meta name="DC.publisher" content="[% site_name %]" />
+
   [% IF contact_email %]
     <link rev="made" href="mailto:[% contact_email %]" />
   [% END %]
   [% IF summary %]
     <meta name="description" content="[% summary %]" />
+  [% END %]
+  [% IF (categories.size AND categories.size > 0)
+     OR (locales.size AND locales.size > 0) %]
+    <meta name="keywords" content="[% IF categories.size AND
+categories.size > 0 %][% FOREACH category = categories %][%
+category.name %][%- ", " %][% END %][% END %][% IF locales.size AND
+locales.size > 0 %][% FOREACH locale = locales %][% locale.name %][%-
+", " UNLESS loop.last %][% END %][% END %]" />
   [% END %]
   [% IF stylesheet %]
     <link rel="stylesheet" href="[% stylesheet %]" type="text/css" title="Stylesheet for [% site_name %]" />
@@ -23,7 +35,7 @@
   [% END %]
   [% IF latitude AND longitude %]
     <meta name="ICBM" content="[% latitude %], [% longitude %]" />
-    <meta name="DC.title" content="[% site_name %]" />
+    <meta name="geo.position" content="[% latitude %], [% longitude %]" />
   [% END %]
     <link rel="alternate" type="application/rss+xml" title="[% site_name %] - Recent Changes (RSS 1.0)" href="[% full_cgi_url %]?action=rc;format=rss" />
     <link rel="alternate" type="application/atom+xml" title="[% site_name %] - Recent Changes (Atom)" href="[% full_cgi_url %]?action=rc;format=atom" />

@@ -166,7 +166,7 @@ sub render_feed_for_nodes {
     my $newest_node;
     foreach my $node (@nodes) {
         if($node->{last_modified}) {
-            if((!$newest_node) || $node->{last_modified} < $newest_node->{last_modified}) {
+            if((!$newest_node) || ($node->{last_modified} gt $newest_node->{last_modified})) {
                 $newest_node = $node;
             }
         }
@@ -248,6 +248,7 @@ sub atom_maker {
             software_name       => 'OpenGuides',
             software_homepage   => 'http://openguides.org/',
             software_version    => $self->{og_version},
+            encoding            => $self->{config}->http_charset,
         );
     }
     
@@ -268,6 +269,7 @@ sub rss_maker {
             software_name       => 'OpenGuides',
             software_homepage   => 'http://openguides.org/',
             software_version    => $self->{og_version},
+            encoding            => $self->{config}->http_charset,
         );
     }
     
@@ -395,7 +397,7 @@ user-agents can determine whether they need to reload the feed or not.
 
 =head1 AUTHOR
 
-The OpenGuides Project (openguides-dev@openguides.org)
+The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 

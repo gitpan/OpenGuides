@@ -1,14 +1,17 @@
 package OpenGuides::Config;
 use strict;
 
+use Carp qw( croak );
 use Config::Tiny;
 
 use base qw( Class::Accessor );
 my @variables = qw(
-   dbtype dbname dbuser dbpass dbhost script_name install_directory script_url
+   dbtype dbname dbuser dbpass dbhost dbencoding
+   script_name install_directory script_url
    custom_lib_path use_plucene indexing_directory enable_page_deletion
    admin_pass stylesheet_url site_name navbar_on_home_page home_name
-   site_desc default_city default_country contact_email default_language
+   site_desc default_city default_country contact_email 
+   default_language http_charset ping_services
    formatting_rules_node formatting_rules_link backlinks_in_title template_path
    custom_template_path geo_handler ellipsoid gmaps_api_key centre_long
    centre_lat default_gmaps_zoom default_gmaps_search_zoom force_wgs84
@@ -70,8 +73,9 @@ sub _init {
                      moderation_requires_password => 1,
                      admin_pass => "Change This!",
                      enable_node_image => 1,
-                     enable_common_categories => 1,
-                     enable_common_locales => 1,
+                     enable_common_categories => 0,
+                     enable_common_locales => 0,
+                     ping_services => "",
                      site_name => "Unconfigured OpenGuides site",
                      navbar_on_home_page => 1,
                      home_name => "Home",
@@ -79,6 +83,7 @@ sub _init {
                      default_city => "",
                      default_country => "",
                      default_language => "en",
+                     http_charset => "",
                      formatting_rules_node => "Text Formatting Examples",
                      formatting_rules_link => "http://openguides.org/page/text_formatting",
                      backlinks_in_title => 0,
@@ -98,8 +103,8 @@ sub _init {
     my %stored;
     if ( $args{file} ) {
         my $read_config = Config::Tiny->read( $args{file} ) or
-            warn "Cannot read config file $args{file}";
-        %stored = $read_config ? %{ $read_config->{_} } : ();
+            croak "Cannot read config file '$args{file}': $Config::Tiny::errstr";
+        %stored = %{$read_config->{_}};
     } elsif ( $args{vars} ) {
         %stored = %{ $args{vars} };
     }
@@ -114,6 +119,7 @@ sub _init {
         if ( $self->can( $var ) ) { # handle any garbage in file gracefully
             $self->$var( $stored{$var} );
 	} else {
+		use Data::Dumper; die Dumper \%stored;
             warn "Don't know what to do with variable '$var'";
         }
     }
@@ -126,6 +132,7 @@ sub _init {
         dbuser => "...the database user that can access that database?",
         dbpass => "...the password that they use to access the database?",
         dbhost => "...the machine that the database is hosted on? (blank if local)",
+        dbencoding => "...the encoding that your database uses? (blank if default)",
         script_name => "What do you want the script to be called?",
         install_directory => "What directory should I install it in?",
         template_path => "What directory should I install the templates in?",
@@ -141,6 +148,7 @@ sub _init {
         enable_node_image => "Should nodes be allowed to have an externally hosted image?",
         enable_common_categories => "Do you want a common list of categories shown on all node pages?",
         enable_common_locales => "Do you want a common list of locales shown on all node pages?",
+        ping_services => "Which services do you wish to ping whenever you write a page? Can be pingerati, geourl, or both",
         site_name => "What's the site called? (should be unique)",
         navbar_on_home_page => "Do you want the navigation bar included on the home page?",
         home_name => "What should the home page of the wiki be called?",
@@ -149,12 +157,13 @@ sub _init {
         default_country => "What country is the site based in?",
         contact_email => "Contact email address for the site administrator?",
         default_language => "What language will the site be in? (Please give an ISO language code.)",
+        http_charset => "What character set should we put in the http headers? (This won't change the character set internally, just what it's reported as). Leave blank for none to be sent",
         formatting_rules_node => "What's the name of the node or page to use for the text formatting rules link (this is by default an external document, but if you make formatting_rules_link empty, it will be a wiki node instead",
-	formatting_rules_link => "What URL do you want to use for the text formatting rules (leave blank to use a wiki node instead)?",
+        formatting_rules_link => "What URL do you want to use for the text formatting rules (leave blank to use a wiki node instead)?",
         backlinks_in_title => "Make node titles link to node backlinks (C2 style)?",
         ellipsoid => "Which ellipsoid do you want to use? (eg 'Airy', 'WGS-84')",
         gmaps_api_key => "Do you have a Google Maps API key to use with this guide? If you enter it here the Google Maps functionality will be automatically enabled.",
-        centre_long => "What is the longitude of the centre point of a map to draw for your guide? (This question can be ignored if you aren't using Google Maps)",
+        centre_long => "What is the longitude of the centre point of a map to draw for your guide? (This question can be ignored if you aren't using Google Maps). You may paste in a Google Maps URL here (hint: copy URL from 'Link to this page')",
         centre_lat => "What is the latitude of the centre point of a map to draw for your guide? (This question can be ignored if you aren't using Google Maps)",
         default_gmaps_zoom => "What default zoom level shall we use for Google Maps? (This question can be ignored if you aren't using Google Maps)",
         default_gmaps_search_zoom => "What default zoom level shall we use for Google Maps in the search results? (This question can be ignored if you aren't using Google Maps)",
@@ -195,6 +204,8 @@ the config file.
 =item * dbpass
 
 =item * dbhost
+
+=item * dbencoding
 
 =item * script_name (default: C<wiki.cgi>)
 
@@ -238,6 +249,8 @@ sub script_url {
 
 =item * default_language (default: C<en>)
 
+=item * http_charset
+
 =item * contact_email
 
 =item * formatting_rules_node (default: C<Text Formatting Examples>)
@@ -272,7 +285,7 @@ sub script_url {
 
 =head1 AUTHOR
 
-The OpenGuides Project (openguides-dev@openguides.org)
+The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 
