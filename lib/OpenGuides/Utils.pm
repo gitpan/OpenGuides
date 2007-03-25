@@ -71,22 +71,23 @@ sub make_wiki_object {
     # Require in the right database module.
     my $dbtype = $config->dbtype;
 
-    my %cgi_wiki_exts = (
+    my %wiki_toolkit_exts = (
                           postgres => "Pg",
 		          mysql    => "MySQL",
                           sqlite   => "SQLite",
                         );
 
-    my $cgi_wiki_module = "Wiki::Toolkit::Store::" . $cgi_wiki_exts{$dbtype};
-    eval "require $cgi_wiki_module";
-    croak "Can't 'require' $cgi_wiki_module.\n" if $@;
+    my $wiki_toolkit_module = "Wiki::Toolkit::Store::" . $wiki_toolkit_exts{$dbtype};
+    eval "require $wiki_toolkit_module";
+    croak "Can't 'require' $wiki_toolkit_module.\n" if $@;
 
     # Make store.
-    my $store = $cgi_wiki_module->new(
+    my $store = $wiki_toolkit_module->new(
         dbname  => $config->dbname,
         dbuser  => $config->dbuser,
         dbpass  => $config->dbpass,
         dbhost  => $config->dbhost,
+        dbport  => $config->dbport,
         charset => $config->dbencoding,
     );
 
@@ -158,6 +159,21 @@ sub make_wiki_object {
 	           }
                    return $return;
                  },
+        qr/\@MAP_LINK\s+\[\[(Category|Locale)\s+([^\]|]+)\|?([^\]]+)?\]\]/ =>
+                sub {
+                      if ( UNIVERSAL::isa( $_[0], "Wiki::Toolkit" ) ) {
+                          shift; # don't need $wiki
+                      }
+                      my $link_title = $_[2]
+                                       || "View map of pages in $_[0] $_[1]";
+                      return qq(<a href="$script_name?action=index;format=map;index_type=) . uri_escape(lc($_[0])) . qq(;index_value=) . uri_escape($_[1]) . qq(">$link_title</a>);
+                },
+        qr/\@INCLUDE_NODE\s+\[\[([^\]|]+)\]\]/ => 
+            sub {
+                  my ($wiki, $node) = @_;
+                  my %node_data = $wiki->retrieve_node( $node );
+                  return $node_data{content};
+                },
 	qr/\@RSS\s+(.+)/ => sub {
                     # We may be being called by Wiki::Toolkit::Plugin::Diff,
                     # which doesn't know it has to pass us $wiki - and
@@ -308,7 +324,7 @@ The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 
-     Copyright (C) 2003-2005 The OpenGuides Project.  All Rights Reserved.
+     Copyright (C) 2003-2007 The OpenGuides Project.  All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

@@ -1,10 +1,14 @@
 use strict;
 use lib "lib";
-use OpenGuides::Build;
-use OpenGuides::Config;
 use Data::Dumper;
 
-eval "use Config::Tiny";
+eval {
+    require Config::Tiny;
+    # OpenGuides::Build and OpenGuides::Config both use Config::Tiny.
+    require OpenGuides::Build;
+    require OpenGuides::Config;
+};
+
 die "Config::Tiny is required to configure this application.\n" if $@;
 
 print <<EOF;
@@ -36,7 +40,8 @@ EOF
 my %yn_vars = map { $_ => 1 }
    qw(use_plucene enable_page_deletion navbar_on_home_page backlinks_in_title
       moderation_requires_password enable_node_image enable_common_categories
-      enable_common_locales);
+      enable_common_locales recent_changes_on_home_page
+      content_above_navbar_in_html show_gmap_in_node_display);
 
 my $skip_config = Module::Build->y_n("Skip OpenGuides configuration?", "n");
 if ( $skip_config ) {
@@ -89,10 +94,12 @@ foreach my $var ( qw(
    dbname dbuser dbpass dbhost script_name
    install_directory template_path custom_template_path script_url
    custom_lib_path use_plucene indexing_directory enable_page_deletion
-   admin_pass stylesheet_url site_name navbar_on_home_page home_name
+   admin_pass stylesheet_url site_name navbar_on_home_page
+   recent_changes_on_home_page content_above_navbar_in_html home_name
    site_desc default_city default_country contact_email default_language
    formatting_rules_node backlinks_in_title gmaps_api_key centre_long
-   centre_lat default_gmaps_zoom default_gmaps_search_zoom force_wgs84
+   centre_lat show_gmap_in_node_display default_gmaps_zoom
+   default_gmaps_search_zoom force_wgs84 google_analytics_key
    licence_name licence_url licence_info_url moderation_requires_password
    enable_node_image enable_common_categories enable_common_locales
   ) ) {
@@ -312,16 +319,14 @@ $build->{config}{__extra_scripts}     =
                         "newpage.cgi" ];
 $build->{config}{__templates}         = [
                       "admin_home.tt",
+                      "admin_revert_user.tt",
                       "backlink_results.tt",
                       "banner.tt",
-                      "common_categories.tt",
-                      "common_locales.tt",
                       "delete_confirm.tt",
                       "delete_done.tt",
                       "delete_password_wrong.tt",
                       "differences.tt",
                       "display_metadata.tt",
-                      "edit_conflict.tt",
                       "edit_form.tt",
                       "error.tt",
                       "footer.tt",
@@ -332,10 +337,20 @@ $build->{config}{__templates}         = [
                       "moderate_confirm.tt",
                       "moderate_password_wrong.tt",
                       "navbar.tt",
+                      "navbar_categories.tt",
+                      "navbar_locales.tt",
+                      "navbar_help.tt",
+                      "navbar_home_link.tt",
+                      "navbar_options.tt",
+                      "navbar_revision_info.tt",
+                      "navbar_search.tt",
+                      "navbar_this_page.tt",
+                      "navbar_tools.tt",
                       "needing_moderation.tt",
                       "newpage.tt",
                       "node.tt",
                       "node_history.tt",
+                      "node_image_fields.tt",
                       "node_photo_notes.tt",
                       "openguides_information_boxes.tt",
                       "preferences.tt",

@@ -146,6 +146,7 @@ sub output {
     }
 
     my $tt_vars = {
+        config                => $config,
         site_name             => $config->site_name,
         cgi_url               => $script_name,
         full_cgi_url          => $script_url . $script_name,
@@ -204,10 +205,14 @@ sub output {
     my $output;
     $tt->process( $args{template}, $tt_vars, \$output );
 
+    my $contact_email = $config->contact_email;
+    
     $output ||= qq(<html><head><title>ERROR</title></head><body><p>
-                   Failed to process template: )
-              . $tt->error
-              . qq(</p></body></html>);
+    Sorry!  Something went wrong.  Please contact the site administrator 
+    at <a href="mailto:$contact_email">$contact_email</a> and quote the
+    following error message:</p><blockquote>Failed to process template: )
+        . $tt->error
+        . qq(</blockquote></body></html>);
 
     return $header . $output;
 }
@@ -324,10 +329,17 @@ sub extract_metadata_vars {
         summary                => $summary,
     );
 
-    my $node_image = $args{metadata} ? $metadata{node_image}[0]
-                                     : $q->param("node_image");
-    if ($config->enable_node_image && $node_image) {
-        $vars{node_image} = $node_image;
+    if ($config->enable_node_image ) {
+        foreach my $key ( qw( node_image node_image_licence node_image_url
+                              node_image_copyright ) ) {
+            my $value = $args{metadata} ? $metadata{$key}[0]
+                                        : $q->param( $key );
+            if ( $value ) {
+                $value =~ s/^\s+//g;
+                $value =~ s/\s+$//g;
+            }
+            $vars{$key} = $value if $value;
+        }
     }
 
     if (exists $metadata{source}) {
@@ -546,7 +558,7 @@ The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 
-  Copyright (C) 2003-2005 The OpenGuides Project.  All Rights Reserved.
+  Copyright (C) 2003-2007 The OpenGuides Project.  All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

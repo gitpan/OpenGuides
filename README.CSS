@@ -8,33 +8,33 @@ a.home_link
     Used in: search_results.tt
     Purpose: Link to the home page of the site, in the search results page
 
-div.edit_page_link
-    Used in: navbar.tt
+a.edit_page_link (was div.edit_page_link)
+    Used in: navbar_this_page.tt
     Purpose: Link to the edit page function, in the navbar
 
 div.navbar_group
-    Used in: navbar.tt
+    Used in: navbar_*.tt
     Purpose: Defines a related set of navigation bar functions
 
 div.navbar_group_title
-    Used in: navbar.tt
+    Used in: navbar_*.tt
     Purpose: Titles a related set of navigation bar functions
 
 div.navbar_item
-    Used in: navbar.tt
+    Used in: navbar_*.tt
     Purpose: Defines an item in the navigation bar
 
 div.warning_text
-    Used in: edit_conflict.tt
+    Used in: edit_form.tt
     Purpose: Warns the user that there is an edit conflict
 
 input.form_button
-    Used in: differences.tt, edit_form.tt, footer.tt, navbar.tt, newpage.tt,
-	     node.tt, preferences.tt, search.tt
+    Used in: differences.tt, edit_form.tt, footer.tt, navbar_search.tt,
+             newpage.tt, node.tt, preferences.tt, search.tt
     Purpose: A standard form button
 
-label.hidden
-    Used in: navbar.tt
+label.hidden (was span.hidden)
+    Used in: navbar_search.tt
     Purpose: A label for the search box that will be hidden for users with
              a CSS-conforming user agent
 
@@ -53,19 +53,19 @@ h2.node_name
     Used in: node.tt
     Purpose: Displays the node name
 
-span.hidden
-    Used in: navbar.tt
+input.hidden
+    Used in: navbar_search.tt
     Purpose: Defines content that will be hidden for users with a
              CSS-conforming user agent
 
 span.node_name
     Used in: backlink_results.tt delete_confirm.tt delete_done.tt
-             differences.tt node_history.tt, edit_conflict.tt
+             differences.tt node_history.tt
     Purpose: Inlines a node name in a snippet of explanatory text,
              without linking to it.
 
 td.label
-    Used in: edit_conflict.tt, edit_form.tt
+    Used in: edit_form.tt
     Purpose: Defines a label for a field
 
 td.recentchanges_comment
@@ -95,10 +95,14 @@ div#banner
     Used in: banner.tt
     Purpose: The site banner/title
 
+div#body_wrapper
+    Used in: header.tt
+    Purpose: Wrap the entire body of the page.
+
 div#content
 div#maincontent
     Used in: backlink_results.tt, delete_confirm.tt, delete_done.tt,
-	     delete_password_wrong.tt, edit_conflict.tt, edit_form.tt,
+	     delete_password_wrong.tt, edit_form.tt,
 	     home_node.tt, newpage.tt, node.tt, node_history.tt, preferences.tt,
 	     recent_changes.tt, search_results.tt, site_index.tt,
 	     search.tt, userstats.tt, wanted_pages.tt, differences.tt
@@ -118,6 +122,11 @@ div#footer
     Used in: footer.tt
     Purpose: The bottom portion of the page
 
+div#footer_delete_link
+    Used in: footer.tt
+    Purpose: Display a "delete this page" link in the footer, if the page is
+    editable, and if page deletion is switched on.
+
 div#header
     Used in: search_results.tt
     Purpose: The first part of the page, containing the site name
@@ -130,6 +139,43 @@ div#navbar
     Used in: navbar.tt
     Purpose: The navigation bar
 
+div#navbar_help
+    Used in: navbar_help.tt
+    Purpose: Display help links, if user has them turned on.
+div#navbar_options
+    Used in: navbar_options.tt
+    Purpose: Display links to options such as "Set username/prefs".
+div#navbar_search
+    Used in: navbar_search.tt
+    Purpose: Display search box and link to advanced search.
+div#navbar_this_page
+    Used in: navbar_this_page.tt
+    Purpose: Display links to this-page stuff such as "Edit this page", if
+    the current page is an editable one.
+div#navbar_tools
+    Used in: navbar_tools.tt
+    Purpose: Display links to tools such as "Recent Changes", "Random Page".
+
+div#navbar_current_version_link
+    Used in: navbar_revision_info.tt
+    Purpose: Display a link to the current version when showing a historical
+    version of an editable node.
+
+div#navbar_last_edited
+    Used in: navbar_revision_info.tt
+    Purpose: Display the last edited time when showing the current version of
+    an editable node.
+
+div#navbar_this_revision_info
+    Used in: navbar_revision_info.tt
+    Purpose: Display the version number and edit time when showing a historical
+    version of an editable node.
+
+div#navbar_version
+    Used in: navbar_revision_info.tt
+    Purpose: Display the version number when showing the current version of
+    an editable node.
+
 div#rdf_link
     Used in: node.tt
     Purpose: Link to an RDF version of the node
@@ -137,6 +183,16 @@ div#rdf_link
 div#recent
     Used in: home_node.tt
     Purpose: Recent changes summary box on the home node
+
+div#home_page_edit_link
+    Used in: home_node.tt
+    Purpose: "Edit this page" link on the home node - only displayed if neither
+    the navbar or the recent changes box are shown, since both those divs also
+    contain an edit link.
+
+div#recent_changes_feeds
+    Used in: recent_changes.tt
+    Purpose: Display links to atom/RSS feeds of the recent changes.
 
 div#search_form
     Used in: footer.tt
@@ -156,45 +212,32 @@ span#node_no_image
 img#node_image
     Used in: display_metadata.tt
     Purpose: To display the image for a node
+div#node_image_copyright
+    Used in: display_metadata.tt
+    Purpose: To display the name of the copyright holder of a node image, and
+             optionally a link to the licence we're using it under.
 
-div#common_navigation
-    Used in: node.tt
+div#navbar_common_navigation
+    Used in: navbar.tt
     Purpose: Hold the common locales and categories, if enabled
-
-div#common_categories
-    Used in: common_categories.tt
-    Purpose: Hold the common categories, if enabled
-h3#common_categories_title
-    Used in: common_categories.tt
-    Purpose: Title for the common categories
-ul#common_categories_list
-    Used in: common_categories.tt
-    Purpose: Parent list for the common categories
-li.common_category
-    Used in: common_categories.tt
-    Purpose: A common category
-a.common_category_link
-    Used in: common_categories.tt
-    Purpose: A link to a common category
-
-div#common_locales
-    Used in: common_locales.tt
+div#navbar_locales
+    Used in: navbar_locales.tt
     Purpose: Hold the common locales, if enabled
-h3#common_locales_title
-    Used in: common_locales.tt
-    Purpose: Title for the common locales
-ul#common_locales_list
-    Used in: common_locales.tt
-    Purpose: Parent list for the common locales
-li.common_locale
-    Used in: common_locales.tt
-    Purpose: A common locale
-a.common_locale_link
-    Used in: common_locales.tt
-    Purpose: A link to a common locale
+div#navbar_categories
+    Used in: navbar_categories.tt
+    Purpose: Hold the common categories, if enabled
+div#navbar_group_title
+    Used in: navbar_categories.tt, navbar_locales.tt
+    Purpose: Title for the common categories / locales
+ul#navbar_group
+    Used in: navbar_categories.tt, navbar_locales.tt
+    Purpose: Parent list for the common categories / locales
+#navbar_group > li
+    Used in: navbar_categories.tt, navbar_locales.tt
+    Purpose: A common category / locale
 
 input#address
-    Used in: edit_conflict.tt, edit_form.tt
+    Used in: edit_form.tt
     Purpose: An input field for the address of the node
 
 input#comment
@@ -202,7 +245,7 @@ input#comment
     Purpose: An input field for the comment about the change made
 
 input#fax
-    Used in: edit_conflict.tt, edit_form.tt
+    Used in: edit_form.tt
     Purpose: An input field for the fax number of the node
 
 input#geocache
@@ -215,7 +258,7 @@ input#go
     Purpose: A standard button
 
 input#hours
-    Used in: edit_conflit.tt, edit_form.tt
+    Used in: edit_form.tt
     Purpose: An input field for the opening hours of a node
     
 input#latlong
@@ -224,11 +267,11 @@ input#latlong
              longitude
 
 input#map_link
-    Used in: edit_conflict.tt, edit_form.tt
+    Used in: edit_form.tt
     Purpose: An input field for the map link of the node
 
 input#nav_search
-    Used in: navbar.tt
+    Used in: navbar_search.tt
     Purpose: The search input portion of the navigation bar
 
 input#omit_help
@@ -237,11 +280,11 @@ input#omit_help
              help links
 
 input#os_x
-    Used in: edit_conflict.tt, edit_form.tt
+    Used in: edit_form.tt
     Purpose: An input field for the OS X coordinate of the node
 
 input#os_y
-    Used in: edit_conflict.tt, edit_form.tt
+    Used in: edit_form.tt
     Purpose: An input field for the OS Y coordinate of the node
 
 input#pagename
@@ -249,11 +292,11 @@ input#pagename
     Purpose: An input field for choosing the name of a new page
 
 input#phone
-    Used in: edit_conflict.tt, edit_form.tt
+    Used in: edit_form.tt
     Purpose: An input field for the telephone number of the node
 
 input#postcode
-    Used in: edit_conflict.tt, edit_form.tt
+    Used in: edit_form.tt
     Purpose: An input field for the postcode of the node
 	
 input#preview_above
@@ -283,7 +326,7 @@ input#username
     Purpose: An input field for entering the username making changes
 
 input#website
-    Used in: edit_conflict.tt, edit_form.tt
+    Used in: edit_form.tt
     Purpose: An input field for the web site of the node
 
 select#distance
@@ -300,17 +343,17 @@ table#recentchanges
     Purpose: The main display table of the recent changes page
 
 textarea#categories
-    Used in: edit_conflict.tt, edit_form.tt
+    Used in: edit_form.tt
     Purpose: An box to enter the categories of the node
 
 textarea#content_textarea
-    Used in: edit_conflict.tt, edit_form.tt
+    Used in: edit_form.tt
     Purpose: A box to enter the main conent of the node
     Note: ID doesn't match class, as IDs have to be globally unique, and we
            already have a div with ID content
 
 textarea#locales
-    Used in: edit_conflict.tt, edit_form.tt
+    Used in: edit_form.tt
     Purpose: A box to enter the locales of the node
 
 div#redirect_message

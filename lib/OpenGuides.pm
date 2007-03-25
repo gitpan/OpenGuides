@@ -14,7 +14,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.58';
+$VERSION = '0.59';
 
 =head1 NAME
 
@@ -68,23 +68,31 @@ sub new {
     $self->{differ} = $differ;
 
     if($self->config->ping_services) {
-        require Wiki::Toolkit::Plugin::Ping;
+        eval {
+            require Wiki::Toolkit::Plugin::Ping;
+        };
 
-        my @ws = split(/\s*,\s*/, $self->config->ping_services);
-        my %well_known = Wiki::Toolkit::Plugin::Ping->well_known;
-        my %services;
-        foreach my $s (@ws) {
-            if($well_known{$s}) {
-                $services{$s} = $well_known{$s};
-            } else {
-                warn("Ignoring unknown ping service '$s'");
+        if ( $@ ) {
+            warn "You asked for some ping services, but can't find "
+                 . "Wiki::Toolkit::Plugin::Ping";
+        } else {
+            my @ws = split(/\s*,\s*/, $self->config->ping_services);
+            my %well_known = Wiki::Toolkit::Plugin::Ping->well_known;
+            my %services;
+            foreach my $s (@ws) {
+                if($well_known{$s}) {
+                    $services{$s} = $well_known{$s};
+                } else {
+                    warn("Ignoring unknown ping service '$s'");
+                }
             }
+            my $ping = Wiki::Toolkit::Plugin::Ping->new(
+                node_to_url => $self->{config}->{script_url}
+                               . $self->{config}->{script_name} . '?$node',
+                services => \%services
+            );
+            $wiki->register_plugin( plugin => $ping );
         }
-        my $ping = Wiki::Toolkit::Plugin::Ping->new(
-            node_to_url => $self->{config}->{script_url} . $self->{config}->{script_name} . '?$node',
-            services => \%services
-        );
-        $wiki->register_plugin( plugin => $ping );
     }
 
     return $self;
@@ -231,10 +239,14 @@ sub display_node {
                    moderated     => $moderated,
                    oldid         => $oldid,
                    enable_gmaps  => 1,
-                   display_google_maps => $self->get_cookie("display_google_maps"),
                    wgs84_long    => $wgs84_long,
                    wgs84_lat     => $wgs84_lat
                );
+
+    if ( $config->show_gmap_in_node_display
+           && $self->get_cookie( "display_google_maps" ) ) {
+        $tt_vars{display_google_maps} = 1;
+    }
 
     # Should we include a standard list of categories or locales?
     if ($config->enable_common_categories || $config->enable_common_locales) {
@@ -276,22 +288,27 @@ sub display_node {
     if ($id eq "RecentChanges") {
         $self->display_recent_changes(%args);
     } elsif ( $id eq $self->config->home_name ) {
-        my @recent = $wiki->list_recent_changes(
-            last_n_changes => 10,
-            metadata_was   => { edit_type => "Normal edit" },
-        );
-        @recent = map {
-                          {
+        if ( $self->config->recent_changes_on_home_page ) {
+            my @recent = $wiki->list_recent_changes(
+                last_n_changes => 10,
+                metadata_was   => { edit_type => "Normal edit" },
+            );
+            @recent = map {
+                            {
                               name          => CGI->escapeHTML($_->{name}),
-                              last_modified => CGI->escapeHTML($_->{last_modified}),
+                              last_modified =>
+                                  CGI->escapeHTML($_->{last_modified}),
                               version       => CGI->escapeHTML($_->{version}),
-                              comment       => CGI->escapeHTML($_->{metadata}{comment}[0]),
-                              username      => CGI->escapeHTML($_->{metadata}{username}[0]),
+                              comment       =>
+                                  CGI->escapeHTML($_->{metadata}{comment}[0]),
+                              username      =>
+                                  CGI->escapeHTML($_->{metadata}{username}[0]),
                               url           => $config->script_name . "?"
-                                               . CGI->escape($wiki->formatter->node_name_to_node_param($_->{name}))
-                          }
-                      } @recent;
-        $tt_vars{recent_changes} = \@recent;
+                                             . CGI->escape($wiki->formatter->node_name_to_node_param($_->{name}))
+                            }
+                          } @recent;
+            $tt_vars{recent_changes} = \@recent;
+        }
         return %tt_vars if $args{return_tt_vars};
         my $output = $self->process_template(
                                                 id            => $id,
@@ -309,6 +326,124 @@ sub display_node {
                                             );
         return $output if $return_output;
         print $output;
+    }
+}
+
+=item B<display_edit_form>
+
+  $guide->display_edit_form(
+                             id => "Vivat Bacchus",
+                           );
+
+Display an edit form for the specified node.  As with other methods, the
+C<return_output> parameter can be used to return the output instead of
+printing it to STDOUT.
+
+=cut
+
+sub display_edit_form {
+    my ($self, %args) = @_;
+    my $return_output = $args{return_output} || 0;
+    my $config = $self->config;
+    my $wiki = $self->wiki;
+    my $node = $args{id};
+    my %node_data = $wiki->retrieve_node($node);
+    my ($content, $checksum) = @node_data{ qw( content checksum ) };
+    my %cookie_data = OpenGuides::CGI->get_prefs_from_cookie(config=>$config);
+
+    my $username = $self->get_cookie( "username" );
+    my $edit_type = $self->get_cookie( "default_edit_type" ) eq "normal"
+                        ? "Normal edit"
+                        : "Minor tidying";
+
+    my %metadata_vars = OpenGuides::Template->extract_metadata_vars(
+                             wiki     => $wiki,
+                             config   => $config,
+                 metadata => $node_data{metadata} );
+
+    $metadata_vars{website} ||= 'http://';
+    my $moderate = $wiki->node_required_moderation($node);
+
+    my %tt_vars = ( content         => CGI->escapeHTML($content),
+                    checksum        => CGI->escapeHTML($checksum),
+                    %metadata_vars,
+                    config          => $config,
+                    username        => $username,
+                    edit_type       => $edit_type,
+                    moderate        => $moderate,
+                    deter_robots    => 1,
+    );
+
+    my $output = $self->process_template(
+                                          id            => $node,
+                                          template      => "edit_form.tt",
+                                          tt_vars       => \%tt_vars,
+                                        );
+    return $output if $return_output;
+    print $output;
+}
+
+=item B<preview_edit>
+
+  $guide->preview_edit(
+                        id      => "Vivat Bacchus",
+                        cgi_obj => $q,
+                      );
+
+Preview the edited version of the specified node.  As with other methods, the
+C<return_output> parameter can be used to return the output instead of
+printing it to STDOUT.
+
+=cut
+
+sub preview_edit {
+    my ($self, %args) = @_;
+    my $node = $args{id};
+    my $q = $args{cgi_obj};
+    my $return_output = $args{return_output};
+    my $wiki = $self->wiki;
+    my $config = $self->config;
+
+    my $content  = $q->param('content');
+    $content     =~ s/\r\n/\n/gs;
+    my $checksum = $q->param('checksum');
+
+    my %new_metadata = OpenGuides::Template->extract_metadata_vars(
+                                               wiki                 => $wiki,
+                                               config               => $config,
+                                               cgi_obj              => $q,
+                                               set_coord_field_vars => 1,
+    );
+    foreach my $var ( qw( username comment edit_type ) ) {
+        $new_metadata{$var} = $q->escapeHTML($q->param($var));
+    }
+
+    if ($wiki->verify_checksum($node, $checksum)) {
+        my $moderate = $wiki->node_required_moderation($node);
+        my %tt_vars = (
+            %new_metadata,
+            config                 => $config,
+            content                => $q->escapeHTML($content),
+            preview_html           => $wiki->format($content),
+            preview_above_edit_box => $self->get_cookie(
+                                                   "preview_above_edit_box" ),
+            checksum               => $q->escapeHTML($checksum),
+            moderate               => $moderate
+        );
+        my $output = $self->process_template(
+                                              id       => $node,
+                                              template => "edit_form.tt",
+                                              tt_vars  => \%tt_vars,
+                                            );
+        return $output if $args{return_output};
+        print $output;
+    } else {
+        return $self->_handle_edit_conflict(
+                                             id            => $node,
+                                             content       => $content,
+                                             new_metadata  => \%new_metadata,
+                                             return_output => $return_output,
+                                           );
     }
 }
 
@@ -625,6 +760,7 @@ sub show_index {
             $tt_vars{zoom} = $q->param('zoom') || '';
             $tt_vars{lat} = $q->param('lat') || '';
             $tt_vars{long} = $q->param('long') || '';
+            $tt_vars{map_type} = $q->param('map_type') || '';
             $tt_vars{centre_long} = $self->config->centre_long;
             $tt_vars{centre_lat} = $self->config->centre_lat;
             $tt_vars{default_gmaps_zoom} = $self->config->default_gmaps_zoom;
@@ -733,7 +869,9 @@ Fetch the OpenGuides feed object, and the output content type, for the
 supplied feed type.
 
 Handles all the setup for the OpenGuides feed object.
+
 =cut
+
 sub get_feed_and_content_type {
     my ($self, $feed_type) = @_;
 
@@ -1031,22 +1169,22 @@ sub commit_node {
     $content =~ s/\r\n/\n/gs;
     my $checksum = $q->param("checksum");
 
-    my %metadata = OpenGuides::Template->extract_metadata_vars(
+    my %new_metadata = OpenGuides::Template->extract_metadata_vars(
         wiki    => $wiki,
         config  => $config,
         cgi_obj => $q
     );
 
-    delete $metadata{website} if $metadata{website} eq 'http://';
+    delete $new_metadata{website} if $new_metadata{website} eq 'http://';
 
-    $metadata{opening_hours_text} = $q->param("hours_text") || "";
+    $new_metadata{opening_hours_text} = $q->param("hours_text") || "";
 
     # Pick out the unmunged versions of lat/long if they're set.
     # (If they're not, it means they weren't munged in the first place.)
-    $metadata{latitude} = delete $metadata{latitude_unmunged}
-        if $metadata{latitude_unmunged};
-    $metadata{longitude} = delete $metadata{longitude_unmunged}
-        if $metadata{longitude_unmunged};
+    $new_metadata{latitude} = delete $new_metadata{latitude_unmunged}
+        if $new_metadata{latitude_unmunged};
+    $new_metadata{longitude} = delete $new_metadata{longitude_unmunged}
+        if $new_metadata{longitude_unmunged};
 
     # Check to make sure all the indexable nodes are created
     # Skip this for nodes needing moderation - this occurs for them once
@@ -1054,55 +1192,93 @@ sub commit_node {
     unless($wiki->node_required_moderation($node)) {
         $self->_autoCreateCategoryLocale(
                                           id       => $node,
-                                          metadata => \%metadata
+                                          metadata => \%new_metadata
         );
     }
     
     foreach my $var ( qw( summary username comment edit_type ) ) {
-        $metadata{$var} = $q->param($var) || "";
+        $new_metadata{$var} = $q->param($var) || "";
     }
-    $metadata{host} = $ENV{REMOTE_ADDR};
+    $new_metadata{host} = $ENV{REMOTE_ADDR};
 
     # Wiki::Toolkit::Plugin::RSS::ModWiki wants "major_change" to be set.
-    $metadata{major_change} = ( $metadata{edit_type} eq "Normal edit" )
-                            ? 1
-                            : 0;
+    $new_metadata{major_change} = ( $new_metadata{edit_type} eq "Normal edit" )
+                                    ? 1
+                                    : 0;
 
-    my $written = $wiki->write_node($node, $content, $checksum, \%metadata );
+    my $written = $wiki->write_node( $node, $content, $checksum,
+                                     \%new_metadata );
 
     if ($written) {
         my $output = $self->redirect_to_node($node);
         return $output if $return_output;
         print $output;
     } else {
-        my %node_data = $wiki->retrieve_node($node);
-        my %tt_vars = ( checksum       => $node_data{checksum},
-                        new_content    => $content,
-                        stored_content => $node_data{content} );
-        foreach my $mdvar ( keys %metadata ) {
-            if ($mdvar eq "locales") {
-                $tt_vars{"stored_$mdvar"} = $node_data{metadata}{locale};
-                $tt_vars{"new_$mdvar"}    = $metadata{locale};
-            } elsif ($mdvar eq "categories") {
-                $tt_vars{"stored_$mdvar"} = $node_data{metadata}{category};
-                $tt_vars{"new_$mdvar"}    = $metadata{category};
-            } elsif ($mdvar eq "username" or $mdvar eq "comment"
-                      or $mdvar eq "edit_type" ) {
-                $tt_vars{$mdvar} = $metadata{$mdvar};
-            } else {
-                $tt_vars{"stored_$mdvar"} = $node_data{metadata}{$mdvar}[0];
-                $tt_vars{"new_$mdvar"}    = $metadata{$mdvar};
-            }
-        }
-        return %tt_vars if $args{return_tt_vars};
-        my $output = $self->process_template(
-                                              id       => $node,
-                                              template => "edit_conflict.tt",
-                                              tt_vars  => \%tt_vars,
-                                            );
-        return $output if $args{return_output};
-        print $output;
+        return $self->_handle_edit_conflict(
+                                             id            => $node,
+                                             content       => $content,
+                                             new_metadata  => \%new_metadata,
+                                             return_output => $return_output,
+                                           );
     }
+}
+
+sub _handle_edit_conflict {
+    my ($self, %args) = @_;
+    my $return_output = $args{return_output} || 0;
+    my $config = $self->config;
+    my $wiki = $self->wiki;
+    my $node = $args{id};
+    my $content = $args{content};
+    my %new_metadata = %{$args{new_metadata}};
+
+    my %node_data = $wiki->retrieve_node($node);
+    my %tt_vars = ( checksum       => $node_data{checksum},
+                    new_content    => $content,
+                    content        => $node_data{content} );
+    my %old_metadata = OpenGuides::Template->extract_metadata_vars(
+                                           wiki     => $wiki,
+                                           config   => $config,
+                                           metadata => $node_data{metadata} );
+    # Make sure we look at all variables.
+    my @tmp = (keys %new_metadata, keys %old_metadata );
+    my %tmp_hash = map { $_ => 1; } @tmp;
+    my @all_vars = keys %tmp_hash;
+
+    foreach my $mdvar ( keys %new_metadata ) {
+        if ($mdvar eq "locales") {
+            $tt_vars{$mdvar} = $old_metadata{locales};
+            $tt_vars{"new_$mdvar"} = $new_metadata{locale};
+        } elsif ($mdvar eq "categories") {
+            $tt_vars{$mdvar} = $old_metadata{categories};
+            $tt_vars{"new_$mdvar"} = $new_metadata{category};
+        } elsif ($mdvar eq "username" or $mdvar eq "comment"
+                  or $mdvar eq "edit_type" ) {
+            $tt_vars{$mdvar} = $new_metadata{$mdvar};
+        } else {
+            $tt_vars{$mdvar} = $old_metadata{$mdvar};
+            $tt_vars{"new_$mdvar"} = $new_metadata{$mdvar};
+        }
+    }
+
+    $tt_vars{coord_field_1} = $old_metadata{coord_field_1};
+    $tt_vars{coord_field_2} = $old_metadata{coord_field_2};
+    $tt_vars{coord_field_1_value} = $old_metadata{coord_field_1_value};
+    $tt_vars{coord_field_2_value} = $old_metadata{coord_field_2_value};
+    $tt_vars{"new_coord_field_1_value"}
+                                = $new_metadata{$old_metadata{coord_field_1}};
+    $tt_vars{"new_coord_field_2_value"}
+                                = $new_metadata{$old_metadata{coord_field_2}};
+
+    $tt_vars{conflict} = 1;
+    return %tt_vars if $args{return_tt_vars};
+    my $output = $self->process_template(
+                                          id       => $node,
+                                          template => "edit_form.tt",
+                                          tt_vars  => \%tt_vars,
+                                        );
+    return $output if $args{return_output};
+    print $output;
 }
 
 =item B<_autoCreateCategoryLocale>
@@ -1115,9 +1291,29 @@ sub commit_node {
 When a new node is added, or a previously un-moderated node is moderated,
 identifies if any of its Categories or Locales are missing, and creates them.
 
+Guide admins can control the text that gets put into the content field of the
+autocreated node by putting it in custom_autocreate_content.tt in their custom
+templates directory.  The following TT variables will be available to the
+template:
+
+=over
+
+=item * index_type (e.g. C<Category>)
+
+=item * index_value (e.g. C<Vegan-friendly>)
+
+=item * node_name (e.g. C<Category Vegan-Friendly>)
+
+=back
+
+(Note capitalisation - index_value is what they typed in to the form, and
+node_name is the fully free-upper-ed name of the autocreated node.)
+
 For nodes not requiring moderation, should be called on writing the node
 For nodes requiring moderation, should only be called on moderation
+
 =cut
+
 sub _autoCreateCategoryLocale {
     my ($self, %args) = @_;
 
@@ -1126,18 +1322,37 @@ sub _autoCreateCategoryLocale {
     my %metadata = %{$args{'metadata'}};
 
     # Check to make sure all the indexable nodes are created
+    my $config = $self->config;
+    my $template_path = $config->template_path;
+    my $custom_template_path = $config->custom_template_path || "";
+    my $tt = Template->new( { INCLUDE_PATH =>
+                                  "$custom_template_path:$template_path" } );
+
     foreach my $type (qw(Category Locale)) {
         my $lctype = lc($type);
         foreach my $index (@{$metadata{$lctype}}) {
             $index =~ s/(.*)/\u$1/;
             my $node = $type . " " . $index;
             # Uppercase the node name before checking for existence
-            $node =~ s/ (\S+)/ \u$1/g;
+            $node = $wiki->formatter->_do_freeupper( $node );
             unless ( $wiki->node_exists($node) ) {
                 my $category = $type eq "Category" ? "Category" : "Locales";
+                # Try to get the autocreated content from a custom template;
+                # if we fail, use some default text.
+                my $blurb;
+                my %tt_vars = (
+                                index_type  => $type,
+                                index_value => $index,
+                                node_name   => $node,
+                              );
+                my $ok = $tt->process( "custom_autocreate_content.tt",
+                                       \%tt_vars, \$blurb );
+                if ( !$ok ) {
+                    $blurb = "\@INDEX_LINK [[$node]]";
+                }
                 $wiki->write_node(
                                      $node,
-                                     "\@INDEX_LINK [[$node]]",
+                                     $blurb,
                                      undef,
                                      {
                                          username => "Auto Create",
@@ -1238,7 +1453,9 @@ Sets the moderation needed flag on a node, either on or off.
 
 If C<password> is not supplied then a form for entering the password
 will be displayed.
+
 =cut
+
 sub set_node_moderation {
     my ($self, %args) = @_;
     my $node = $args{id} or croak "No node ID supplied for node moderation";
@@ -1319,7 +1536,9 @@ and Categories for the newly moderated version.
 
 If C<password> is not supplied then a form for entering the password
 will be displayed.
+
 =cut
+
 sub moderate_node {
     my ($self, %args) = @_;
     my $node = $args{id} or croak "No node ID supplied for node moderation";
@@ -1389,9 +1608,12 @@ sub moderate_node {
 }
 
 =item B<show_missing_metadata>
+
 Search for nodes which don't have a certain kind of metadata. Optionally
 also excludes Locales and Categories
+
 =cut
+
 sub show_missing_metadata {
     my ($self, %args) = @_;
     my $return_tt_vars = $args{return_tt_vars} || 0;
@@ -1471,10 +1693,96 @@ sub show_missing_metadata {
     print $output;
 }
 
+=item B<revert_user_interface>
+
+If C<password> is not supplied then a form for entering the password
+will be displayed, along with a list of all the edits the user made.
+
+If the password is given, will delete all of these versions.
+=cut
+sub revert_user_interface {
+    my ($self, %args) = @_;
+
+    my $password = $args{password} || '';
+    my $return_tt_vars = $args{return_tt_vars} || 0;
+    my $return_output = $args{return_output} || 0;
+
+    my $wiki = $self->wiki;
+    my $formatter = $self->wiki->formatter;
+    my $script_name = $self->config->script_name;
+
+    my ($type,$value);
+    if($args{'username'}) {
+        ($type,$value) = ('username', $args{'username'});
+    }
+    if($args{'host'}) {
+        ($type,$value) = ('host', $args{'host'});
+    }
+    unless($type && $value) {
+        croak("One of username or host must be given");
+    }
+
+    # Grab everything they've touched, ever
+    my @user_edits = $self->wiki->list_recent_changes(
+                            since => 1,
+                            metadata_was => { $type => $value },
+    );
+
+    if ($password) {
+        if ($password ne $self->config->admin_pass) {
+            croak("Bad password supplied");
+        } else {
+            # Delete all these versions
+            foreach my $edit (@user_edits) {
+                $self->wiki->delete_node(
+                                name => $edit->{name},
+                                version => $edit->{version},
+                );
+            }
+
+            # Grab new list
+            @user_edits = $self->wiki->list_recent_changes(
+                            since => 1,
+                            metadata_was => { $type => $value },
+            );
+        }
+    } else {
+        # Don't do anything
+    }
+
+    # Set up our TT variables, including the search parameters
+    my %tt_vars = (
+                      not_editable  => 1,
+                      not_deletable => 1,
+                      deter_robots  => 1,
+
+                      edits          => \@user_edits,
+                      username       => $args{username},
+                      host           => $args{host},
+                      by_type        => $type,
+                      by             => $value,
+
+                      script_name => $script_name
+                  );
+    return %tt_vars if $return_tt_vars;
+
+    # Render to the page
+    my $output = $self->process_template(
+                                           id       => "",
+                                           template => "admin_revert_user.tt",
+                                           tt_vars  => \%tt_vars,
+                                        );
+    return $output if $return_output;
+    print $output;
+}
+
 =item B<display_admin_interface>
+
 Fetch everything we need to display the admin interface, and passes it off 
  to the template
+
 =cut
+
 sub display_admin_interface {
     my ($self, %args) = @_;
     my $return_tt_vars = $args{return_tt_vars} || 0;
@@ -1502,6 +1810,8 @@ sub display_admin_interface {
                         "?action=list_all_versions;id=" . $node_param;
         $node->{'moderation_url'} = $script_name .
                         "?action=set_moderation;id=" . $node_param;
+        $node->{'revert_user_url'} = $script_name . "?action=revert_user" .
+                        ";username=".$node->{metadata}->{username}->[0];
 
         # Filter
         if($node->{'name'} =~ /^Category /) {

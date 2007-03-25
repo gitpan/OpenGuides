@@ -1,6 +1,6 @@
 ---
 name: OpenGuides
-version: 0.58
+version: 0.59
 author: ~
 abstract: ~
 license: perl
@@ -44,7 +44,7 @@ dynamic_config: 1
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.58
+    version: 0.59
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
   OpenGuides::CGI:

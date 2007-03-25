@@ -1,56 +1,56 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-[% USE CGI %]
-<html>
-<head>
-  <title>[% node_name %] - [% site_name %]</title>
-  [% IF contact_email %]
-    <link rev=made href="mailto:[% contact_email %]">
-  [% END %]
-  [% IF summary %]
-    <meta name="description" content="[% summary %]">
-  [% END %]
-  [% IF stylesheet %]
-    <link rel="stylesheet" href="[% stylesheet %]" type="text/css">
-  [% END %]
-</head>
-<body>
+[% INCLUDE header.tt %]
 
 [% INCLUDE banner.tt %]
 
 <div id="content">
 
-[% IF navbar_on_home_page %]
+[% IF navbar_on_home_page AND !config.content_above_navbar_in_html %]
   [% INCLUDE navbar.tt %]
 [% END %]
 
-<div id="maincontent">
-<div id="recent">
-
-<h3>Ten most <a href="[% cgi_url %]?action=rc">recent changes</a>
-    (<a href="[% full_cgi_url %]?action=rc;format=rss">RSS</a>):</h3>
-
-<dl>
-  [% FOREACH node = recent_changes %]
-  <dt><a href="[% node.url %]">[% node.name %]</a>
-  [% IF node.version == "1" %]
-    [new]
-  [% END %]
-  </dt>
-  [% IF node.comment or node.username %]
-    <dd>
-      [% node.comment %]
-      [% IF node.username %]
-        <b><small>([% node.username %])</small></b>
-      [% END %]
-    </dd>
-  [% END %]
+[% IF !navbar_on_home_page AND !config.recent_changes_on_home_page %]
+  <div id="home_page_edit_link">
+    <a href="[% cgi_url %]?action=edit;id=[% node_param %]">Edit this page</a>
+  </div>
 [% END %]
-</dl>
 
-<p><b><a href="[% cgi_url %]?action=edit;id=[% node_param %]">Edit this page</a></b></p>
+<div id="maincontent">
+  [% IF config.recent_changes_on_home_page %]
+    <div id="recent">
+
+      <h3>Ten most <a href="[% cgi_url %]?action=rc">recent changes</a>
+          (<a href="[% full_cgi_url %]?action=rc;format=rss">RSS</a>):</h3>
+
+      <dl>
+        [% FOREACH node = recent_changes %]
+          <dt><a href="[% node.url %]">[% node.name %]</a>
+            [% IF node.version == "1" %]
+              [new]
+            [% END %]
+          </dt>
+          [% IF node.comment or node.username %]
+            <dd>
+              [% node.comment %]
+              [% IF node.username %]
+                <b><small>([% node.username %])</small></b>
+              [% END %]
+            </dd>
+          [% END %]
+        [% END %]
+      </dl>
+
+      <p><b><a href="[% cgi_url %]?action=edit;id=[% node_param %]">Edit
+      this page</a></b></p>
+
+    </div>
+  [% END %]
+
+  [% content %]
 
 </div>
-[% content %]
 
-</div>
+[% IF navbar_on_home_page AND config.content_above_navbar_in_html %]
+  [% INCLUDE navbar.tt %]
+[% END %]
+
 [% INCLUDE footer.tt %]

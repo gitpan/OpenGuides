@@ -10,7 +10,9 @@
 <div id="footer">
   [% BLOCK delete_link %]
     [% IF enable_page_deletion AND NOT not_deletable %]
-      <a href="[% full_cgi_url %]?id=[% node_param %];action=delete">Delete page</a> (admins only)
+      <div id="footer_delete_link">
+        <a href="[% full_cgi_url %]?id=[% node_param %];action=delete">Delete page</a> (admins only)
+      </div>
     [% END %]
   [% END %]
 
@@ -23,8 +25,8 @@
     <p>
       Powered by <a href="[% full_cgi_url%]?action=about">OpenGuides [% openguides_version %]</a>.
     </p>
-    <p>
-      [% IF licence_name %]
+    [% IF licence_name %]
+      <p>
         This work is licensed under the 
         [% IF licence_url %]
            <a href="[% licence_url %]">[% licence_name %]</a>
@@ -35,10 +37,23 @@
         [% IF licence_info_url %]
            (<a href="[% licence_info_url %]">more info</a>)
         [% END %]
-      [% END %]
+      </p>
+    [% END %]
   [% END %]
 
 </div>
 </div>
+</div>
+
+  [% IF config.google_analytics_key %]
+    <script src="http://www.google-analytics.com/urchin.js"
+     type="text/javascript">
+    </script>
+    <script type="text/javascript">
+      _uacct = "[% CGI.escapeHTML( config.google_analytics_key  ) %]";
+      if ( typeof urchinTracker == 'function' ) urchinTracker();
+    </script>
+  [% END %]
+
 </body>
 </html>

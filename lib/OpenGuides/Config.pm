@@ -1,19 +1,22 @@
 package OpenGuides::Config;
 use strict;
+use warnings;
 
 use Carp qw( croak );
 use Config::Tiny;
 
 use base qw( Class::Accessor );
 my @variables = qw(
-   dbtype dbname dbuser dbpass dbhost dbencoding
+   dbtype dbname dbuser dbpass dbport dbhost dbencoding
    script_name install_directory script_url
    custom_lib_path use_plucene indexing_directory enable_page_deletion
-   admin_pass stylesheet_url site_name navbar_on_home_page home_name
-   site_desc default_city default_country contact_email 
+   admin_pass stylesheet_url site_name navbar_on_home_page
+   recent_changes_on_home_page content_above_navbar_in_html home_name
+   site_desc default_city default_country contact_email
    default_language http_charset ping_services
    formatting_rules_node formatting_rules_link backlinks_in_title template_path
    custom_template_path geo_handler ellipsoid gmaps_api_key centre_long
+   show_gmap_in_node_display google_analytics_key
    centre_lat default_gmaps_zoom default_gmaps_search_zoom force_wgs84
    licence_name licence_url licence_info_url moderation_requires_password
    enable_node_image enable_common_categories enable_common_locales
@@ -78,6 +81,8 @@ sub _init {
                      ping_services => "",
                      site_name => "Unconfigured OpenGuides site",
                      navbar_on_home_page => 1,
+                     recent_changes_on_home_page => 1,
+                     content_above_navbar_in_html => 0,
                      home_name => "Home",
                      site_desc => "A default configuration of OpenGuides",
                      default_city => "",
@@ -89,6 +94,7 @@ sub _init {
                      backlinks_in_title => 0,
                      geo_handler => 1,
                      ellipsoid => "WGS-84",
+                     show_gmap_in_node_display => 1,
                      centre_long => 0,
                      centre_lat => 0,
                      default_gmaps_zoom => 5,
@@ -119,7 +125,6 @@ sub _init {
         if ( $self->can( $var ) ) { # handle any garbage in file gracefully
             $self->$var( $stored{$var} );
 	} else {
-		use Data::Dumper; die Dumper \%stored;
             warn "Don't know what to do with variable '$var'";
         }
     }
@@ -132,6 +137,7 @@ sub _init {
         dbuser => "...the database user that can access that database?",
         dbpass => "...the password that they use to access the database?",
         dbhost => "...the machine that the database is hosted on? (blank if local)",
+        dbport => "...the port the database is listening on? (blank if default)",
         dbencoding => "...the encoding that your database uses? (blank if default)",
         script_name => "What do you want the script to be called?",
         install_directory => "What directory should I install it in?",
@@ -151,6 +157,8 @@ sub _init {
         ping_services => "Which services do you wish to ping whenever you write a page? Can be pingerati, geourl, or both",
         site_name => "What's the site called? (should be unique)",
         navbar_on_home_page => "Do you want the navigation bar included on the home page?",
+        recent_changes_on_home_page => "Do you want the ten most recent changes included on the home page?",
+        content_above_navbar_in_html => "Do you want the content to appear above the navbar in the HTML?",
         home_name => "What should the home page of the wiki be called?",
         site_desc => "How would you describe the site?",
         default_city => "What city is the site based in?",
@@ -167,7 +175,9 @@ sub _init {
         centre_lat => "What is the latitude of the centre point of a map to draw for your guide? (This question can be ignored if you aren't using Google Maps)",
         default_gmaps_zoom => "What default zoom level shall we use for Google Maps? (This question can be ignored if you aren't using Google Maps)",
         default_gmaps_search_zoom => "What default zoom level shall we use for Google Maps in the search results? (This question can be ignored if you aren't using Google Maps)",
+        show_gmap_in_node_display => "Would you like to display a Google Map on every node that has geodata? (This question can be ignored if you aren't using Google Maps)",
         force_wgs84 => "Forcibly treat stored lat/long data as if they used the WGS84 ellipsoid?",
+        google_analytics_key => "Do you have a Google Analytics key to use with this guide? If you enter it here, then Google Analytics functionality will be automatically enabled.",
         licence_name => "What licence will you use for the guide?",
         licence_url => "What is the URL to your licence?",
         licence_info_url => "What is the URL to your local page about your licensing policy?"
@@ -205,6 +215,8 @@ the config file.
 
 =item * dbhost
 
+=item * dbport
+
 =item * dbencoding
 
 =item * script_name (default: C<wiki.cgi>)
@@ -238,6 +250,10 @@ sub script_url {
 =item * site_name (default: C<Unconfigured OpenGuides site>)
 
 =item * navbar_on_home_page (default: true)
+
+=item * recent_changes_on_home_page (default: true)
+
+=item * content_above_navbar_in_html (default: false)
 
 =item * home_name (default: C<Home>)
 
@@ -273,7 +289,11 @@ sub script_url {
 
 =item * default_gmaps_search_zoom
 
+=item * show_gmap_in_node_display
+
 =item * force_wgs84
+
+=item * google_analytics_key
 
 =item * licence_name
 
@@ -289,7 +309,7 @@ The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 
-     Copyright (C) 2004-2006 The OpenGuides Project.  All Rights Reserved.
+     Copyright (C) 2004-2007 The OpenGuides Project.  All Rights Reserved.
 
 The OpenGuides distribution is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.
