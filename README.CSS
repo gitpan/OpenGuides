@@ -12,6 +12,64 @@ a.edit_page_link (was div.edit_page_link)
     Used in: navbar_this_page.tt
     Purpose: Link to the edit page function, in the navbar
 
+div.admin_completed_action
+    Used in: admin_home.tt
+    Purpose: Display a message confirming the action just taken.
+
+div.disallowed_characters_note
+    Used in: newpage.tt
+    Purpose: Contains text explaining that some characters aren't allowed in
+             node names, and a list of such characters.
+div.disallowed_characters_text
+    Used in: newpage.tt
+    Purpose: Contains text explaining that some characters aren't allowed in
+             node names.
+div.disallowed_characters
+    Used in: newpage.tt
+    Purpose: Contains a list of characters that aren't allowed in node names.
+
+div.edit_form_actions
+    Used in: edit_form_actions.tt
+    Purpose: Contains widgets for previewing, cancelling, and committing an
+             edit.
+div.preview_edit
+    Used in: edit_form_actions.tt
+    Purpose: Contains a button for previewing an edit.
+div.cancel_edit
+    Used in: edit_form_actions.tt
+    Purpose: Contains a link for cancelling an edit.
+div.commit_edit
+    Used in: edit_form_actions.tt
+    Purpose: Contains a button for committing an edit.
+
+div.edit_form_group
+    Used in: edit_form.tt openguides_information_boxes.tt node_image_fields.tt
+    Purpose: Handles a single type of data (e.g. locales, phone number,
+             latitude, etc) in the edit form.  Contains a label, an
+             input/select/textarea, and a space where any edit conflict will
+             be flagged up.
+div.edit_box
+    Used in: edit_form.tt openguides_information_boxes.tt node_image_fields.tt
+    Purpose: Contains a input, select, or textarea.
+div.conflict_group
+    Used in: edit_form.tt node_image_fields.tt
+    Purpose: Contains a label and details of an edit conflict for a single
+             type of data.
+div.conflict_box
+    Used in: edit_form.tt node_image_fields.tt
+    Purpose: Contains details of an edit conflict for a single type of data.
+
+div.licence_and_moderation_notes
+    Used in: edit_form.tt
+    Purpose: Contains a description of the guide's licence and details of any
+             moderation of the current node.
+div.licence_notes
+    Used in: edit_form.tt
+    Purpose: Contains a description of the guide's licence.
+div.moderation_warning
+    Used in: edit_form.tt
+    Purpose: Contains details of any moderation of the current node.
+
 div.navbar_group
     Used in: navbar_*.tt
     Purpose: Defines a related set of navigation bar functions
@@ -27,6 +85,10 @@ div.navbar_item
 div.warning_text
     Used in: edit_form.tt
     Purpose: Warns the user that there is an edit conflict
+
+h1.edit_form_title
+    Used in: edit_form.tt
+    Purpose: Display the main heading on the edit form - e.g. Edit "My Node"
 
 input.form_button
     Used in: differences.tt, edit_form.tt, footer.tt, navbar_search.tt,
@@ -63,6 +125,36 @@ span.node_name
              differences.tt node_history.tt
     Purpose: Inlines a node name in a snippet of explanatory text,
              without linking to it.
+
+td.admin_action
+    Used in: admin_home.tt
+    Purpose: Display possible actions for a node, locale, or category in
+             the "recently edited" table.
+
+td.admin_lastmodby
+    Used in: admin_home.tt
+    Purpose: Display username of the last person to edit a node, locale, or
+             category in the "recently edited" table.
+
+td.admin_lastmode
+    Used in: admin_home.tt
+    Purpose: Display the last-modified time of a node, locale, or category in
+             the "recently edited" table.
+
+td.admin_moderate
+    Used in: admin_home.tt
+    Purpose: Display the moderation status of a node, locale, or category in
+             the "recently edited" table.
+
+td.admin_name
+    Used in: admin_home.tt
+    Purpose: Display the name of a node, locale, or category in the
+             "recently edited" table.
+
+td.admin_version
+    Used in: admin_home.tt
+    Purpose: Display the version number of a node, locale, or category in the
+             "recently edited" table.
 
 td.label
     Used in: edit_form.tt
@@ -113,6 +205,11 @@ div#coordinates
     Used in: node.tt
     Purpose: The physical coordinates of the node
 
+div#create_new_page
+    Used in: newpage.tt
+    Purpose: Contains the form for typing in the new page name, and the note
+             about disallowed characters.
+
 div#find_within_distance
     Used in: node.tt
     Purpose: A section of the node display that allows the user to search
@@ -134,6 +231,13 @@ div#header
 div#metadata
     Used in: display_metadata.tt
     Purpose: The section of the node display with a list of metadata
+
+div#navbar_parent
+    Used in: navbar.tt
+    Purpose: Parent of the navigation bar. If you want to pull bits of the 
+              navigation out, and put them next to the main nav bar, you'll
+              want to make this the size of two parts combined, then size
+              them within this.
 
 div#navbar
     Used in: navbar.tt
@@ -217,7 +321,7 @@ div#node_image_copyright
     Purpose: To display the name of the copyright holder of a node image, and
              optionally a link to the licence we're using it under.
 
-div#navbar_common_navigation
+div#navbar_starting_points
     Used in: navbar.tt
     Purpose: Hold the common locales and categories, if enabled
 div#navbar_locales
@@ -235,6 +339,27 @@ ul#navbar_group
 #navbar_group > li
     Used in: navbar_categories.tt, navbar_locales.tt
     Purpose: A common category / locale
+
+fieldset#additional_information
+    Used in: edit_form.tt
+    Purpose: Contains input fields for phone, address, geodata, etc.
+
+fieldset#main_information
+    Used in: edit_form.tt
+    Purpose: Contains input fields for content, categories, locales, and
+             page summary.
+
+fieldset#node_image_fields
+    Used in: node_image_fields.tt
+    Purpose: contains input fields for node image, copyright, etc.
+
+fieldset#openguides_information
+    Used in: openguides_information_boxes.tt
+    Purpose: Contains input widgets for username, comment, and edit type.
+
+form#new_page_form
+    Used in: newpage.tt
+    Purpose: The form for typing in the new page name.
 
 input#address
     Used in: edit_form.tt
@@ -337,6 +462,29 @@ select#distance
 select#edit_type
     Used in: openguides_information_boxes.tt
     Purpose: A selection of whether the change is minor or major
+
+select#metadata_type
+    Used in: missing_metadata.tt
+    Purpose: Display a list of the types of metadata we may wish to check for.
+
+table#categories
+    Used in: admin_home.tt
+    Purpose: Display recently edited categories.
+
+table#locales
+    Used in: admin_home.tt
+    Purpose: Display recently edited locales.
+
+table#needing_moderation
+    Used in: needing_moderation.tt
+    Purpose: Display nodes which have edits pending moderation.
+
+table#nodes
+    Used in: admin_home.tt
+    Purpose: Display recently edited nodes.
+
+    Also used in: missing_metadata.tt
+    Purpose: Display nodes which are missing some metadata.
 
 table#recentchanges
     Used in: recent_changes.tt

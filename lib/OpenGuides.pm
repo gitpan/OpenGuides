@@ -14,7 +14,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.59';
+$VERSION = '0.60';
 
 =head1 NAME
 
@@ -253,7 +253,8 @@ sub display_node {
         $tt_vars{common_catloc} = 1;
         $tt_vars{common_categories} = $config->enable_common_categories;
         $tt_vars{common_locales} = $config->enable_common_locales;
-        $tt_vars{catloc_link} = $config->script_name . "?id=";
+        $tt_vars{catloc_link} = $config->script_url . $config->script_name
+                                . "?id=";
     }
     
     if ( $node_data{content} && $node_data{content} =~ /^#REDIRECT\s+(.+?)\s*$/ ) {
@@ -327,6 +328,114 @@ sub display_node {
         return $output if $return_output;
         print $output;
     }
+}
+
+=item B<display_random_page>
+
+  $guide->display_random_page;
+
+Display a random page.  As with other methods, the C<return_output>
+parameter can be used to return the output instead of printing it to STDOUT.
+You can also restrict it to a given category and/or locale by supplying
+appropriate parameters:
+
+  $guide->display_random_page(
+                               category => "pubs",
+                               locale   => "bermondsey",
+                             );
+
+The values of these parameters are case-insensitive.
+
+You can make sure this method never returns pages that are themselves
+categories and/or locales by setting C<random_page_omits_categories>
+and/or C<random_page_omits_locales> in your wiki.conf.
+
+=cut
+
+sub display_random_page {
+    my ( $self, %args ) = @_;
+    my $wiki = $self->wiki;
+    my $config = $self->config;
+
+    my ( @catnodes, @locnodes, @nodes );
+    if ( $args{category} ) {
+        @catnodes = $wiki->list_nodes_by_metadata(
+            metadata_type  => "category",
+            metadata_value => $args{category},
+            ignore_case    => 1,
+        );
+    }
+    if ( $args{locale} ) {
+        @locnodes = $wiki->list_nodes_by_metadata(
+            metadata_type  => "locale",
+            metadata_value => $args{locale},
+            ignore_case    => 1,
+        );
+    }
+
+    if ( $args{category} && $args{locale} ) {
+        # If we have both category and locale, return the intersection.
+        my %count;
+        foreach my $node ( @catnodes, @locnodes ) {
+            $count{$node}++;
+        }
+        foreach my $node ( keys %count ) {
+            push @nodes, $node if $count{$node} > 1;
+        }
+    } elsif ( $args{category} ) {
+        @nodes = @catnodes;
+    } elsif ( $args{locale} ) {
+        @nodes = @locnodes;
+    } else {
+        @nodes = $wiki->list_all_nodes();
+    }
+
+    my $omit_cats = $config->random_page_omits_categories;
+    my $omit_locs = $config->random_page_omits_locales;
+
+    if ( $omit_cats || $omit_locs ) {
+        my %all_nodes = map { $_ => $_ } @nodes;
+        if ( $omit_cats ) {
+            my @cats = $wiki->list_nodes_by_metadata(
+                                                  metadata_type  => "category",
+                                                  metadata_value => "category",
+                                                  ignore_case => 1,
+            );
+            foreach my $omit ( @cats ) {
+                delete $all_nodes{$omit};
+            }
+        }
+        if ( $omit_locs ) {
+            my @locs = $wiki->list_nodes_by_metadata(
+                                                  metadata_type  => "category",
+                                                  metadata_value => "locales",
+                                                  ignore_case => 1,
+            );
+            foreach my $omit ( @locs ) {
+                delete $all_nodes{$omit};
+            }
+        }
+        @nodes = keys %all_nodes;
+    }
+    my $node = $nodes[ rand @nodes ];
+    my $output;
+
+    if ( $node ) {
+        $output = $self->redirect_to_node( $node );
+    } else {
+        my %tt_vars = (
+                        category => $args{category},
+                        locale   => $args{locale},
+                      );
+        $output = OpenGuides::Template->output(
+            wiki     => $wiki,
+            config   => $config,
+            template => "random_page_failure.tt",
+            vars     => \%tt_vars,
+        );
+    }
+    return $output if $args{return_output};
+    print $output;
 }
 
 =item B<display_edit_form>
@@ -1100,7 +1209,7 @@ project is available from the <a href="http://dev.openguides.org/">OpenGuides
 development site</a>.
 </p>
 <p>
-Copyright &copy;2003-2006, <a href="http://openguides.org/">The OpenGuides
+Copyright &copy;2003-2007, <a href="http://openguides.org/">The OpenGuides
 Project</a>. "OpenGuides", "[The] Open Guide To..." and "The guides made by
 you" are trademarks of The OpenGuides Project. Any uses on this site are made 
 with permission.
@@ -1939,7 +2048,7 @@ The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 
-     Copyright (C) 2003-2006 The OpenGuides Project.  All Rights Reserved.
+     Copyright (C) 2003-2007 The OpenGuides Project.  All Rights Reserved.
 
 The OpenGuides distribution is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

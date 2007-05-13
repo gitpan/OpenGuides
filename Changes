@@ -3,6 +3,45 @@
 More detailed changelogs can be found at
 http://dev.openguides.org/log/trunk
 
+0.60    13 May 2007
+        Removed footer search from edit page (shouldn't have been there).
+        Upgraded Module::Build requirement to cope with API change.
+        Added new parameters to action=random - you can now supply category
+          and/or locale to get a random page chosen from that category/locale.
+        To go with this, added a new macro:
+          @RANDOM_PAGE_LINK [[Category Pubs|View a random pub]]
+        Fixed bug in OpenGuides::Feed - HTML equivalent link now works even
+          if your script_name isn't blank.
+        Rewrote the HTML of the edit page to use <div>s rather than tables.
+          Note that you will probably want to provide at least basic styling
+          for these classes.  As part of this, added a new template,
+          edit_form_actions.tt
+        Moved node image boxes below phone/address/etc on the edit form, and
+          moved summary field from openguides information section into main
+          section.
+        Made div#maincontent on the edit form wrap the preview view only, not
+          the whole form.
+        Added links to the "revision N" and "Last edited" text in the navbar.
+        Added format => "raw" option to OpenGuides::Search->run to let you get
+          your results back as a hash.
+        Add JavaScript to the Create New Page page so the prefilled
+          "New page name" disappears when you click in the field (it doesn't
+          make anything other than "New page name" diappear).
+        Move node RDF generation from inline to node_rdf.tt and replace
+          home-grown escaping with encode_entities_numeric from HTML::Entities
+          (technically this is an added dependency, but we already require
+          the package it comes in, via Wiki::Toolkit::Formatter::UseMod).
+        Move random page functionality from wiki.cgi into OpenGuides.pm and
+          add some tests.
+        Add config options to let admins omit category and/or locale pages
+          from the list of pages that can be returned by the Random Page link.
+        Use full URLs for all links in navbar, so people can INCLUDE navbar.tt
+          in their own scripts.  (May revisit this later using "base href".)
+        Added some stylesheet hooks to newpage.tt; see README.CSS for details.
+        Documented the stylesheet hooks in the admin interface (see README.CSS)
+        Bugfix: uninitialized variable warning in script_url
+        Bugfix: Make sure clean target works
+
 0.59    25 March 2007
         Move preview_node() and edit_node() from wiki.cgi into OpenGuides.pm
         Remove edit_conflict.tt - use edit_form.tt instead to reduce

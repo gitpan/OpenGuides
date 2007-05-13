@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.59';
+$VERSION = '0.60';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -85,9 +85,10 @@ eval {
                             format => $format,
                           );
     } elsif ($action eq 'random') {
-        my @nodes = $wiki->list_all_nodes();
-        $node = $nodes[int(rand(scalar(@nodes) + 1)) + 1];
-        print $guide->redirect_to_node($node);
+        print $guide->display_random_page(
+                            category => $q->param( "category" ) || "",
+                            locale   => $q->param( "locale" ) || "",
+                                         );
     } elsif ($action eq 'find_within_distance') {
         $guide->find_within_distance(
                                       id => $node,

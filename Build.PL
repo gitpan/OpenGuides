@@ -41,6 +41,7 @@ my %yn_vars = map { $_ => 1 }
    qw(use_plucene enable_page_deletion navbar_on_home_page backlinks_in_title
       moderation_requires_password enable_node_image enable_common_categories
       enable_common_locales recent_changes_on_home_page
+      random_page_omits_locales random_page_omits_categories
       content_above_navbar_in_html show_gmap_in_node_display);
 
 my $skip_config = Module::Build->y_n("Skip OpenGuides configuration?", "n");
@@ -95,7 +96,8 @@ foreach my $var ( qw(
    install_directory template_path custom_template_path script_url
    custom_lib_path use_plucene indexing_directory enable_page_deletion
    admin_pass stylesheet_url site_name navbar_on_home_page
-   recent_changes_on_home_page content_above_navbar_in_html home_name
+   recent_changes_on_home_page random_page_omits_locales
+   random_page_omits_categories content_above_navbar_in_html home_name
    site_desc default_city default_country contact_email default_language
    formatting_rules_node backlinks_in_title gmaps_api_key centre_long
    centre_lat show_gmap_in_node_display default_gmaps_zoom
@@ -117,7 +119,8 @@ foreach my $var ( qw(
     if ( $dbtype eq "sqlite" and
          ( $var eq "dbuser" or $var eq "dbpass" or $var eq "dbhost" )
        ) {
-        print "$var not relevant for SQLite... skipping...\n";
+        print "$var not relevant for SQLite... skipping...\n"
+            unless $skip_config;
         push @answers, { question => $qu,
                             variable => $var,
                          value    => "not-used" };
@@ -127,7 +130,8 @@ foreach my $var ( qw(
     # We don't ask this for new installs as Search::InvertedIndex is
     # deprecated
     if ( $var eq "use_plucene" and $existing_config->$var == 1) {
-        print "Skipping question about plucene\n";
+        print "Skipping question about plucene\n"
+            unless $skip_config;
         push @answers, { question => $qu,
                          variable => $var,
                          value => 1 };
@@ -263,6 +267,7 @@ my $search_module = $use_plucene ? "Plucene" : "Search::InvertedIndex";
 my $build = OpenGuides::Build->new(
     sign => 1,
     dist_name => "OpenGuides",
+    module_name => "OpenGuides",
     dist_version_from => "wiki.cgi",
     license => "perl",
     requires => {
@@ -285,6 +290,7 @@ my $build = OpenGuides::Build->new(
         'File::Spec::Functions'               => 0,
         'File::Temp'                          => 0,
         'Geography::NationalGrid'             => 0,
+        'HTML::Entities'                      => 0,
         'LWP::Simple'                         => 0,
         'Parse::RecDescent'                   => 0,
         $search_module                        => 0,
@@ -296,7 +302,7 @@ my $build = OpenGuides::Build->new(
         'XML::RSS'                            => 0,
         },
     build_requires => {
-        'Module::Build' => '0.18', # earlier doesn't install script files
+        'Module::Build' => '0.26', # API change for accessing config data
         },
     recommends => {
         'DBD::SQLite'         => 0, # for testing
@@ -312,12 +318,13 @@ my $build = OpenGuides::Build->new(
 
 $build->add_to_cleanup( "t/indexes/" );
 $build->add_to_cleanup( "t/node.db" );
+$build->add_to_cleanup( "t/templates/tmp/" );
 
 # Tell OpenGuides::Build which additional scripts and templates to install.
-$build->{config}{__extra_scripts}     = 
+$build->config_data( __extra_scripts => 
                       [ "wiki.conf", "preferences.cgi", "search.cgi",
-                        "newpage.cgi" ];
-$build->{config}{__templates}         = [
+                        "newpage.cgi" ] );
+$build->config_data( __templates     => [
                       "admin_home.tt",
                       "admin_revert_user.tt",
                       "backlink_results.tt",
@@ -328,6 +335,7 @@ $build->{config}{__templates}         = [
                       "differences.tt",
                       "display_metadata.tt",
                       "edit_form.tt",
+                      "edit_form_actions.tt",
                       "error.tt",
                       "footer.tt",
                       "header.tt",
@@ -352,8 +360,10 @@ $build->{config}{__templates}         = [
                       "node_history.tt",
                       "node_image_fields.tt",
                       "node_photo_notes.tt",
+                      "node_rdf.tt",
                       "openguides_information_boxes.tt",
                       "preferences.tt",
+                      "random_page_failure.tt",
                       "rdf_index.tt",
                       "recent_changes.tt",
                       "search_results.tt",
@@ -361,7 +371,7 @@ $build->{config}{__templates}         = [
                       "search.tt",
                       "userstats.tt",
                       "wanted_pages.tt"
-    ];
+    ] );
 
 # Finally write the build script.
 $build->create_build_script;

@@ -38,6 +38,7 @@ templates/delete_password_wrong.tt
 templates/differences.tt
 templates/display_metadata.tt
 templates/edit_form.tt
+templates/edit_form_actions.tt
 templates/error.tt
 templates/footer.tt
 templates/header.tt
@@ -62,9 +63,11 @@ templates/node.tt
 templates/node_history.tt
 templates/node_image_fields.tt
 templates/node_photo_notes.tt
+templates/node_rdf.tt
 templates/openguides_information_boxes.tt
 templates/plain_index.tt
 templates/preferences.tt
+templates/random_page_failure.tt
 templates/rdf_index.tt
 templates/recent_changes.tt
 templates/search_results.tt
@@ -82,6 +85,7 @@ t/16_test_tester.t
 t/17_commit_node.t
 t/18_http_headers.t
 t/19_autocreate.t
+t/20_edit_form.t
 t/21_rdf.t
 t/22_feed_recent_changes.t
 t/23_feed_node_all_versions.t
@@ -90,6 +94,7 @@ t/25_write_geo_data.t
 t/26_geo_data_search_form.t
 t/27_geo_data_edit_form.t
 t/28_wgs84_coords.t
+t/30_search_raw.t
 t/31_search.t
 t/32_search_simple_metadata.t
 t/33_search_advanced_search.t
@@ -116,6 +121,7 @@ t/53_show_index.t
 t/54_redirect.t
 t/55_node_history.t
 t/56_diffs_with_macros.t
+t/57_random_page.t
 t/61_bug_textareas.t
 t/62_bug_trailing_whitespace.t
 t/63_bug_map_link_no_address.t

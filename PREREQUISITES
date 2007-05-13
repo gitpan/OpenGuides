@@ -33,8 +33,9 @@ File::Temp
     -- or --
   Geo::Coordinates::UTM
 )
+HTML::Entities
 LWP::Simple
-Module::Build (version 0.18 or later)
+Module::Build (version 0.26 or later)
 Parse::RecDescent
 Plucene
 POSIX
