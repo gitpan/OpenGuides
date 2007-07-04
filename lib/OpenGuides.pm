@@ -14,7 +14,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.60';
+$VERSION = '0.61';
 
 =head1 NAME
 
@@ -163,19 +163,31 @@ sub differ {
                           return_tt_vars => 1,
                       );
 
-If C<version> is omitted then the latest version will be displayed.
+If C<version> is omitted then it will assume you want the latest version.
+
+Note that if you pass the C<return_output> parameter, and your node is a
+redirecting node, this method will fake the redirect and return the output
+that will actually end up in the user's browser.  If instead you want to see
+the HTTP headers that will be printed in order to perform the redirect, pass
+the C<intercept_redirect> parameter as well.  The C<intercept_redirect>
+parameter has no effect if the node isn't a redirect, or if the
+C<return_output> parameter is omitted.
+
+(At the moment, C<return_tt_vars> acts as if the C<intercept_redirect>
+parameter was passed.)
 
 =cut
 
 sub display_node {
     my ($self, %args) = @_;
     my $return_output = $args{return_output} || 0;
+    my $intercept_redirect = $args{intercept_redirect};
     my $version = $args{version};
     my $id = $args{id} || $self->config->home_name;
     my $wiki = $self->wiki;
     my $config = $self->config;
     my $oldid = $args{oldid} || '';
-    my $do_redirect = $args{redirect} || 1;
+    my $do_redirect = defined($args{redirect}) ? $args{redirect} : 1;
 
     my %tt_vars;
 
@@ -248,25 +260,13 @@ sub display_node {
         $tt_vars{display_google_maps} = 1;
     }
 
-    # Should we include a standard list of categories or locales?
-    if ($config->enable_common_categories || $config->enable_common_locales) {
-        $tt_vars{common_catloc} = 1;
-        $tt_vars{common_categories} = $config->enable_common_categories;
-        $tt_vars{common_locales} = $config->enable_common_locales;
-        $tt_vars{catloc_link} = $config->script_url . $config->script_name
-                                . "?id=";
-    }
-    
-    if ( $node_data{content} && $node_data{content} =~ /^#REDIRECT\s+(.+?)\s*$/ ) {
-        my $redirect = $1;
-        # Strip off enclosing [[ ]] in case this is an extended link.
-        $redirect =~ s/^\[\[//;
-        $redirect =~ s/\]\]\s*$//;
-
+    my $redirect = OpenGuides::Utils->detect_redirect(
+                                              content => $node_data{content} );
+    if ( $redirect ) {
         # Don't redirect if the parameter "redirect" is given as 0.
         if ($do_redirect == 0) {
-            return %tt_vars if $args{return_tt_vars};
             $tt_vars{current} = 1;
+            return %tt_vars if $args{return_tt_vars};
             my $output = $self->process_template(
                                                   id            => $id,
                                                   template      => "node.tt",
@@ -276,9 +276,17 @@ sub display_node {
             print $output;
         } elsif ( $wiki->node_exists($redirect) && $redirect ne $id && $redirect ne $oldid ) {
             # Avoid loops by not generating redirects to the same node or the previous node.
-            my $output = $self->redirect_to_node($redirect, $id);
-            return $output if $return_output;
-            print $output;
+            if ( $return_output ) {
+                if ( $intercept_redirect ) {
+                    return $self->redirect_to_node( $redirect, $id );
+                } else {
+                    return $self->display_node( id            => $redirect,
+                                                oldid         => $id,
+                                                return_output => 1,
+                                              );
+                }
+            }
+            print $self->redirect_to_node( $redirect, $id );
             return 0;
         }
     }
@@ -442,11 +450,20 @@ sub display_random_page {
 
   $guide->display_edit_form(
                              id => "Vivat Bacchus",
+                             vars => \%vars,
+                             content => $content,
+                             metadata => \%metadata,
+                             checksum => $checksum
                            );
 
 Display an edit form for the specified node.  As with other methods, the
 C<return_output> parameter can be used to return the output instead of
 printing it to STDOUT.
+
+If this is to redisplay an existing edit, the content, metadata
+and checksum may be supplied in those arguments
+
+Extra template variables may be supplied in the vars argument
 
 =cut
 
@@ -482,6 +499,22 @@ sub display_edit_form {
                     moderate        => $moderate,
                     deter_robots    => 1,
     );
+
+    # Override some things if we were supplied with them
+    $tt_vars{content} = $args{content} if $args{content};
+    $tt_vars{checksum} = $args{checksum} if $args{checksum};
+    if (defined $args{vars}) {
+        my %supplied_vars = %{$args{vars}};
+        foreach my $key ( keys %supplied_vars ) {
+            $tt_vars{$key} = $supplied_vars{$key};
+        }
+    }
+    if (defined $args{metadata}) {
+        my %supplied_metadata = %{$args{metadata}};
+        foreach my $key ( keys %supplied_metadata ) {
+            $tt_vars{$key} = $supplied_metadata{$key};
+        }
+    }
 
     my $output = $self->process_template(
                                           id            => $node,
@@ -781,6 +814,9 @@ sub show_backlinks {
                         return_output => 1,
                     );
 
+If either the C<type> or the C<value> parameter is omitted, then all pages
+will be returned.
+
 =cut
 
 sub show_index {
@@ -906,7 +942,6 @@ sub show_index {
 
     %conf = (
                 %conf,
-                node        => "$args{type} index", # KLUDGE
                 template    => $template,
                 tt_vars     => \%tt_vars,
             );
@@ -1088,6 +1123,14 @@ sub display_feed {
     print $output;
 }
 
+=item B<display_about>
+
+                print $guide->display_about(format => "rdf");
+
+Displays static 'about' information in various format. Defaults to HTML.
+
+=cut
+
 sub display_about {
     my ($self, %args) = @_;
 
@@ -1153,8 +1196,28 @@ sub display_about {
 </Project>
 
 </rdf:RDF>};
-    }
-    else {
+    } elsif ($args{format} && $args{format} eq 'opensearch') {
+        my $site_name  = $self->config->site_name;
+        my $search_url = $self->config->script_url . 'search.cgi';
+        my $contact_email = $self->config->contact_email;
+        $output = qq{Content-Type: application/opensearchdescription+xml; charset=utf-8
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+ <ShortName>$site_name</ShortName>
+ <Description>Search the site '$site_name'</Description>
+ <Tags>$site_name</Tags>
+ <Contact>$contact_email</Contact>
+ <Url type="application/atom+xml"
+   template="$search_url?search={searchTerms};format=atom"/>
+ <Url type="application/rss+xml"
+   template="$search_url?search={searchTerms};format=rss"/>
+ <Url type="text/html"
+   template="$search_url?search={searchTerms}"/>
+ <Query role="example" searchTerms="pubs"/>
+</OpenSearchDescription>};
+    } else {
         my $site_name  = $self->config->{site_name};
         my $script_name = $self->config->{script_name};
         $output = qq{Content-Type: text/html; charset=utf-8
@@ -1240,6 +1303,15 @@ As with other methods, parameters C<return_tt_vars> and
 C<return_output> can be used to return these things instead of
 printing the output to STDOUT.
 
+If you have specified the C<spam_detector_module> option in your
+C<wiki.conf>, this method will attempt to call the <looks_like_spam>
+method of that module to determine whether the edit is spam.  If this
+method returns true, then the C<spam_detected.tt> template will be
+used to display an error message.
+
+The C<looks_like_spam> method will be passed a datastructure containing
+content and metadata.
+
 The geographical data that you should provide in the L<CGI> object
 depends on the handler you chose in C<wiki.conf>.
 
@@ -1295,16 +1367,6 @@ sub commit_node {
     $new_metadata{longitude} = delete $new_metadata{longitude_unmunged}
         if $new_metadata{longitude_unmunged};
 
-    # Check to make sure all the indexable nodes are created
-    # Skip this for nodes needing moderation - this occurs for them once
-    #  they've been moderated
-    unless($wiki->node_required_moderation($node)) {
-        $self->_autoCreateCategoryLocale(
-                                          id       => $node,
-                                          metadata => \%new_metadata
-        );
-    }
-    
     foreach my $var ( qw( summary username comment edit_type ) ) {
         $new_metadata{$var} = $q->param($var) || "";
     }
@@ -1315,10 +1377,91 @@ sub commit_node {
                                     ? 1
                                     : 0;
 
+    # General validation
+    my $fails = OpenGuides::Utils->validate_edit(
+        cgi_obj  => $q
+    );
+
+    if ( scalar @{$fails} ) {
+        my %vars = (
+            validate_failed => $fails
+        );
+
+        my $output = $self->display_edit_form(
+                           id            => $node,
+                           content       => CGI->escapeHTML($content),
+                           metadata      => \%new_metadata,
+                           vars          => \%vars,
+                           checksum      => CGI->escapeHTML($checksum),
+                           return_output => 1
+        );
+
+        return $output if $return_output;
+        print $output;
+        return;
+    }
+
+    # If we can, check to see if this edit looks like spam.
+    my $spam_detector = $config->spam_detector_module;
+    my $is_spam;
+    if ( $spam_detector ) {
+        eval {
+            eval "require $spam_detector";
+            $is_spam = $spam_detector->looks_like_spam(
+                node    => $node,
+                content => $content,
+                metadata => \%new_metadata,
+            );
+        };
+    }
+
+    if ( $is_spam ) {
+        my $output = OpenGuides::Template->output(
+            wiki     => $self->wiki,
+            config   => $config,
+            template => "spam_detected.tt",
+            vars     => {
+                          not_editable => 1,
+                        },
+        );
+        return $output if $return_output;
+        print $output;
+        return;
+    }
+
+    # Check to make sure all the indexable nodes are created
+    # Skip this for nodes needing moderation - this occurs for them once
+    #  they've been moderated
+    my $needs_moderation = $wiki->node_required_moderation($node);
+    unless( $needs_moderation ) {
+        $self->_autoCreateCategoryLocale(
+                                          id       => $node,
+                                          metadata => \%new_metadata
+        );
+    }
+    
     my $written = $wiki->write_node( $node, $content, $checksum,
                                      \%new_metadata );
 
     if ($written) {
+        if ( $needs_moderation and $config->send_moderation_notifications ) {
+            my $body = "The node '$node' in the OpenGuides installation\n" .
+                "'" . $config->site_name . "' requires moderation. ".
+                "Please visit\n" .
+                $config->script_url . $config->script_name .
+                "?action=show_needing_moderation\nat your convenience.\n";
+            eval {
+                OpenGuides::Utils->send_email(
+                    config        => $config,
+                    subject       => "Node requires moderation",
+                    body          => $body,
+                    admin         => 1,
+                    return_output => $return_output
+                );
+            };
+            warn $@ if $@;
+        }
+
         my $output = $self->redirect_to_node($node);
         return $output if $return_output;
         print $output;

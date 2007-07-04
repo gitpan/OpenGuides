@@ -27,6 +27,7 @@
   </script>
 [% END %]
 
+<div id="node_title">
 [% IF current %]
   [% IF backlinks_in_title AND is_indexable_node %]
     <h2 class="node_name"><a href="[% cgi_url %]?action=index;index_type=[% CGI.escape(index_type) %];index_value=[% CGI.escape(index_value) %]">[% node_name %]</a></h2>
@@ -47,8 +48,13 @@
   </h2>
 [% END %]
 [% IF not (content || coord_field_1_value || coord_field_2_value || latitude || longitude) %]
-We don't have a node called "[% node_param %]". Would you like to <a href="[% full_cgi_url %]?action=edit;id=[% node_param %]">create it</a>?
+</div>
+<div id="nonexistent_node_message">We don't have a node called "[% node_param %]". Would you like to <a href="[% full_cgi_url %]?action=edit;id=[% node_param %]">create it</a>?</div>
 [% ELSE %]
+<div id="title_edit_link">
+<a href="[% full_cgi_url %]?action=edit;id=[% node_param %]">Edit this page</a>
+</div>
+</div>
 [% INCLUDE display_metadata.tt %]
 
 <!-- NODE CONTENT STARTS -->
@@ -105,6 +111,7 @@ We don't have a node called "[% node_param %]". Would you like to <a href="[% fu
 [% IF latitude AND longitude %]
   <small>
     (Latitude: 
+    <!-- titles using the wgs84 versions here are for microformats -->
     <abbr class="latitude" title="[% wgs84_lat %]">[% latitude %]</abbr>
 	Longitude: 
 	<abbr class="longitude" title="[% wgs84_long %]">[% longitude %]</abbr>)

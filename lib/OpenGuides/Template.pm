@@ -2,7 +2,7 @@ package OpenGuides::Template;
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = '0.12';
+$VERSION = '0.13';
 
 use Carp qw( croak );
 use CGI; # want to get rid of this and put the burden on the templates
@@ -50,17 +50,18 @@ to OpenGuides developers.
                                       template     => "node.tt",
                                       content_type => "text/html",
                                       cookies      => $cookie,
-                                      vars         => {foo => "bar"}
+                                      vars         => {foo => "bar"},
+                                      noheaders    => 1
   );
 
 Returns everything you need to send to STDOUT, including the
 Content-Type: header. Croaks unless C<template> is supplied.
 
-The variables supplied in C<vars> are passed through to the template
-specified.  Additional Template Toolkit variables are automatically
-set and passed through as well, as described below.  B<Note:>
-variables set in C<vars> will over-ride any variables of the same name
-in the config object or the user cookies.
+The config object and variables supplied in C<vars> are passed through
+to the template specified.  Additional Template Toolkit variables are
+automatically set and passed through as well, as described below.
+B<Note:> variables set in C<vars> will over-ride any variables of the
+same name in the config object or the user cookies.
 
 =over
 
@@ -94,6 +95,8 @@ in the config object or the user cookies.
 
 =item * C<licence_info_url>
 
+=item * C<prefs> (the preferences from the user cookie)
+
 =back
 
 =over
@@ -108,6 +111,11 @@ If C<node> is supplied:
 
 Content-Type: defaults to C<text/html> and is omitted if the
 C<content_type> arg is explicitly set to the blank string.
+
+However, what you more often need is the C<noheaders> option,
+which suppresses all HTTP headers, not just the Content-Type.
+
+The HTTP response code may be explictly set with the C<http_status> arg.
 
 =cut
 
@@ -127,7 +135,9 @@ sub output {
     my ($formatting_rules_link, $omit_help_links);
     my $formatting_rules_node = $config->formatting_rules_node;
     $formatting_rules_link = $config->formatting_rules_link;
-    my %cookie_data = OpenGuides::CGI->get_prefs_from_cookie(config=>$config);
+    my %cookie_data = OpenGuides::CGI->get_prefs_from_cookie(config=>$config,
+                                                             cookies => $args{cookies},
+                                                            );
     if ( $cookie_data{omit_help_links} ) {
         $omit_help_links = 1;
     } else {
@@ -147,6 +157,7 @@ sub output {
 
     my $tt_vars = {
         config                => $config,
+        prefs                 => \%cookie_data,
         site_name             => $config->site_name,
         cgi_url               => $script_name,
         script_url            => $script_url,
@@ -180,17 +191,30 @@ sub output {
     $tt_vars = { %$tt_vars, %{ $args{vars} || {} } };
 
     my $header = "";
-    unless ( defined $args{content_type} and $args{content_type} eq "" ) {
-        my $content_type;
-        if ($args{content_type}) {
-            $content_type = $args{content_type};
+
+    unless ( $args{noheaders} ) {
+        my %cgi_header_args;
+
+        if ( defined $args{content_type} and $args{content_type} eq "" ) {
+            $cgi_header_args{'-type'} = '';
         } else {
-            $content_type = "text/html";
+            if ( $args{content_type} ) {
+                $cgi_header_args{'-type'} = $args{content_type};
+            } else {
+                $cgi_header_args{'-type'} = "text/html";
+            }
         }
-        if ($tt_vars->{http_charset}) {
-            $content_type .= "; charset=".$tt_vars->{http_charset};
+
+        if ( $tt_vars->{http_charset} ) {
+            $cgi_header_args{'-type'} .= "; charset=".$tt_vars->{http_charset};
         }
-        $header = CGI::header( -type => $content_type, -cookie => $args{cookies} );
+        $cgi_header_args{'-cookie'} = $args{cookies};
+
+        if ( $args{http_status} ) {
+            $cgi_header_args{'-status'} = $args{http_status};
+        }
+
+        $header = CGI::header( %cgi_header_args );
     }
 
     # vile hack
@@ -200,7 +224,7 @@ sub output {
                          set_coord_field_vars => 1,
                          metadata => {},
                      );
-                     
+
     $tt_vars = { %field_vars, %$tt_vars };
 
     my $output;
@@ -266,7 +290,8 @@ sub extract_metadata_vars {
     my ($class, %args) = @_;
     my %metadata = %{$args{metadata} || {} };
     my $q = $args{cgi_obj};
-    my $formatter = $args{wiki}->formatter;
+    my $wiki = $args{wiki};
+    my $formatter = $wiki->formatter;
     my $config = $args{config};
     my $script_name = $config->script_name;
 
@@ -294,13 +319,33 @@ sub extract_metadata_vars {
                         split("\r\n", $locales_text);
     }
 
-    my @categories = map { { name => $_,
-                             url  => "$script_name?Category_"
-            . uri_escape($formatter->node_name_to_node_param($_)) } } @catlist;
+    # Some stuff here is copied from OpenGuides->_autoCreateCategoryLocale
+    # - we should rationalise this.
+    my @categories = map {
+        my $param = $formatter->node_name_to_node_param( $_ );
+        my $name = $_;
+        $name =~ s/(.*)/\u$1/;
+        $name = $wiki->formatter->_do_freeupper( "Category $name" );
+        {
+          name => $_,
+          url  => $wiki->node_exists( $name )
+                      ? "$script_name?Category_" . uri_escape( $param )
+                      : "",
+        };
+    } @catlist;
 
-    my @locales    = map { { name => $_,
-                             url  => "$script_name?Locale_"
-            . uri_escape($formatter->node_name_to_node_param($_)) } } @loclist;
+    my @locales = map {
+        my $param = $formatter->node_name_to_node_param( $_ );
+        my $name = $_;
+        $name =~ s/(.*)/\u$1/;
+        $name = $wiki->formatter->_do_freeupper( "Locale $name" );
+        {
+          name => $_,
+          url  => $wiki->node_exists( $name )
+                      ? "$script_name?Locale_" . uri_escape( $param )
+                      : "",
+        };
+    } @loclist;
 
     # The 'website' attribute might contain a URL so we wiki-format it here
     # rather than just CGI::escapeHTMLing it all in the template.
@@ -409,19 +454,19 @@ sub extract_metadata_vars {
             $os_y =~ s/\s+//g;
 
             # If we were sent x and y, work out lat/long; and vice versa.
-            if ( $os_x && $os_y ) {
+            if ( defined $os_x && length $os_x && defined $os_y && length $os_y ) {
                 my $point = Geography::NationalGrid::GB->new( Easting =>$os_x,
                                      Northing=>$os_y);
                 $lat  = sprintf("%.6f", $point->latitude);
                 $long = sprintf("%.6f", $point->longitude);
-            } elsif ( $lat && $long ) {
+            } elsif ( defined $lat && length $lat && defined $long && length $long ) {
                 my $point = Geography::NationalGrid::GB->new(Latitude  => $lat,
                                                              Longitude => $long);
                 $os_x = $point->easting;
                 $os_y = $point->northing;
             }
             
-            if ( $os_x && $os_y ) {
+            if ( defined $os_x && length $os_x && defined $os_y && length $os_y ) {
                 %vars = (
                             %vars,
                             latitude  => $lat,
@@ -454,18 +499,18 @@ sub extract_metadata_vars {
             $osie_y =~ s/\s+//g;
 
             # If we were sent x and y, work out lat/long; and vice versa.
-            if ( $osie_x && $osie_y ) {
+            if ( defined $osie_x && length $osie_x && defined $osie_y && length $osie_y ) {
                 my $point = Geography::NationalGrid::IE->new(Easting=>$osie_x,
                                    Northing=>$osie_y);
                 $lat = sprintf("%.6f", $point->latitude);
                 $long = sprintf("%.6f", $point->longitude);
-            } elsif ( $lat && $long ) {
+            } elsif ( defined $lat && length $lat && defined $long && length $long ) {
                 my $point = Geography::NationalGrid::GB->new(Latitude  => $lat,
                                                              Longitude => $long);
                 $osie_x = $point->easting;
                 $osie_y = $point->northing;
             }
-            if ( $osie_x && $osie_y ) {
+            if ( defined $osie_x && length $osie_x && defined $osie_y && length $osie_y ) {
                 %vars = (
                             %vars,
                             latitude  => $lat,
@@ -491,7 +536,7 @@ sub extract_metadata_vars {
             my $lat    = $q->param("latitude");
             my $long   = $q->param("longitude");
             
-            if ( $lat && $long ) {
+            if ( defined $lat && length $lat && defined $long && length $long ) {
                 # Trim whitespace.
                 $lat =~ s/\s+//g;
                 $long =~ s/\s+//g;
@@ -528,7 +573,7 @@ sub extract_metadata_vars {
     my %prefs = OpenGuides::CGI->get_prefs_from_cookie( config => $config );
     if ( $prefs{latlong_traditional} ) {
         foreach my $var ( qw( latitude longitude ) ) {
-            next unless defined $vars{$var};
+            next unless defined $vars{$var} && length $vars{$var};
             $vars{$var."_unmunged"} = $vars{$var};
             $vars{$var} = Geography::NationalGrid->deg2string($vars{$var});
         }

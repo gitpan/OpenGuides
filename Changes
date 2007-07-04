@@ -3,6 +3,32 @@
 More detailed changelogs can be found at
 http://dev.openguides.org/log/trunk
 
+0.61    4 July 2007
+        Added experimental support for local spam detection modules; see the
+          commit_node method in "perldoc OpenGuides" for details.
+        Added extra "edit this page" link next to the node name; if you don't
+          want it, add div#title_edit_link {display:none;} to your stylesheet.
+        Removed dependency on Test::MockObject.
+        Remove misleading CSS examples
+        Support alternative database ports (#165)
+        Only display the google maps preference if node maps are enabled
+          (#192).
+        Respect redirect=0 (#104).
+        If an unknown action is supplied to wiki.cgi, redirect to
+          action=display (partial fix for #102)
+        Added new div#nonexistent_node_message for displaying message when
+          someone tries to view a nonexistent node.
+        Validate input geodata (#22)
+        List all contributors in RDF version of nodes (#106).
+        The "Look for nearby geocaches" preference and link now actually work
+          (#216).
+        Move the common categories/locales navbar display decision into the
+          templates (#214).
+        Add email notifications when moderated nodes are edited (#138)
+        Add IP addresses into non-anonymous changes in Recent Changes (#113)
+        Add an OpenSearch description, and automatic discovery for it (#180)
+        Include machine-readable link to licence, if configured (#226)
+
 0.60    13 May 2007
         Removed footer search from edit page (shouldn't have been there).
         Upgraded Module::Build requirement to cope with API change.

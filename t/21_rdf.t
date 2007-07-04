@@ -15,7 +15,7 @@ if ( $@ ) {
     plan skip_all => "DBD::SQLite could not be used - no database to test with. ($error)";
 }
 
-plan tests => 27;
+plan tests => 28;
 
 Wiki::Toolkit::Setup::SQLite::setup( { dbname => "t/node.db" } );
 my $config = OpenGuides::Test->make_basic_config;
@@ -24,12 +24,14 @@ $config->script_name( "mywiki.cgi" );
 $config->site_name( "Wiki::Toolkit Test Site" );
 $config->default_city( "London" );
 $config->default_country( "United Kingdom" );
+$config->geo_handler( 3 );
 
 eval { require Wiki::Toolkit::Search::Plucene; };
 if ( $@ ) { $config->use_plucene ( 0 ) };
 
 
-my $wiki = OpenGuides::Utils->make_wiki_object( config => $config );
+my $guide = OpenGuides->new( config => $config );
+my $wiki = $guide->wiki;
 
 # Clear out the database from any previous runs.
 foreach my $del_node ( $wiki->list_all_nodes ) {
@@ -43,21 +45,36 @@ is( $@, "", "'new' doesn't croak if wiki and config objects supplied" );
 isa_ok( $rdf_writer, "OpenGuides::RDF" );
 
 # Test the data for a node that exists.
-$wiki->write_node( "Calthorpe Arms",
-    "CAMRA-approved pub near King's Cross",
-    undef,
-    {
+OpenGuides::Test->write_data(
+        guide              => $guide,
+        node               => "Calthorpe Arms",
+        content            => "CAMRA-approved pub near King's Cross",
+        comment            => "Stub page, please update!",
+        username           => "Anonymous",
+        postcode           => "WC1X 8JR",
+        locales            => "Bloomsbury\r\nSt Pancras",
+        phone              => "test phone number",
+        website            => "test website",
+        hours_text         => "test hours",
+        latitude           => "51.524193",
+        longitude          => "-0.114436",
+        summary            => "a really nice pub",
+);
+
+OpenGuides::Test->write_data(
+        guide              => $guide,
+        node               => "Calthorpe Arms",
+        content            => "CAMRA-approved pub near King's Cross",
         comment            => "Stub page, please update!",
         username           => "Kake",
         postcode           => "WC1X 8JR",
-        locale             => [ "Bloomsbury", "St Pancras" ],
+        locales            => "Bloomsbury\r\nSt Pancras",
         phone              => "test phone number",
         website            => "test website",
-        opening_hours_text => "test hours",
+        hours_text         => "test hours",
         latitude           => "51.524193",
         longitude          => "-0.114436",
         summary            => "a nice pub",
-    }
 );
 
 my $rdfxml = $rdf_writer->emit_rdfxml( node => "Calthorpe Arms" );
@@ -83,8 +100,10 @@ like( $rdfxml,
 
 like( $rdfxml, qr|<foaf:Person rdf:ID="Kake">|,
     "last username to edit used as contributor" );
+like( $rdfxml, qr|<foaf:Person rdf:ID="Anonymous">|,
+    "... as well as previous usernames" );
 
-like( $rdfxml, qr|<wiki:version>1</wiki:version>|, "version picked up" );
+like( $rdfxml, qr|<wiki:version>2</wiki:version>|, "version picked up" );
 
 like( $rdfxml, qr|<rdf:Description rdf:about="">|, "sets the 'about' correctly" );
 
@@ -105,7 +124,7 @@ unlike( $rdfxml, qr|<dc:date>1970|, "hasn't defaulted to the epoch" );
 $config = OpenGuides::Test->make_basic_config;
 $config->default_city( "" );
 $config->default_country( "" );
-my $guide = OpenGuides->new( config => $config );
+$guide = OpenGuides->new( config => $config );
 OpenGuides::Test->write_data(
                                 guide => $guide,
                                 node  => "Star Tavern",

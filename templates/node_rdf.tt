@@ -8,7 +8,7 @@
   xmlns:chefmoz="http://chefmoz.org/rdf/elements/1.0/"
   xmlns:wn="http://xmlns.com/wordnet/1.6/"
   xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#"
-  xmlns:os="http://downlode.org/rdf/os/0.1/"
+  xmlns:os="http://downlode.org/Code/RDF/Ordnance_Survey/schema/1#"
   xmlns:owl="http://www.w3.org/2002/07/owl#"
   xmlns="http://www.w3.org/2000/10/swap/pim/contact#"
 >
@@ -18,11 +18,13 @@
     <dc:date>[% timestamp %]</dc:date>
     <dcterms:modified>[% timestamp %]</dcterms:modified>
 
+    [% FOREACH contributor = contributors.values %] 
     <dc:contributor>
-      <foaf:Person rdf:ID="[% user_id %]">
-        <foaf:nick>[% username %]</foaf:nick>
+      <foaf:Person rdf:ID="[% contributor.user_id %]">
+        <foaf:nick>[% contributor.username %]</foaf:nick>
       </foaf:Person>
     </dc:contributor>
+    [% END %]
 
     <dc:source rdf:resource="[% node_uri %]" />
     <wiki:version>[% version %]</wiki:version>
@@ -67,9 +69,9 @@
         </foaf:based_near>
       [% END %]
 
-      [% IF latitude AND longitude %]
-        <geo:lat>[% latitude %]</geo:lat>
-        <geo:long>[% longitude %]</geo:long>
+      [% IF wgs84_lat AND wgs84_long %]
+        <geo:lat>[% wgs84_lat %]</geo:lat>
+        <geo:long>[% wgs84_long %]</geo:long>
       [% END %]
 
       [% IF os_x AND os_y %]

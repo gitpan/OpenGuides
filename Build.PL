@@ -9,7 +9,7 @@ eval {
     require OpenGuides::Config;
 };
 
-die "Config::Tiny is required to configure this application.\n" if $@;
+die "Problem loading OpenGuides module or a missing module\n\n$@.\n" if $@;
 
 print <<EOF;
 
@@ -42,7 +42,8 @@ my %yn_vars = map { $_ => 1 }
       moderation_requires_password enable_node_image enable_common_categories
       enable_common_locales recent_changes_on_home_page
       random_page_omits_locales random_page_omits_categories
-      content_above_navbar_in_html show_gmap_in_node_display);
+      content_above_navbar_in_html show_gmap_in_node_display
+      send_moderation_notifications);
 
 my $skip_config = Module::Build->y_n("Skip OpenGuides configuration?", "n");
 if ( $skip_config ) {
@@ -92,7 +93,7 @@ my $install_directory; # used to suggest template paths
 my $use_plucene = 1; # keep track of this so we know what to put in prereqs
 my $centre_lat = ''; # contains centre lat derived from Google Maps URL
 foreach my $var ( qw(
-   dbname dbuser dbpass dbhost script_name
+   dbname dbuser dbpass dbhost dbport script_name
    install_directory template_path custom_template_path script_url
    custom_lib_path use_plucene indexing_directory enable_page_deletion
    admin_pass stylesheet_url site_name navbar_on_home_page
@@ -104,6 +105,7 @@ foreach my $var ( qw(
    default_gmaps_search_zoom force_wgs84 google_analytics_key
    licence_name licence_url licence_info_url moderation_requires_password
    enable_node_image enable_common_categories enable_common_locales
+   spam_detector_module static_path static_url send_moderation_notifications
   ) ) {
     my $q_method = $var . "__qu";
     my $qu  = $existing_config->$q_method;
@@ -117,7 +119,8 @@ foreach my $var ( qw(
     }
 
     if ( $dbtype eq "sqlite" and
-         ( $var eq "dbuser" or $var eq "dbpass" or $var eq "dbhost" )
+         ( $var eq "dbuser" or $var eq "dbpass" or $var eq "dbhost" or
+           $var eq "dbport")
        ) {
         print "$var not relevant for SQLite... skipping...\n"
             unless $skip_config;
@@ -275,7 +278,7 @@ my $build = OpenGuides::Build->new(
         'CGI'                                 => '2.92',  # avoid escapeHTML bug
         'CGI::Carp'                           => 0,
         'CGI::Cookie'                         => 0,
-        'Wiki::Toolkit'                       => '0.73',
+        'Wiki::Toolkit'                       => '0.74',  # for dbport
         'Wiki::Toolkit::Feed::Atom'           => 0,
         'Wiki::Toolkit::Feed::RSS'            => 0,
         'Wiki::Toolkit::Formatter::UseMod'    => 0,
@@ -292,11 +295,11 @@ my $build = OpenGuides::Build->new(
         'Geography::NationalGrid'             => 0,
         'HTML::Entities'                      => 0,
         'LWP::Simple'                         => 0,
+        'MIME::Lite'                          => 0,
         'Parse::RecDescent'                   => 0,
         $search_module                        => 0,
         'POSIX'                               => 0,
         'Template'                            => '2.15', # for hash.delete and string.remove vmethods
-        'Test::MockObject'                    => '0.07', # earlier doesn't use 'mock'
         'Time::Piece'                         => 0,
         'URI::Escape'                         => 0,
         'XML::RSS'                            => 0,
@@ -369,8 +372,13 @@ $build->config_data( __templates     => [
                       "search_results.tt",
                       "site_index.tt",
                       "search.tt",
+                      "spam_detected.tt",
                       "userstats.tt",
                       "wanted_pages.tt"
+    ] );
+
+$build->config_data( __static_files => [
+    # XXX to be supplied when we have some
     ] );
 
 # Finally write the build script.

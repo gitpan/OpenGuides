@@ -1,6 +1,6 @@
 ---
 name: OpenGuides
-version: 0.60
+version: 0.61
 author: ~
 abstract: ~
 license: perl
@@ -18,14 +18,14 @@ requires:
   Geography::NationalGrid: 0
   HTML::Entities: 0
   LWP::Simple: 0
+  MIME::Lite: 0
   POSIX: 0
   Parse::RecDescent: 0
   Plucene: 0
   Template: 2.15
-  Test::MockObject: 0.07
   Time::Piece: 0
   URI::Escape: 0
-  Wiki::Toolkit: 0.73
+  Wiki::Toolkit: 0.74
   Wiki::Toolkit::Feed::Atom: 0
   Wiki::Toolkit::Feed::RSS: 0
   Wiki::Toolkit::Formatter::UseMod: 0
@@ -45,12 +45,12 @@ dynamic_config: 1
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.60
+    version: 0.61
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
   OpenGuides::CGI:
     file: lib/OpenGuides/CGI.pm
-    version: 0.07
+    version: 0.08
   OpenGuides::Config:
     file: lib/OpenGuides/Config.pm
   OpenGuides::Feed:
@@ -58,17 +58,17 @@ provides:
     version: 0.01
   OpenGuides::RDF:
     file: lib/OpenGuides/RDF.pm
-    version: 0.09
+    version: 0.10
   OpenGuides::Search:
     file: lib/OpenGuides/Search.pm
     version: 0.11
   OpenGuides::Template:
     file: lib/OpenGuides/Template.pm
-    version: 0.12
+    version: 0.13
   OpenGuides::Test:
     file: lib/OpenGuides/Test.pm
-    version: 0.02
+    version: 0.03
   OpenGuides::Utils:
     file: lib/OpenGuides/Utils.pm
-    version: 0.09
+    version: 0.10
 generated_by: Module::Build version 0.26

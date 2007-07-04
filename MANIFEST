@@ -12,9 +12,7 @@ README.GMAPS
 SIGNATURE
 TROUBLESHOOTING
 UPGRADING
-examples/london.css
 examples/reindex.pl
-examples/vegan-oxford.css
 lib/OpenGuides/Build.pm
 lib/OpenGuides/CGI.pm
 lib/OpenGuides/Config.pm
@@ -73,6 +71,7 @@ templates/recent_changes.tt
 templates/search_results.tt
 templates/site_index.tt
 templates/search.tt
+templates/spam_detected.tt
 templates/userstats.tt
 templates/wanted_pages.tt
 t/01_load.t
@@ -115,6 +114,7 @@ t/46_map_in_node_display.t
 t/47_navbar_placement.t
 t/48_google_analytics.t
 t/49_custom_header.t
+t/50_http_response_codes.t
 t/51_display_node.t
 t/52_display_diffs.t
 t/53_show_index.t
@@ -122,6 +122,8 @@ t/54_redirect.t
 t/55_node_history.t
 t/56_diffs_with_macros.t
 t/57_random_page.t
+t/58_navbar_common_locales_categories.t
+t/59_preferences.t
 t/61_bug_textareas.t
 t/62_bug_trailing_whitespace.t
 t/63_bug_map_link_no_address.t
@@ -130,12 +132,16 @@ t/65_bug_metadata_escape.t
 t/66_bug_latlong_representation.t
 t/67_bug_first_version.t
 t/68_bug_website_displayed.t
+t/69_bug_zero_geo.t
 t/70_admin_home.t
 t/71_missing_metadata.t
 t/72_node_moderation.t
 t/73_toggle_moderation.t
 t/74_ping_plugin.t
 t/75_revert_user.t
+t/76_detect_spam.t
+t/77_send_email.t
+t/78_about.t
 t/templates/15_test.tt
 wiki.cgi
 SIGNATURE    Added here by Module::Build

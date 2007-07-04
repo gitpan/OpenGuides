@@ -34,10 +34,10 @@ sub show_form {
 					config   => $config,
 					template => "newpage.tt",
 					vars     => {
-					    not_editable     => 1,
+                                            not_editable     => 1,
                                             not_deletable    => 1,
                                             deter_robots     => 1,
-				       	    disallowed_chars => \@badchars,
+                                            disallowed_chars => \@badchars,
                                             pagename         => $pagename }
     );
 }

@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.60';
+$VERSION = '0.61';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -186,7 +186,7 @@ eval {
         print $q->redirect( $redir_target );
     } elsif ($action eq 'about') {
         $guide->display_about(format => $format);
-    } else { # Default is to display a node.
+    } elsif ($action eq 'display') { 
         if ( $format and $format eq "rdf" ) {
             display_node_rdf( node => $node );
         } elsif ( $format and $format eq 'raw' ) {
@@ -220,7 +220,23 @@ eval {
                                     );
             }
         }
+    } else { 
+        # Fallback: redirect to the display page, preserving all vars
+        # except for the action, which we override.
+        # Note: $q->Vars needs munging if we need to support any
+        # multi-valued params
+        my $params = $q->Vars;
+        $params->{'action'} = 'display';
+        my $redir_target = $script_url . $script_name . '?';
+        my @args = map { "$_=" . $params->{$_} } keys %{$params};
+        $redir_target .= join ';', @args;
+        
+        print $q->redirect(
+            -uri => $redir_target,
+            -status => 303
+        );
     }
+
 };
 
 if ($@) {
@@ -286,7 +302,7 @@ sub process_template {
             template => $template,
             vars     => $vars
     );
-    $output_conf{content_type} = "" if $omit_header; # defaults otherwise
+    $output_conf{noheaders} = 1 if $omit_header; # defaults otherwise
     print OpenGuides::Template->output( %output_conf );
 }
 

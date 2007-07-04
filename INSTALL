@@ -277,6 +277,28 @@ http://creativecommons.org/licenses/by-sa/2.5/
 You should probably include a page on your wiki about your local licensing
 policy, but you can leave this blank for now if you don't have one yet.
 
+  "What module would you like to use for spam detection? (optional)"
+
+The module you choose should have a method called "looks_like_spam", which
+accepts a hash with content and metadata as keys, and returns true or false
+to the question of whether the edit should be considered to be spam. 
+
+  "What directory should we install static content (CSS, images, javascript)
+   to?"
+
+OpenGuides comes with some static content which will be installed
+automatically.
+
+  "What is the URL corresponding to the static content?"
+
+You will need to configure the above directory in your web server, then
+input the URL the content will be visible at here.
+
+  "Should we send email notifications when a moderated node is edited?"
+
+For spam avoidance, you can configure certain nodes to require moderation.
+To ensure that such edits are noticed, OpenGuides can email you.
+
   "Distance calculation methods available are:
       1) British National Grid
       2) Irish National Grid
@@ -324,6 +346,7 @@ again.
 Once you have installed OpenGuides you may wish to edit templates that
 provide site-specific design. These templates are stored in the directory
 custom-templates/ by default and are described in the file CUSTOMISATION.
+
 The id and class tags used for the CSS in OpenGuides are specified in
 README.CSS.
 

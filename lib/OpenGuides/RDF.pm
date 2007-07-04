@@ -2,8 +2,10 @@ package OpenGuides::RDF;
 
 use strict;
 
+use OpenGuides::Utils;
+
 use vars qw( $VERSION );
-$VERSION = '0.09';
+$VERSION = '0.10';
 
 use Time::Piece;
 use URI::Escape;
@@ -80,7 +82,7 @@ sub emit_rdfxml {
                    );
 
     foreach my $var ( qw( phone fax website opening_hours_text address
-                          postcode city country latitude longitude username
+                          postcode city country latitude longitude
                           os_x os_y summary ) ) {
         my $val = $metadata{$var}[0] || $defaults{$var} || "";
         $tt_vars{$var} = $val;
@@ -113,6 +115,15 @@ sub emit_rdfxml {
                                         : "rdf:Description";
     $tt_vars{is_geospatial} = $is_geospatial;
 
+    # Fix up lat and long.
+    eval {
+           @tt_vars{ qw( wgs84_long wgs84_lat ) } =
+               OpenGuides::Utils->get_wgs84_coords(
+                                             longitude => $tt_vars{longitude},
+                                             latitude  => $tt_vars{latitude},
+                                             config    => $config );
+    };
+
     # Timestamp of last edited.
     my $timestamp = $node_data{last_modified};
     if ( $timestamp ) {
@@ -122,17 +133,14 @@ sub emit_rdfxml {
         $tt_vars{timestamp} = $time->strftime("%Y-%m-%dT%H:%M:%S");
     }
 
-    $tt_vars{user_id} = $tt_vars{username};
-    $tt_vars{user_id} =~ s/\s/_/g;
-    
     $tt_vars{node_uri} = $self->{make_node_url}->( $node_name );
     $tt_vars{node_uri_with_version}
                             = $self->{make_node_url}->( $node_name,
                                                         $tt_vars{version} );
 
-    # Should probably be moved into OpenGuides::Utils.
-    if ($node_data{content} =~ /^\#REDIRECT \[\[(.*?)]\]$/) {
-        my $redirect = $1;
+    my $redirect = OpenGuides::Utils->detect_redirect( content =>
+                                                         $node_data{content} );
+    if ( $redirect ) {
         $tt_vars{redirect} = $config->script_url . $config->script_name
                              . "?id="
                              . $formatter->node_name_to_node_param( $redirect )
@@ -144,6 +152,28 @@ sub emit_rdfxml {
         if ( $tt_vars{$var} ) {
             $tt_vars{$var} = encode_entities_numeric( $tt_vars{$var} );
         }
+    }
+
+    my @revisions = $wiki->list_node_all_versions(
+                                                   name => $node_name,
+                                                   with_content => 0,
+                                                   with_metadata => 1,
+                                                 );
+
+    # We want all users who have edited the page listed as contributors,
+    # but only once each
+    foreach my $rev ( @revisions ) {
+        my $username = $rev->{metadata}{username};
+        next unless defined $username && length $username;
+
+        my $user_id = $username;
+        $user_id =~ s/\s+/_/g;
+        
+        $tt_vars{contributors}{$username} ||=
+            {
+              username => encode_entities_numeric($username),
+              user_id  => encode_entities_numeric($user_id),
+            };
     }
 
     # OK, we've set all our template variables; now process the template.
