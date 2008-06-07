@@ -1,7 +1,19 @@
 "#" items refer to tickets. See <http://dev.openguides.org/report/9> for details.
 
 More detailed changelogs can be found at
-http://dev.openguides.org/log/trunk
+<http://dev.openguides.org/log/trunk>.
+
+0.62    8 June 2008
+        Allow wiki page links (simple: [[Foo]], title: [[Foo|bar]]) in
+          change summaries.
+        Ensure that all modules we ship are versioned.
+        Added experimental support for local IP blacklisting modules; see the
+          display_node method in "perldoc OpenGuides" for details.
+        Don't include redirect pages in search results. (#24)
+        Include map link URLs in RDF output. (#26)
+        Hide historic versions of nodes from search engines. (#207)
+        Install signal handlers in reindex.pl and CGI scripts to allow
+          temporary files (eg from Plucene) to be cleaned up. (#247)
 
 0.61    4 July 2007
         Added experimental support for local spam detection modules; see the

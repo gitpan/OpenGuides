@@ -2,7 +2,7 @@ package OpenGuides::Utils;
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = '0.10';
+$VERSION = '0.11';
 
 use Carp qw( croak );
 use Wiki::Toolkit;
@@ -393,6 +393,47 @@ sub validate_edit {
 
 };
 
+=item B<parse_change_comment>
+
+    my $change_comment = parse_change_comment($string, $base_url);
+    
+Given a base URL (for example, C<http://example.com/wiki.cgi?>), takes a string, 
+replaces C<[[page]]> and C<[[page|titled link]]> with
+
+    <a href="http://example.com/wiki.cgi?page">page</a>
+
+and
+
+    <a href="http://example.com/wiki.cgi?page">titled link</a>
+
+respectively, and returns it. This is a limited subset of wiki markup suitable for
+use in page change comments.
+
+=cut
+
+sub parse_change_comment {   
+    my ($comment, $base_url) = @_;
+
+    my @links = $comment =~ m{\[\[(.*?)\]\]}g;
+
+    # It's not all that great having to reinvent the wheel in this way, but
+    # Text::WikiFormat won't let you specify the subset of wiki notation that 
+    # you're interested in. C'est la vie.
+    foreach (@links) {
+        if (/(.*?)\|(.*)/) {
+            my ($page, $title) = ($1, $2);
+            $comment =~ s{\[\[$page\|$title\]\]}
+                         {<a href="$base_url$page">$title</a>};
+        } else {
+            my $page = $_;
+            $comment =~ s{\[\[$page\]\]}
+                         {<a href="$base_url$page">$page</a>};
+        }
+    }
+
+    return $comment;
+}
+
 =item B<send_email>
 
     eval { OpenGuides::Utils->send_email(
@@ -421,6 +462,7 @@ a string instead of being sent by email.
 
 =cut
 
+
 sub send_email {
     my ( $self, %args ) = @_;
     my $config = $args{config} or die "config argument not supplied";
@@ -428,7 +470,7 @@ sub send_email {
     @to = @{$args{to}} if $args{to};
     my @bcc;
     push @to, $config->contact_email if $args{admin};
-    die "No recipients specified" unless scalar @to;
+    die "No recipients specified" unless $to[0];
     die "No subject specified" unless $args{subject};
     die "No body specified" unless $args{body};
     my $to_str = join ',', @to;
@@ -457,7 +499,7 @@ The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 
-     Copyright (C) 2003-2007 The OpenGuides Project.  All Rights Reserved.
+     Copyright (C) 2003-2008 The OpenGuides Project.  All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

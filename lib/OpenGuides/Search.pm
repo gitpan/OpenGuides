@@ -1,6 +1,6 @@
 package OpenGuides::Search;
 use strict;
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 use CGI qw( :standard );
 use Wiki::Toolkit::Plugin::Locator::Grid;
@@ -503,17 +503,25 @@ sub _run_phrase_search {
         $contents_res{$node} = int( $contents_res{$node} / $num_results ) + 1;
     }
 
-    # It'll be a real phrase (as opposed to a word) if it has a space in it.
-    # In this case, dump out the nodes that don't match the search exactly.
-    # I don't know why the phrase searching isn't working properly.  Fix later.
-    if ( $phrase =~ /\s/ ) {
-        my @tmp = keys %contents_res;
-        foreach my $node ( @tmp ) {
-            my $content = $wiki->retrieve_node( $node );
+    my @tmp = keys %contents_res;
+    foreach my $node ( @tmp ) {
+        my $content = $wiki->retrieve_node( $node );
+
+        # Don't include redirects in search results.
+        if ($content =~ /^#REDIRECT/) {
+            delete $contents_res{$node};
+            next;
+        }
+        
+        # It'll be a real phrase (as opposed to a word) if it has a space in it.
+        # In this case, dump out the nodes that don't match the search exactly.
+        # I don't know why the phrase searching isn't working properly.  Fix later.
+        if ( $phrase =~ /\s/ ) {
             unless ( $content =~ /$phrase/i || $node =~ /$phrase/i ) {
                 delete $contents_res{$node};
-	    }
+            }
         }
+
     }
 
     my %results = map { $_ => { name => $_, score => $contents_res{$_} } }
@@ -823,7 +831,7 @@ The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 
-     Copyright (C) 2003-2007 The OpenGuides Project.  All Rights Reserved.
+     Copyright (C) 2003-2008 The OpenGuides Project.  All Rights Reserved.
 
 The OpenGuides distribution is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

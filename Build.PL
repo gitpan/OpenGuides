@@ -1,6 +1,7 @@
 use strict;
 use lib "lib";
 use Data::Dumper;
+use Getopt::Long;
 
 eval {
     require Config::Tiny;
@@ -11,7 +12,12 @@ eval {
 
 die "Problem loading OpenGuides module or a missing module\n\n$@.\n" if $@;
 
-print <<EOF;
+my $force;
+
+GetOptions('force' => \$force);
+
+unless ($force) {
+	print <<EOF;
 
 Beginning install process... if you already have an OpenGuides
 configuration file and you don't want to have to type in all your config
@@ -22,6 +28,7 @@ EOF
 
 my $continue = Module::Build->y_n("Continue with install?", "y");
 exit 0 unless $continue;
+}
 
 my $existing_config_file = 'wiki.conf';
 my $existing_config;
@@ -42,10 +49,10 @@ my %yn_vars = map { $_ => 1 }
       moderation_requires_password enable_node_image enable_common_categories
       enable_common_locales recent_changes_on_home_page
       random_page_omits_locales random_page_omits_categories
-      content_above_navbar_in_html show_gmap_in_node_display
+      content_above_navbar_in_html show_gmap_in_node_display force_wgs84
       send_moderation_notifications);
 
-my $skip_config = Module::Build->y_n("Skip OpenGuides configuration?", "n");
+my $skip_config = $force ? 'y' : Module::Build->y_n("Skip OpenGuides configuration?", "n");
 if ( $skip_config ) {
     print <<EOF;
 ===========================================================================
@@ -105,7 +112,8 @@ foreach my $var ( qw(
    default_gmaps_search_zoom force_wgs84 google_analytics_key
    licence_name licence_url licence_info_url moderation_requires_password
    enable_node_image enable_common_categories enable_common_locales
-   spam_detector_module static_path static_url send_moderation_notifications
+   spam_detector_module host_checker_module static_path static_url
+   send_moderation_notifications
   ) ) {
     my $q_method = $var . "__qu";
     my $qu  = $existing_config->$q_method;
@@ -292,6 +300,7 @@ my $build = OpenGuides::Build->new(
         $drivers{$dbtype}                     => 0,
         'File::Spec::Functions'               => 0,
         'File::Temp'                          => 0,
+		'Geo::Coordinates::UTM'               => 0,
         'Geography::NationalGrid'             => 0,
         'HTML::Entities'                      => 0,
         'LWP::Simple'                         => 0,
@@ -332,6 +341,7 @@ $build->config_data( __templates     => [
                       "admin_revert_user.tt",
                       "backlink_results.tt",
                       "banner.tt",
+                      "blacklisted_host.tt",
                       "delete_confirm.tt",
                       "delete_done.tt",
                       "delete_password_wrong.tt",
