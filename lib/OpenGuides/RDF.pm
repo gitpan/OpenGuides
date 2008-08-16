@@ -5,7 +5,7 @@ use strict;
 use OpenGuides::Utils;
 
 use vars qw( $VERSION );
-$VERSION = '0.11';
+$VERSION = '0.12';
 
 use Time::Piece;
 use URI::Escape;
@@ -83,12 +83,11 @@ sub emit_rdfxml {
 
     foreach my $var ( qw( phone fax website opening_hours_text address
                           postcode city country latitude longitude
-                          os_x os_y map_link summary ) ) {
+                          os_x os_y map_link summary node_image ) ) {
         my $val = $metadata{$var}[0] || $defaults{$var} || "";
         $tt_vars{$var} = $val;
     }
 
-    
     my @cats = @{ $metadata{category} || [] };
     @cats = map { { name => $_ } } @cats;
     $tt_vars{categories} = \@cats;
@@ -181,6 +180,8 @@ sub emit_rdfxml {
     my $custom_template_path = $config->custom_template_path || "";
     my $tt = Template->new( {
                     INCLUDE_PATH => "$custom_template_path:$template_path" } );
+
+    $tt_vars{full_cgi_url} = $config->script_url . $config->script_name;
 
     my $rdf;
     $tt->process( "node_rdf.tt", \%tt_vars, \$rdf );

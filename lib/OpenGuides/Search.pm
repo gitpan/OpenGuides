@@ -1,6 +1,6 @@
 package OpenGuides::Search;
 use strict;
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 
 use CGI qw( :standard );
 use Wiki::Toolkit::Plugin::Locator::Grid;
@@ -184,7 +184,7 @@ sub run {
     my %tt_vars = (
                    format      => $args{'vars'}->{'format'},
                    ss_version  => $VERSION,
-                   ss_info_url => 'http://openguides.org/page/search_help'
+                   ss_info_url => 'http://openguides.org/search_help'
                   );
 
     my $doing_search;

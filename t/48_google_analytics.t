@@ -10,7 +10,7 @@ if ( $@ ) {
     exit 0;
 }
 
-plan tests => 5;
+plan tests => 9;
 
 my ( $config, $guide, $wiki, $cookie, $output );
 
@@ -34,26 +34,41 @@ $output = $guide->display_node(
                                 id => "Red Lion",
                                 return_output => 1,
                               );
-unlike( $output, qr/urchinTracker/, "Google analytics omitted by default" );
+unlike( $output, qr/ga.js/, "Google analytics omitted by default" );
 
 $config->google_analytics_key( "" );
 $output = $guide->display_node(
                                 id => "Red Lion",
                                 return_output => 1,
                               );
-unlike( $output, qr/urchinTracker/, "...also if analytics key is blank" );
+unlike( $output, qr/ga.js/, "...also if analytics key is blank" );
 
 $config->google_analytics_key( 0 );
 $output = $guide->display_node(
                                 id => "Red Lion",
                                 return_output => 1,
                               );
-unlike( $output, qr/urchinTracker/, "...also if analytics key is zero" );
+unlike( $output, qr/ga.js/, "...also if analytics key is zero" );
 
 $config->google_analytics_key( "ThisIsNotAKey" );
 $output = $guide->display_node(
                                 id => "Red Lion",
                                 return_output => 1,
                               );
-like( $output, qr/urchinTracker/, "does show up if key is provided" );
+like( $output, qr/ga.js/, "does show up if key is provided" );
+like( $output, qr/ThisIsNotAKey/, "...correct key" );
+# Make sure analytics stuff only shows up if we want it to on recent changes
+# recent changes doesnt use CGI. which we dont need anymore but we should test in case we change our mind again.
+
+$config->google_analytics_key( "" );
+$output = $guide->display_recent_changes( return_output => 1 );
+unlike( $output, qr/ga.js/, "...also if analytics key is blank" );
+
+$config->google_analytics_key( 0 );
+$output = $guide->display_recent_changes( return_output => 1 );
+unlike( $output, qr/ga.js/, "...also if analytics key is zero" );
+
+$config->google_analytics_key( "ThisIsNotAKey" );
+$output = $guide->display_recent_changes( return_output => 1 );
+like( $output, qr/ga.js/, "does show up if key is provided" );
 like( $output, qr/ThisIsNotAKey/, "...correct key" );
