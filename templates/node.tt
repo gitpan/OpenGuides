@@ -27,6 +27,27 @@
   </script>
 [% END %]
 
+[% IF node_image %]
+  <div id="node_image_box">
+    [% IF node_image_url %]<a href="[% node_image_url %]">[% END %]
+    <img id="node_image" src="[% node_image %]"
+         alt="Picture of [% node_name %]" />
+    [% IF node_image_url %]</a>[% END %]
+    [% IF node_image_copyright %]
+      <div id="node_image_copyright">
+        [% IF node_image_licence %]
+          <a href="[% node_image_licence %]">&copy;
+            [% node_image_copyright %]</a>
+        [% ELSE %]
+          &copy; [% node_image_copyright %]
+        [% END %]
+      </div>
+    [% END %]
+  </div>
+[% ELSE %]
+  <span id="node_no_image" />
+[% END %]
+
 <div id="node_title">
 [% IF current %]
   [% IF backlinks_in_title AND is_indexable_node %]
@@ -122,6 +143,8 @@
 [% END %]
 <div id="rdf_link">
   <a href="[% cgi_url %]?id=[% node_param %];format=rdf">RDF/XML for this
+  node</a>
+  <a href="[% cgi_url %]?id=[% node_param %];format=json">JSON for this
   node</a>
   [% IF rss_locale_url %]
     / <a href="[% rss_locale_url %]">RSS feed for this locale</a>

@@ -15,7 +15,7 @@ if ( $@ ) {
     plan skip_all => "DBD::SQLite could not be used - no database to test with. ($error)";
 }
 
-plan tests => 29;
+plan tests => 30;
 
 Wiki::Toolkit::Setup::SQLite::setup( { dbname => "t/node.db" } );
 my $config = OpenGuides::Test->make_basic_config;
@@ -54,7 +54,7 @@ OpenGuides::Test->write_data(
         postcode           => "WC1X 8JR",
         locales            => "Bloomsbury\r\nSt Pancras",
         phone              => "test phone number",
-        website            => "test website",
+        website            => "http://example.com",
         hours_text         => "test hours",
         latitude           => "51.524193",
         longitude          => "-0.114436",
@@ -70,7 +70,7 @@ OpenGuides::Test->write_data(
         postcode           => "WC1X 8JR",
         locales            => "Bloomsbury\r\nSt Pancras",
         phone              => "test phone number",
-        website            => "test website",
+        website            => "http://example.com",
         hours_text         => "test hours",
         latitude           => "51.524193",
         longitude          => "-0.114436",
@@ -80,7 +80,11 @@ OpenGuides::Test->write_data(
 
 my $rdfxml = $rdf_writer->emit_rdfxml( node => "Calthorpe Arms" );
 
-like( $rdfxml, qr|<\?xml version="1.0"\?>|, "RDF is encoding-neutral" );
+like( $rdfxml, qr|<\?xml version="1.0" \?>|, "RDF uses no encoding when none set" );
+$config->http_charset( "UTF-8" );
+$guide = OpenGuides->new( config => $config );
+$rdfxml = $rdf_writer->emit_rdfxml( node => "Calthorpe Arms" );
+like( $rdfxml, qr|<\?xml version="1.0" encoding="UTF-8"\?>|, "RDF uses declared encoding" );
 
 like( $rdfxml, qr|<foaf:depiction rdf:resource="http://example.com/calthorpe.jpg" />|, "Node image");
 
@@ -95,7 +99,7 @@ like( $rdfxml, qr|<contact:phone>test phone number</contact:phone>|,
 like( $rdfxml, qr|<dc:available>test hours</dc:available>|,
     "picks up opening hours text" );
 
-like( $rdfxml, qr|<foaf:homepage rdf:resource="test website" />|, "picks up website" );
+like( $rdfxml, qr|<foaf:homepage rdf:resource="http://example.com" />|, "picks up website" );
 
 like( $rdfxml,
     qr|<dc:title>Wiki::Toolkit Test Site: Calthorpe Arms</dc:title>|,

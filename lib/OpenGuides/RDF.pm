@@ -5,7 +5,7 @@ use strict;
 use OpenGuides::Utils;
 
 use vars qw( $VERSION );
-$VERSION = '0.12';
+$VERSION = '0.13';
 
 use Time::Piece;
 use URI::Escape;
@@ -74,6 +74,7 @@ sub emit_rdfxml {
                     site_name  => $self->{site_name},
                     site_desc  => $self->{site_description},
                     og_version => $self->{og_version},
+                    config     => $config,
                   );
 
     my %defaults = (

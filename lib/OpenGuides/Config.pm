@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.04';
+$VERSION = '0.05';
 
 use Carp qw( croak );
 use Config::Tiny;
@@ -22,10 +22,11 @@ my @variables = qw(
    custom_template_path geo_handler ellipsoid gmaps_api_key centre_long
    show_gmap_in_node_display google_analytics_key
    centre_lat default_gmaps_zoom default_gmaps_search_zoom force_wgs84
-   licence_name licence_url licence_info_url moderation_requires_password
+   licence_name licence_url licence_info_url
+   moderation_requires_password moderate_whitelist
    enable_node_image enable_common_categories enable_common_locales
    spam_detector_module host_checker_module static_path static_url
-   send_moderation_notifications
+   send_moderation_notifications website_link_max_chars
 );
 my @questions = map { $_ . "__qu" } @variables;
 OpenGuides::Config->mk_accessors( @variables );
@@ -73,13 +74,14 @@ sub _init {
     # Here are the defaults for the variable values.
     # Don't forget to add to INSTALL when changing these.
     my %defaults = (
-                     dbtype => "postgres",
+                     dbtype => "sqlite",
                      script_name => "wiki.cgi",
                      install_directory => "/usr/lib/cgi-bin/openguides/",
                      use_plucene => 1,
                      indexing_directory => "/usr/lib/cgi-bin/openguides/indexes/",
                      enable_page_deletion => 0,
                      moderation_requires_password => 1,
+                     moderate_whitelist => "",
                      admin_pass => "Change This!",
                      enable_node_image => 1,
                      enable_common_categories => 0,
@@ -114,7 +116,8 @@ sub _init {
                      spam_detector_module => "",
                      host_checker_module => "",
                      static_path => "/usr/local/share/openguides/static",
-                     send_moderation_notifications => 1
+                     send_moderation_notifications => 1,
+                     website_link_max_chars => 20,
                    );
 
     # See if we already have some config variables set.
@@ -199,7 +202,9 @@ sub _init {
         host_checker_module => "What module would you like to use to run an IP blacklist? (optional)",
         static_path => "What directory should we install static content (CSS, images, javascript) to?",
         static_url => "What is the URL corresponding to the static content?",
-        send_moderation_notifications => "Should we send email notifications when a moderated node is edited?"
+        send_moderation_notifications => "Should we send email notifications when a moderated node is edited?",
+        website_link_max_chars => "How many characters of the URL of node websites should be displayed?",
+        moderate_whitelist => "Enter a comma-separated list of IP addresses able to make changes to moderated nodes and have them show up immediately",
     );
 
     foreach my $var ( keys %questions ) {
@@ -333,6 +338,10 @@ sub script_url {
 =item * static_url
 
 =item * send_moderation_notifications
+
+=item * moderate_whitelist
+
+=item * website_link_max_chars (default: C<20>)
 
 =back
 

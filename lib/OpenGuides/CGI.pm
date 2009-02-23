@@ -1,7 +1,7 @@
 package OpenGuides::CGI;
 use strict;
 use vars qw( $VERSION );
-$VERSION = '0.08';
+$VERSION = '0.09';
 
 use Carp qw( croak );
 use CGI::Cookie;
@@ -38,7 +38,8 @@ Saving preferences in a cookie:
       default_edit_type          => "tidying",
       cookie_expires             => "never",
       track_recent_changes_views => 1,
-      display_google_maps        => 1
+      display_google_maps        => 1,
+      is_admin                   => 1
   );
 
   my $wiki = OpenGuides::Utils->make_wiki_object( config => $config );
@@ -83,7 +84,8 @@ Tracking visits to Recent Changes:
       default_edit_type          => "tidying",
       cookie_expires             => "never",
       track_recent_changes_views => 1,
-      display_google_maps        => 1
+      display_google_maps        => 1,
+      is_admin                   => 1
   );
 
 Croaks unless an L<OpenGuides::Config> object is supplied as C<config>.
@@ -126,7 +128,8 @@ sub make_prefs_cookie {
                     defedit    => $args{default_edit_type} || "normal",
                     exp        => $args{cookie_expires},
                     trackrc    => $args{track_recent_changes_views} || 0,
-                    gmaps      => $args{display_google_maps} || 0
+                    gmaps      => $args{display_google_maps} || 0,
+                    admin      => $args{is_admin} || 0
                   },
         -expires => $expires,
     );
@@ -180,6 +183,7 @@ sub get_prefs_from_cookie {
                        exp        => "cookie_expires",
                        trackrc    => "track_recent_changes_views",
                        gmaps      => "display_google_maps",
+                       admin      => "is_admin",
                      );
     my %long_data = map { $long_forms{$_} => $data{$_} } keys %long_forms;
 
@@ -194,11 +198,15 @@ sub get_prefs_from_hash {
                      preview_above_edit_box     => 0,
                      latlong_traditional        => 0,
                      omit_help_links            => 0,
-                     show_minor_edits_in_rc     => 0,
+                     # This has been set to 1 to work around
+                     # Wiki::Toolkit bug #41 - consider reverting this
+                     # when that bug gets fixed
+                     show_minor_edits_in_rc     => 1,
                      default_edit_type          => "normal",
                      cookie_expires             => "month",
                      track_recent_changes_views => 0,
                      display_google_maps        => 1,
+                     is_admin                   => 0,
                    );
     my %return;
     foreach my $key ( keys %data ) {
@@ -299,7 +307,7 @@ The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 
-     Copyright (C) 2003-2007 The OpenGuides Project.  All Rights Reserved.
+     Copyright (C) 2003-2008 The OpenGuides Project.  All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

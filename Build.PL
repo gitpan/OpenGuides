@@ -1,6 +1,5 @@
 use strict;
 use lib "lib";
-use Data::Dumper;
 use Getopt::Long;
 
 eval {
@@ -266,10 +265,6 @@ foreach my $ans (@answers) {
 }
 close FILE or die "Can't close wiki.conf: $!";
 
-#####
-##### When updating the prereqs PLEASE REMEMBER to update PREREQUISITES.
-#####
-
 # We currently only support Plucene for new installs, but may support
 # others in future
 my $search_module = $use_plucene ? "Plucene" : "Search::InvertedIndex";
@@ -278,6 +273,7 @@ my $search_module = $use_plucene ? "Plucene" : "Search::InvertedIndex";
 my $build = OpenGuides::Build->new(
     sign => 1,
     dist_name => "OpenGuides",
+    dist_abstract => "A complete web application for managing a collaboratively-written guide to a city or town.",
     module_name => "OpenGuides",
     dist_version_from => "wiki.cgi",
     license => "perl",
@@ -286,12 +282,13 @@ my $build = OpenGuides::Build->new(
         'CGI'                                 => '2.92',  # avoid escapeHTML bug
         'CGI::Carp'                           => 0,
         'CGI::Cookie'                         => 0,
-        'Wiki::Toolkit'                       => '0.74',  # for dbport
+        'Wiki::Toolkit'                       => '0.77',
         'Wiki::Toolkit::Feed::Atom'           => 0,
         'Wiki::Toolkit::Feed::RSS'            => 0,
         'Wiki::Toolkit::Formatter::UseMod'    => 0,
         'Wiki::Toolkit::Plugin::Categoriser'  => 0,
         'Wiki::Toolkit::Plugin::Diff'         => 0,
+        'Wiki::Toolkit::Plugin::JSON'         => 0,
         'Wiki::Toolkit::Plugin::Locator::Grid'=> 0,
         'Wiki::Toolkit::Plugin::RSS::Reader'  => 0,
         'Class::Accessor'                     => 0,
@@ -312,13 +309,24 @@ my $build = OpenGuides::Build->new(
         'Time::Piece'                         => 0,
         'URI::Escape'                         => 0,
         'XML::RSS'                            => 0,
+        'Data::Validate::URI'                 => 0,
+        'Net::Netmask'                        => 0,
+        'List::Util'                          => 0,
         },
     build_requires => {
         'Module::Build' => '0.26', # API change for accessing config data
+        'Class::Accessor'                     => 0,
+        'Config::Tiny'                        => 0,
+        'Data::Dumper'                        => 0,
+        },
+    configure_requires => {
+        'Config::Tiny'                        => 0,
+        'Class::Accessor'                     => 0,
+        'Module::Build' => '0.26', # API change for accessing config data
         },
     recommends => {
-        'DBD::SQLite'         => 0, # for testing
-        'Test::HTML::Content' => 0, # for testing, oddly enough
+        'DBD::SQLite'                         => 0, # for testing
+        'Test::HTML::Content'                 => 0, # for testing, oddly enough
         'Wiki::Toolkit::Plugin::Ping' => 0, # for pinging external services
         'Geo::HelmertTransform'  => 0,      # for correct WGS84 lat/long
                                             # when using grid systems
@@ -330,6 +338,7 @@ my $build = OpenGuides::Build->new(
 
 $build->add_to_cleanup( "t/indexes/" );
 $build->add_to_cleanup( "t/node.db" );
+$build->add_to_cleanup( "t/prefs.db" );
 $build->add_to_cleanup( "t/templates/tmp/" );
 
 # Tell OpenGuides::Build which additional scripts and templates to install.
@@ -361,6 +370,7 @@ $build->config_data( __templates     => [
                       "navbar_categories.tt",
                       "navbar_locales.tt",
                       "navbar_help.tt",
+                      "navbar_admin.tt",
                       "navbar_home_link.tt",
                       "navbar_options.tt",
                       "navbar_revision_info.tt",

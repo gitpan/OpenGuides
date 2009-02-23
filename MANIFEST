@@ -1,11 +1,11 @@
 Build.PL
+CONTRIBUTORS
 CUSTOMISATION
 Changes
 INSTALL
 MANIFEST
 Makefile.PL
 META.yml
-PREREQUISITES
 README
 README.CSS
 README.GMAPS
@@ -17,6 +17,7 @@ lib/OpenGuides/Build.pm
 lib/OpenGuides/CGI.pm
 lib/OpenGuides/Config.pm
 lib/OpenGuides/Feed.pm
+lib/OpenGuides/JSON.pm
 lib/OpenGuides/RDF.pm
 lib/OpenGuides/Search.pm
 lib/OpenGuides/Template.pm
@@ -47,6 +48,7 @@ templates/missing_metadata.tt
 templates/moderate_confirm.tt
 templates/moderate_password_wrong.tt
 templates/navbar.tt
+templates/navbar_admin.tt
 templates/navbar_categories.tt
 templates/navbar_help.tt
 templates/navbar_home_link.tt
@@ -144,6 +146,9 @@ t/76_detect_spam.t
 t/77_send_email.t
 t/78_about.t
 t/79_host_blacklist.t
+t/81_node_moderate_whitelist.t
+t/83_show_delete_to_admins_only.t
+t/84_navbar_admin.t
 t/85_universal_edit_link.t
 t/templates/15_test.tt
 wiki.cgi

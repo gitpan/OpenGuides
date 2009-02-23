@@ -3,6 +3,29 @@
 More detailed changelogs can be found at
 <http://dev.openguides.org/log/trunk>.
 
+0.64    23 February 2009
+        Correctly specify all build_requires (#245)
+        Fix some broken POD (#246)
+        Metadata discovery features (action=metadata)
+        JSON support for node details and metadata discovery
+        Correctly validate web site URLs during edit and display,
+        and truncate URLs that are too long (#21)
+        Change default database type to sqlite (#241)
+        Set content charset correctly in RDF (#260)
+        Display geodata ellipsoid to user in edit from (#230)
+        Fix install with CPAN when Config::Tiny not already installed (#224)
+        Add an admin navbar, to be displayed if the user requests (#261)
+        Move the node image outside the metadata div, to aid styling (#222)
+        Add the ability to whitelist hosts who can change moderated nodes
+          without explicit moderation (#203)
+        Don't add delete links unless the user requests (#159)
+        Fix clean target to remove everything it should (#242)
+        Warn about errors fetching remote RSS feeds, but carry on
+          generating the page content (#228)
+        Work around Wiki::Toolkit bug #41 by displaying minor edits by
+          default
+        Correctly paginate search when geodata is supplied (#267)
+
 0.63    16 August 2008
         Major overhaul of RDF output.
         * Remodelled addresses using WAIL.

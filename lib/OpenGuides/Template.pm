@@ -2,7 +2,7 @@ package OpenGuides::Template;
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = '0.13';
+$VERSION = '0.14';
 
 use Carp qw( croak );
 use CGI; # want to get rid of this and put the burden on the templates
@@ -12,6 +12,7 @@ use OpenGuides; # for $VERSION for template variable
 use OpenGuides::CGI;
 use Template;
 use URI::Escape;
+use Data::Validate::URI qw( is_web_uri );
 
 =head1 NAME
 
@@ -154,6 +155,10 @@ sub output {
        ) {
         $enable_page_deletion = 1;
     }
+    my $is_admin = 0;
+    if ( $cookie_data{is_admin} ) {
+        $is_admin = 1;
+    } 
 
     my $tt_vars = {
         config                => $config,
@@ -168,6 +173,7 @@ sub output {
         home_name             => $config->home_name,
         navbar_on_home_page   => $config->navbar_on_home_page,
         omit_help_links       => $omit_help_links,
+        is_admin              => $is_admin,
         formatting_rules_link => $formatting_rules_link,
         formatting_rules_node => $formatting_rules_node,
         openguides_version    => $OpenGuides::VERSION,
@@ -347,16 +353,15 @@ sub extract_metadata_vars {
         };
     } @loclist;
 
-    # The 'website' attribute might contain a URL so we wiki-format it here
-    # rather than just CGI::escapeHTMLing it all in the template.
     my $website = $args{metadata} ? $metadata{website}[0]
                                   : $q->param("website");
     my $formatted_website_text = "";
-    if ( $website && $website ne "http://" ) {
-        $formatted_website_text = $class->format_website_text(
-            formatter => $formatter,
-            text      => $website
-        );
+    if ( $website && $website ne "http://" && is_web_uri( $website ) ) {
+        my $trunc_website = substr( $website, 0, $config->website_link_max_chars );
+        unless ($website eq $trunc_website ) {
+            $trunc_website .= '...';
+        }
+        $formatted_website_text = '<a href="' . $website . '">' . $trunc_website . '</a>';
     }
 
     my $hours_text = $args{metadata} ? $metadata{opening_hours_text}[0]
@@ -423,13 +428,15 @@ sub extract_metadata_vars {
                         coord_field_2_value => $metadata{osie_y}[0],
                     );
         } else {
+            my $lat_text = "Latitude (" . $config->ellipsoid . " decimal)";
+            my $long_text = "Longitude (" . $config->ellipsoid . " decimal)";
             %vars = (
                         %vars,
                         coord_field_1       => "latitude",
                         coord_field_2       => "longitude",
                         dist_field          => "latlong_dist",
-                        coord_field_1_name  => "Latitude (decimal)",
-                        coord_field_2_name  => "Longitude (decimal)",
+                        coord_field_1_name  => $lat_text,
+                        coord_field_2_name  => $long_text,
                         coord_field_1_value => $metadata{latitude}[0],
                         coord_field_2_value => $metadata{longitude}[0],
                     );
@@ -582,20 +589,6 @@ sub extract_metadata_vars {
     return %vars;
 }
 
-sub format_website_text {
-    my ($class, %args) = @_;
-    my ($formatter, $text) = @args{ qw( formatter text ) };
-    my $formatted = $formatter->format($text);
-
-    # Strip out paragraph markers put in by formatter since we want this
-    # to be a single string to put in a <ul>.
-    $formatted =~ s/<p>//g;
-    $formatted =~ s/<\/p>//g;
-
-    return $formatted;
-}
-
-
 =back
 
 =head1 AUTHOR
@@ -604,7 +597,7 @@ The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 
-  Copyright (C) 2003-2007 The OpenGuides Project.  All Rights Reserved.
+  Copyright (C) 2003-2008 The OpenGuides Project.  All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

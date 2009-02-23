@@ -14,7 +14,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.63';
+$VERSION = '0.64';
 
 =head1 NAME
 
@@ -945,8 +945,10 @@ sub show_index {
         if ( $args{format} eq "rdf" ) {
             $template = "rdf_index.tt";
             $conf{content_type} = "application/rdf+xml";
-        }
-        elsif ( $args{format} eq "plain" ) {
+        } elsif ( $args{format} eq "json" ) {
+            $template = "json_index.tt";
+            $conf{content_type} = "text/javascript";
+        } elsif ( $args{format} eq "plain" ) {
             $template = "plain_index.tt";
             $conf{content_type} = "text/plain";
         } elsif ( $args{format} eq "map" ) {
@@ -997,6 +999,75 @@ sub show_index {
 
     my $output = $self->process_template( %conf );
     return $output if $args{return_output};
+    print $output;
+}
+
+=item B<show_metadata>
+
+  $guide->show_metadata();
+  $guide->show_metadata(type => "category");
+  $guide->show_metadata(type => "category", format => "json");
+
+Lists all metadata types, or all metadata values of a given
+type. Useful for programatically discovering a guide.
+
+As with other methods, parameters C<return_tt_vars> and
+C<return_output> can be used to return these things instead of
+printing the output to STDOUT.
+
+=cut
+sub show_metadata {
+    my ($self, %args) = @_;
+    my $wiki = $self->wiki;
+    my $formatter = $wiki->formatter;
+
+    my @values;
+    my $type;
+    my $may_descend = 0;
+    if($args{"type"} && $args{"type"} ne "metadata_type") {
+       $type = $args{"type"};
+       @values = $wiki->store->list_metadata_by_type($args{"type"});
+    } else {
+       $may_descend = 1;
+       $type = "metadata_type";
+       @values = $wiki->store->list_metadata_names;
+    }
+
+    my %tt_vars = ( type          => $type,
+                    may_descend   => $may_descend,
+                    metadata      => \@values,
+                    num_results   => scalar @values,
+                    not_deletable => 1,
+                    deter_robots  => 1,
+                    not_editable  => 1 );
+    return %tt_vars if $args{return_tt_vars};
+
+    my $output;
+    my $content_type;
+
+    if($args{"format"}) {
+       if($args{"format"} eq "json") {
+          $content_type = "text/javascript";
+          my $json = OpenGuides::JSON->new( wiki => $wiki, 
+                                            config => $self->config );
+          $output = $json->output_as_json(
+                                 $type => \@values
+          );
+       }
+    }
+    unless($output) {
+       $output = OpenGuides::Template->output(
+                                                 wiki    => $wiki,
+                                                 config  => $self->config,
+                                                 template=>"metadata.tt",
+                                                 vars    => \%tt_vars,
+                                             );
+    }
+    return $output if $args{return_output};
+
+    if($content_type) {
+       print "Content-type: $content_type\n\n";
+    }
     print $output;
 }
 
@@ -1485,7 +1556,10 @@ sub commit_node {
     # Skip this for nodes needing moderation - this occurs for them once
     #  they've been moderated
     my $needs_moderation = $wiki->node_required_moderation($node);
-    unless( $needs_moderation ) {
+    my $in_moderate_whitelist
+        = OpenGuides::Utils->in_moderate_whitelist($self->config, $new_metadata{host});
+
+    if ( $in_moderate_whitelist or not $needs_moderation ) {
         $self->_autoCreateCategoryLocale(
                                           id       => $node,
                                           metadata => \%new_metadata
@@ -1496,22 +1570,30 @@ sub commit_node {
                                      \%new_metadata );
 
     if ($written) {
-        if ( $needs_moderation and $config->send_moderation_notifications ) {
-            my $body = "The node '$node' in the OpenGuides installation\n" .
-                "'" . $config->site_name . "' requires moderation. ".
-                "Please visit\n" .
-                $config->script_url . $config->script_name .
-                "?action=show_needing_moderation\nat your convenience.\n";
-            eval {
-                OpenGuides::Utils->send_email(
-                    config        => $config,
-                    subject       => "Node requires moderation",
-                    body          => $body,
-                    admin         => 1,
-                    return_output => $return_output
+        if ( $needs_moderation ) {
+            if ( $in_moderate_whitelist ) {
+                $self->wiki->moderate_node(
+                                            name    => $node,
+                                            version => $written
                 );
-            };
-            warn $@ if $@;
+            }
+            elsif ( $config->send_moderation_notifications ) {
+                my $body = "The node '$node' in the OpenGuides installation\n" .
+                    "'" . $config->site_name . "' requires moderation. ".
+                    "Please visit\n" .
+                    $config->script_url . $config->script_name .
+                    "?action=show_needing_moderation\nat your convenience.\n";
+                eval {
+                    OpenGuides::Utils->send_email(
+                        config        => $config,
+                        subject       => "Node requires moderation",
+                        body          => $body,
+                        admin         => 1,
+                        return_output => $return_output
+                    );
+                };
+                warn $@ if $@;
+            }
         }
 
         my $output = $self->redirect_to_node($node);
@@ -2221,11 +2303,11 @@ L<http://dev.openguides.org/>
 
 =over 4
 
-=item * L<http://london.openguides.org/|The Open Guide to London>, the first and biggest OpenGuides site.
+=item * The Open Guide to London, at L<http://london.openguides.org/>, is the first and biggest OpenGuides site.
 
-=item * L<http://openguides.org/|The OpenGuides website>, with a list of all live OpenGuides installs.
+=item * A list of live OpenGuides installs is available at L<http://openguides.org/>.
 
-=item * L<Wiki::Toolkit>, the Wiki toolkit which does the heavy lifting for OpenGuides
+=item * L<Wiki::Toolkit>, the Wiki toolkit which does the heavy lifting for OpenGuides.
 
 =back
 
