@@ -1,10 +1,11 @@
 package OpenGuides::Test;
 
 use OpenGuides::Config;
+use Wiki::Toolkit::Setup::SQLite;
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = '0.05';
+$VERSION = '0.06';
 
 use CGI;
 
@@ -23,6 +24,8 @@ only useful to OpenGuides developers.
 
   use OpenGuides;
   use OpenGuides::Test;
+
+  OpenGuides::Test::refresh_db();
 
   my $config = OpenGuides::Test->make_basic_config;
   $config->default_language( "nl" );
@@ -161,8 +164,6 @@ sub write_data {
     }
 }
 
-=over 4
-
 =item B<make_cgi_object>
 
   my $q = OpenGuides::Test->make_cgi_object;
@@ -203,6 +204,20 @@ sub make_cgi_object {
     return $q;
 }
 
+=item B<refresh_db>
+
+  Openguides::Test::refresh_db();
+
+Unlink the existing SQLite database t/node.db and plucene indexes. Then create a new SQLite database t/node.db 
+
+=cut 
+sub refresh_db {
+    unlink "t/node.db";
+    unlink <t/indexes/*>;
+    Wiki::Toolkit::Setup::SQLite::setup( { dbname => "t/node.db" } );
+}
+
+
 =back
 
 =head1 AUTHOR
@@ -211,7 +226,7 @@ The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 
-  Copyright (C) 2004-2008 The OpenGuides Project.  All Rights Reserved.
+  Copyright (C) 2004-2009 The OpenGuides Project.  All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

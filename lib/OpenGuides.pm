@@ -14,7 +14,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.64';
+$VERSION = '0.65';
 
 =head1 NAME
 
@@ -273,6 +273,8 @@ sub display_node {
                             metadata => $node_data{metadata}
                         );
 
+    my $node_exists = $wiki->node_exists($id);
+    my $http_status = $node_exists ? undef : '404 Not Found';
     %tt_vars = (
                    %tt_vars,
                    %metadata_vars,
@@ -285,7 +287,9 @@ sub display_node {
                    oldid         => $oldid,
                    enable_gmaps  => 1,
                    wgs84_long    => $wgs84_long,
-                   wgs84_lat     => $wgs84_lat
+                   wgs84_lat     => $wgs84_lat,
+                   empty_node    => !$node_exists,
+                   read_only     => $config->read_only,
                );
 
     # Hide from search engines if showing a specific version.
@@ -307,6 +311,7 @@ sub display_node {
                                                   id            => $id,
                                                   template      => "node.tt",
                                                   tt_vars       => \%tt_vars,
+                                                  http_status   => $http_status
                                                 );
             return $output if $return_output;
             print $output;
@@ -362,6 +367,7 @@ sub display_node {
                                                 id            => $id,
                                                 template      => "home_node.tt",
                                                 tt_vars       => \%tt_vars,
+                                                http_status   => $http_status
                                             );
         return $output if $return_output;
         print $output;
@@ -371,6 +377,7 @@ sub display_node {
                                                 id            => $id,
                                                 template      => "node.tt",
                                                 tt_vars       => \%tt_vars,
+                                                http_status   => $http_status
                                             );
         return $output if $return_output;
         print $output;
@@ -537,6 +544,7 @@ sub display_edit_form {
                     edit_type       => $edit_type,
                     moderate        => $moderate,
                     deter_robots    => 1,
+                    read_only       => $config->read_only,
     );
 
     # Override some things if we were supplied with them
@@ -609,7 +617,8 @@ sub preview_edit {
             preview_above_edit_box => $self->get_cookie(
                                                    "preview_above_edit_box" ),
             checksum               => $q->escapeHTML($checksum),
-            moderate               => $moderate
+            moderate               => $moderate,
+            read_only              => $config->read_only,
         );
         my $output = $self->process_template(
                                               id       => $node,
@@ -1505,7 +1514,7 @@ sub commit_node {
         cgi_obj  => $q
     );
 
-    if ( scalar @{$fails} ) {
+    if ( scalar @{$fails} or $config->read_only ) {
         my %vars = (
             validate_failed => $fails
         );
@@ -1516,7 +1525,8 @@ sub commit_node {
                            metadata      => \%new_metadata,
                            vars          => \%vars,
                            checksum      => CGI->escapeHTML($checksum),
-                           return_output => 1
+                           return_output => 1,
+                           read_only     => $config->read_only,
         );
 
         return $output if $return_output;
@@ -2250,12 +2260,13 @@ sub display_admin_interface {
 sub process_template {
     my ($self, %args) = @_;
     my %output_conf = (
-                          wiki     => $self->wiki,
-                          config   => $self->config,
-                          node     => $args{id},
-                          template => $args{template},
-                          vars     => $args{tt_vars},
-                          cookies  => $args{cookies},
+                          wiki        => $self->wiki,
+                          config      => $self->config,
+                          node        => $args{id},
+                          template    => $args{template},
+                          vars        => $args{tt_vars},
+                          cookies     => $args{cookies},
+                          http_status => $args{http_status}
                       );
     if ( $args{content_type} ) {
         $output_conf{content_type} = $args{content_type};
@@ -2291,6 +2302,7 @@ sub get_cookie {
     return $cookie_data{$pref_name};
 }
 
+=back
 
 =head1 BUGS AND CAVEATS
 
@@ -2325,7 +2337,7 @@ The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 
-     Copyright (C) 2003-2008 The OpenGuides Project.  All Rights Reserved.
+     Copyright (C) 2003-2010 The OpenGuides Project.  All Rights Reserved.
 
 The OpenGuides distribution is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

@@ -6,6 +6,8 @@ use OpenGuides::Feed;
 use OpenGuides::Utils;
 use OpenGuides::Test;
 use Test::More;
+use OpenGuides::CGI;
+
 
 eval { require DBD::SQLite; };
 if ( $@ ) {
@@ -19,10 +21,10 @@ if ( $@ ) {
 }
 
 
-plan tests => 7;
+plan tests => 10;
 
-# Clear out the database from any previous runs.
-    OpenGuides::Test::refresh_db();
+OpenGuides::Test::refresh_db();
+
 
 my $config = OpenGuides::Config->new(
        vars => {
@@ -52,9 +54,9 @@ my $guide = OpenGuides->new( config => $config );
 my $q = OpenGuides::Test->make_cgi_object(
     content => "foo",
     username => "bob",
-    comment => "foo",
+    comment => "First edit",
     node_image => "image",
-    edit_type => "Minor tidying"
+    edit_type => "Normal edit",
 );
 
 my $output = $guide->commit_node(
@@ -68,12 +70,12 @@ ok( $wiki->node_exists( "Wombats" ), "Wombats written" );
 
 my %node = $wiki->retrieve_node("Wombats");
 is( $node{version}, 1, "First version" );
-is( $node{metadata}->{edit_type}[0], "Minor tidying", "Right edit type" );
 
 
 # Now write a second version of it
 $q->param( -name => "edit_type", -value => "Normal edit" );
 $q->param( -name => "checksum", -value => $node{checksum} );
+$q->param( -name => "comment", -value => "Second edit" );
 $output = $guide->commit_node(
                                return_output => 1,
                                id => "Wombats",
@@ -90,7 +92,7 @@ $q = OpenGuides::Test->make_cgi_object(
     content => "foo",
     os_x => "fooooo",
     username => "bob",
-    comment => "foo",
+    comment => "bar",
     node_image => "image",
     edit_type => "Minor tidying"
 );
@@ -106,3 +108,53 @@ like( $output, qr/Your input was invalid/,
 
 like( $output, qr/os_x must be integer/,
     "Edit form displayed and os_x integer message displayed" );
+
+my @nodes = $wiki->list_recent_changes( days => 1 );
+    is( scalar @nodes, 1,
+        "By default each node returned only once however many times changed" );
+    @nodes = $wiki->list_recent_changes( days => 1, include_all_changes => 1 );
+    is( scalar @nodes, 2,
+        "...returned more than once when 'include_all_changes' set" );
+
+# when minor_edits = 1
+
+my $cookie = OpenGuides::CGI->make_prefs_cookie(
+    config                     => $config,
+    username                   => "bob",
+    include_geocache_link      => 1,
+    preview_above_edit_box     => 1,
+    omit_help_links            => 1,
+    show_minor_edits_in_rc     => 1,
+    default_edit_type          => "tidying",
+    cookie_expires             => "never",
+    track_recent_changes_views => 1,
+    is_admin => 1,
+);
+$output = $guide->display_recent_changes( return_output => 1 );
+
+unlike ($output, qr/First edit/, "showing a page edit twice when show minor edits enabled. "); 
+
+
+# set show_minor_edits to 0.
+ $cookie = OpenGuides::CGI->make_prefs_cookie(
+    config                     => $config,
+    username                   => "bob",
+    include_geocache_link      => 1,
+    preview_above_edit_box     => 1,
+    omit_help_links            => 1,
+    show_minor_edits_in_rc     => 0,
+    default_edit_type          => "tidying",
+    cookie_expires             => "never",
+    track_recent_changes_views => 1,
+    is_admin => 1,
+);
+$ENV{HTTP_COOKIE} = $cookie;
+
+
+
+$output = $guide->display_recent_changes( return_output => 1 );
+
+TODO: {
+    local $TODO = "http://dev.openguides.org/ticket/270";
+    unlike ($output, qr/First edit/, "showing a page edit twice when not showing minor edits"); 
+}

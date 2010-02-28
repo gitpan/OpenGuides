@@ -2,7 +2,7 @@ package OpenGuides::Template;
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = '0.14';
+$VERSION = '0.15';
 
 use Carp qw( croak );
 use CGI; # want to get rid of this and put the burden on the templates
@@ -100,9 +100,9 @@ same name in the config object or the user cookies.
 
 =back
 
-=over
-
 If C<node> is supplied:
+
+=over
 
 =item * C<node_name>
 
@@ -597,7 +597,7 @@ The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 
-  Copyright (C) 2003-2008 The OpenGuides Project.  All Rights Reserved.
+  Copyright (C) 2003-2009 The OpenGuides Project.  All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

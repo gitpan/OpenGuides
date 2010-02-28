@@ -3,7 +3,7 @@ package OpenGuides::JSON;
 use strict;
 
 use vars qw( $VERSION );
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 use Wiki::Toolkit::Plugin::JSON;
 use Time::Piece;
@@ -60,9 +60,14 @@ sub _init {
     $self;
 }
 
+=over 4
+
 =item B<emit_json>
+
 Renders the given node as JSON
+
 =cut
+
 sub emit_json {
     my ( $self, %args ) = @_;
 
@@ -107,8 +112,11 @@ sub emit_json {
 }
 
 =item B<output_as_json>
+
 Renders the given arbitary data as JSON
+
 =cut
+
 sub output_as_json {
     my ( $self, %args ) = @_;
     return $self->json_maker->make_json(\%args);
@@ -147,6 +155,8 @@ sub json_timestamp {
     # RSS and JSON timestamps are close, I think...
     $self->json_maker->rss_timestamp(%args);
 }
+
+=back
 
 =head1 NAME
 
@@ -284,7 +294,7 @@ The OpenGuides Project (openguides-dev@openguides.org)
 
 =head1 COPYRIGHT
 
-Copyright (C) 2003-2008 The OpenGuides Project.  All Rights Reserved.
+Copyright (C) 2003-2009 The OpenGuides Project.  All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

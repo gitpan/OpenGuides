@@ -1,6 +1,6 @@
 ---
 name: OpenGuides
-version: 0.64
+version: 0.65
 author: []
 abstract: A complete web application for managing a collaboratively-written guide to a city or town.
 license: perl
@@ -54,12 +54,13 @@ recommends:
   DBD::SQLite: 0
   Geo::HelmertTransform: 0
   Test::HTML::Content: 0
+  Test::Pod: 0
   Wiki::Toolkit::Plugin::Ping: 0
 dynamic_config: 1
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.64
+    version: 0.65
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
     version: 0.02
@@ -68,25 +69,25 @@ provides:
     version: 0.09
   OpenGuides::Config:
     file: lib/OpenGuides/Config.pm
-    version: 0.05
+    version: 0.06
   OpenGuides::Feed:
     file: lib/OpenGuides/Feed.pm
-    version: 0.01
+    version: 0.02
   OpenGuides::JSON:
     file: lib/OpenGuides/JSON.pm
-    version: 0.01
+    version: 0.02
   OpenGuides::RDF:
     file: lib/OpenGuides/RDF.pm
-    version: 0.13
+    version: 0.14
   OpenGuides::Search:
     file: lib/OpenGuides/Search.pm
     version: 0.13
   OpenGuides::Template:
     file: lib/OpenGuides/Template.pm
-    version: 0.14
+    version: 0.15
   OpenGuides::Test:
     file: lib/OpenGuides/Test.pm
-    version: 0.05
+    version: 0.06
   OpenGuides::Utils:
     file: lib/OpenGuides/Utils.pm
     version: 0.12
