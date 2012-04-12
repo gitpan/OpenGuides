@@ -1,6 +1,6 @@
 package OpenGuides::Search;
 use strict;
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 
 use CGI qw( :standard );
 use Wiki::Toolkit::Plugin::Locator::Grid;
@@ -706,21 +706,17 @@ sub process_params {
               && defined $vars{latlong_dist} ) {
         # All handlers can do lat/long, but they all do it differently.
         if ( $self->config->geo_handler eq 1 ) {
-	    require Geography::NationalGrid::GB;
-            my $point = Geography::NationalGrid::GB->new(
-                Latitude  => $vars{latitude},
-                Longitude => $vars{longitude},
-            );
-            $self->{x} = $point->easting;
-            $self->{y} = $point->northing;
+            require Geo::Coordinates::OSGB;
+            my ( $x, $y ) = Geo::Coordinates::OSGB::ll_to_grid(
+                                $vars{latitude}, $vars{longitude} );
+            $self->{x} = sprintf( "%d", $x );
+            $self->{y} = sprintf( "%d", $y );
 	} elsif ( $self->config->geo_handler eq 2 ) {
-	    require Geography::NationalGrid::IE;
-            my $point = Geography::NationalGrid::IE->new(
-                Latitude  => $vars{latitude},
-                Longitude => $vars{longitude},
-            );
-            $self->{x} = $point->easting;
-            $self->{y} = $point->northing;
+            require Geo::Coordinates::ITM;
+            my ( $x, $y ) = Geo::Coordinates::ITM::ll_to_grid(
+                                $vars{latitude}, $vars{longitude} );
+            $self->{x} = sprintf( "%d", $x );
+            $self->{y} = sprintf( "%d", $y );
         } elsif ( $self->config->geo_handler eq 3 ) {
 	    require Geo::Coordinates::UTM;
             my ($zone, $x, $y) = Geo::Coordinates::UTM::latlon_to_utm(
@@ -831,7 +827,7 @@ The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 
-     Copyright (C) 2003-2008 The OpenGuides Project.  All Rights Reserved.
+     Copyright (C) 2003-2012 The OpenGuides Project.  All Rights Reserved.
 
 The OpenGuides distribution is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

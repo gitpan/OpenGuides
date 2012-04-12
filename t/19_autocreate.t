@@ -1,5 +1,6 @@
 use strict;
 use Cwd;
+use Wiki::Toolkit::Plugin::Categoriser;
 use OpenGuides;
 use OpenGuides::Test;
 use Test::More;
@@ -7,18 +8,61 @@ use Test::More;
 eval { require DBD::SQLite; };
 if ( $@ ) {
     my ($error) = $@ =~ /^(.*?)\n/;
-    plan skip_all => "DBD::SQLite could not be used - no database to test with. ($error)";
+    plan skip_all =>
+        "DBD::SQLite could not be used - no database to test with. ($error)";
 }
 
-plan tests => 4;
+plan tests => 13;
 
 my $config = OpenGuides::Test->make_basic_config;
 $config->custom_template_path( cwd . "/t/templates/" );
 my $guide = OpenGuides->new( config => $config );
 my $wiki = $guide->wiki;
+my $categoriser = Wiki::Toolkit::Plugin::Categoriser->new;
+$wiki->register_plugin( plugin => $categoriser );
 
 # Clear out the database from any previous runs.
-    OpenGuides::Test::refresh_db();
+OpenGuides::Test::refresh_db();
+
+# Check that unwelcome characters are stripped from autocreated cats/locales.
+# Double spaces:
+OpenGuides::Test->write_data(
+                              guide => $guide,
+                              node  => "Arbat",
+                              categories => "Delicious  Russian  Food",
+                              return_output => 1,
+                            );
+
+ok( !$wiki->node_exists( "Category Delicious  Russian  Food" ),
+    "Categories with double spaces in are not auto-created." );
+ok( $wiki->node_exists( "Category Delicious Russian Food" ),
+    "...but the corresponding category with single spaces is." );
+ok ( !$categoriser->in_category( node => "Arbat",
+                                 category => "Delicious  Russian  Food" ),
+    "...and the new node is not in the double-spaced category." );
+ok ( $categoriser->in_category( node => "Arbat",
+                                category => "Delicious Russian Food" ),
+    "...but it is in the single-spaced one." );
+
+# Newlines:
+OpenGuides::Test->write_data(
+                              guide => $guide,
+                              node  => "Liaison",
+                              categories => "Dim\nSum",
+                              return_output => 1,
+                            );
+
+ok( !$wiki->node_exists( "Category Dim\nSum" ),
+    "Categories with newlines in are not auto-created." );
+ok( $wiki->node_exists( "Category Dim Sum" ),
+    "...but the corresponding category with single spaces is." );
+ok ( !$categoriser->in_category( node => "Liaison",
+                                 category => "Dim\nSum" ),
+    "...and the new node is not in the newlined category." );
+ok ( $categoriser->in_category( node => "Liaison",
+                                category => "Dim Sum" ),
+    "...but it is in the single-spaced one." );
+
 
 # Write a custom template to autofill content in autocreated nodes.
 eval {
@@ -39,6 +83,7 @@ OpenGuides::Test->write_data(
                               node  => "Vivat Bacchus",
                               categories => "Restaurants\r\nVegan-friendly",
                               locales => "Farringdon",
+                              return_output => 1,
                             );
 
 ok( $wiki->node_exists( "Category Vegan-Friendly" ),
@@ -66,9 +111,19 @@ OpenGuides::Test->write_data(
                               guide => $guide,
                               node  => "Bleeding Heart",
                               categories => "Pubs",
+                              locales => "EC1",
+                              return_output => 1,
                             );
 $content = $wiki->retrieve_node( "Category Pubs" );
 $content =~ s/\s+$//s;
-$content =~ s/\s+/ /gs;
-is( $content, "\@INDEX_LINK [[Category Pubs]]",
+is( $content, "Things in this category "
+              . "(\@MAP_LINK [[Category Pubs|view them on a map]]):\n"
+              . "\@INDEX_LIST [[Category Pubs]]",
     "Default content is picked up if autocreate template doesn't exist" );
+
+$content = $wiki->retrieve_node( "Locale EC1" );
+$content =~ s/\s+$//s;
+is( $content, "Things in EC1 "
+              . "(\@MAP_LINK [[Locale EC1|view them on a map]]):\n"
+              . "\@INDEX_LIST [[Locale EC1]]",
+    "...and for locales too." );

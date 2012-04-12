@@ -14,7 +14,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.65';
+$VERSION = '0.66';
 
 =head1 NAME
 
@@ -1744,6 +1744,10 @@ sub _autoCreateCategoryLocale {
                 my $ok = $tt->process( "custom_autocreate_content.tt",
                                        \%tt_vars, \$blurb );
                 if ( !$ok ) {
+                    $ok = $tt->process( "autocreate_content.tt",
+                                        \%tt_vars, \$blurb );
+                }
+                if ( !$ok ) {
                     $blurb = "\@INDEX_LINK [[$node]]";
                 }
                 $wiki->write_node(
@@ -2005,8 +2009,8 @@ sub moderate_node {
 
 =item B<show_missing_metadata>
 
-Search for nodes which don't have a certain kind of metadata. Optionally
-also excludes Locales and Categories
+Search for nodes which don't have a certain kind of metadata.  Excludes nodes
+which are pure redirects, and optionally also excludes locales and categories.
 
 =cut
 
@@ -2028,22 +2032,19 @@ sub show_missing_metadata {
     # Only search if they supplied at least a metadata type
     if($metadata_type) {
         $done_search = 1;
-        @nodes = $wiki->list_nodes_by_missing_metadata(
+        my @all_nodes = $wiki->list_nodes_by_missing_metadata(
                             metadata_type => $metadata_type,
                             metadata_value => $metadata_value,
                             ignore_case    => 1,
         );
 
-        # Do we need to filter some nodes out?
-        if($exclude_locales || $exclude_categories) {
-            my @all_nodes = @nodes;
-            @nodes = ();
-
-            foreach my $node (@all_nodes) {
-                if($exclude_locales && $node =~ /^Locale /) { next; }
-                if($exclude_categories && $node =~ /^Category /) { next; }
-                push @nodes, $node;
-            }
+        # Filter out redirects; also filter out locales/categories if required.
+        foreach my $node ( @all_nodes ) {
+            next if ( $exclude_locales && $node =~ /^Locale / );
+            next if ( $exclude_categories && $node =~ /^Category / );
+            my $content = $wiki->retrieve_node( $node );
+            next if OpenGuides::Utils->detect_redirect( content => $content );
+            push @nodes, $node;
         }
     }
 
@@ -2337,7 +2338,7 @@ The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 
-     Copyright (C) 2003-2010 The OpenGuides Project.  All Rights Reserved.
+     Copyright (C) 2003-2012 The OpenGuides Project.  All Rights Reserved.
 
 The OpenGuides distribution is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

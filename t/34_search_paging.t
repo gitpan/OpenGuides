@@ -28,9 +28,6 @@ my $search = OpenGuides::Search->new( config => $config );
 my $guide = OpenGuides->new( config => $config );
 
 # Test with OS co-ords.
-eval { require Geography::NationalGrid::GB; };
-SKIP: {
-    skip "Geography::NationalGrid::GB not installed", 3 if $@;
     $config->geo_handler( 1 );
 
     foreach my $i ( 1 .. 50 ) {
@@ -64,12 +61,8 @@ SKIP: {
           "os_y retained in previous page link" );
     like( $output, qr/search.cgi\?.*os_dist=1500.*Previous.*results/s,
           "os_dist retained in previous page link" );
-}
 
 # Test with OSIE co-ords.
-eval { require Geography::NationalGrid::IE; };
-SKIP: {
-    skip "Geography::NationalGrid::IE not installed", 3 if $@;
 
     # We must create a new search object after changing the geo_handler
     # in order to force it to create a fresh locator.
@@ -106,12 +99,8 @@ SKIP: {
           "osie_y retained in previous page link" );
     like( $output, qr/search.cgi\?.*osie_dist=1500.*Previous.*results/s,
           "osie_dist retained in previous page link" );
-}
 
 # Test with UTM.
-eval { require Geo::Coordinates::UTM; };
-SKIP: {
-    skip "Geo::Coordinates::UTM not installed", 3 if $@;
 
     # We must create a new search object after changing the geo_handler
     # in order to force it to create a fresh locator.
@@ -148,4 +137,3 @@ SKIP: {
           "longitude retained in previous page link" );
     like( $output, qr/search.cgi\?.*latlong_dist=1500.*Previous.*results/s,
           "latlong_dist retained in previous page link" );
-}

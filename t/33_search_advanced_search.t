@@ -17,10 +17,6 @@ if ( $@ ) {
     plan skip_all => "Plucene not installed";
 }
 
-eval { require Geography::NationalGrid::GB; };
-if ( $@ ) {
-    plan skip_all => "Geography::NationalGrid::GB not installed";
-}
 
 plan tests => 8;
 

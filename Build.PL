@@ -297,21 +297,22 @@ my $build = OpenGuides::Build->new(
         $drivers{$dbtype}                     => 0,
         'File::Spec::Functions'               => 0,
         'File::Temp'                          => 0,
-		'Geo::Coordinates::UTM'               => 0,
-        'Geography::NationalGrid'             => 0,
         'HTML::Entities'                      => 0,
         'LWP::Simple'                         => 0,
         'MIME::Lite'                          => 0,
         'Parse::RecDescent'                   => 0,
         $search_module                        => 0,
         'POSIX'                               => 0,
-        'Template'                            => '2.15', # for hash.delete and string.remove vmethods
+        'Template'                            => '2.24', # for .lower vmethod
         'Time::Piece'                         => 0,
         'URI::Escape'                         => 0,
         'XML::RSS'                            => 0,
         'Data::Validate::URI'                 => 0,
         'Net::Netmask'                        => 0,
         'List::Util'                          => 0,
+	'Geo::Coordinates::UTM'               => 0,
+        'Geo::Coordinates::OSGB'              => 0,
+        'Geo::Coordinates::ITM'               => 0,
         },
     build_requires => {
         'Module::Build' => '0.26', # API change for accessing config data
@@ -348,6 +349,7 @@ $build->config_data( __extra_scripts =>
 $build->config_data( __templates     => [
                       "admin_home.tt",
                       "admin_revert_user.tt",
+                      "autocreate_content.tt",
                       "backlink_results.tt",
                       "banner.tt",
                       "blacklisted_host.tt",
@@ -356,6 +358,7 @@ $build->config_data( __templates     => [
                       "delete_password_wrong.tt",
                       "differences.tt",
                       "display_metadata.tt",
+                      "metadata.tt",
                       "edit_form.tt",
                       "edit_form_actions.tt",
                       "error.tt",

@@ -2,12 +2,10 @@ package OpenGuides::Template;
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = '0.15';
+$VERSION = '0.16';
 
 use Carp qw( croak );
 use CGI; # want to get rid of this and put the burden on the templates
-use Geography::NationalGrid;
-use Geography::NationalGrid::GB;
 use OpenGuides; # for $VERSION for template variable
 use OpenGuides::CGI;
 use Template;
@@ -126,7 +124,8 @@ sub output {
     my $config = $args{config} or croak "No config supplied";
     my $template_path = $config->template_path;
     my $custom_template_path = $config->custom_template_path || "";
-    my $tt = Template->new( { INCLUDE_PATH => "$custom_template_path:$template_path" } );
+    my $tt = Template->new(
+               { INCLUDE_PATH => "$custom_template_path:$template_path" } );
 
     my $script_name  = $config->script_name;
     my $script_url   = $config->script_url;
@@ -136,9 +135,10 @@ sub output {
     my ($formatting_rules_link, $omit_help_links);
     my $formatting_rules_node = $config->formatting_rules_node;
     $formatting_rules_link = $config->formatting_rules_link;
-    my %cookie_data = OpenGuides::CGI->get_prefs_from_cookie(config=>$config,
-                                                             cookies => $args{cookies},
-                                                            );
+    my %cookie_data = OpenGuides::CGI->get_prefs_from_cookie(
+                          config  => $config,
+                          cookies => $args{cookies},
+    );
     if ( $cookie_data{omit_help_links} ) {
         $omit_help_links = 1;
     } else {
@@ -192,9 +192,19 @@ sub output {
         $tt_vars->{node_param} = CGI->escape($args{wiki}->formatter->node_name_to_node_param($args{node}));
     }
 
-    # Now set further TT variables if explicitly supplied - do this last
-    # as these override auto-set ones.
+    # Now set further TT variables if explicitly supplied - do this after the
+    # above auto-setting as these override auto-set ones.
     $tt_vars = { %$tt_vars, %{ $args{vars} || {} } };
+
+    # Finally, dig out the username from the cookie if we haven't already
+    # been sent it in vars.
+    if ( !$tt_vars->{username} ) {
+        my %prefs = OpenGuides::CGI->get_prefs_from_cookie(config => $config);
+        # If there's nothing in there, it defaults to "Anonymous".
+        if ( $prefs{username} ne "Anonymous" ) {
+          $tt_vars->{username} = $prefs{username};
+        }
+    }
 
     my $header = "";
 
@@ -314,14 +324,15 @@ sub extract_metadata_vars {
         my $locales_text    = $q->param('locales');
 
         # Basic sanity-checking. Probably lives elsewhere.
-        $categories_text =~ s/</&lt;/g;
-        $categories_text =~ s/>/&gt;/g;
-        $locales_text =~ s/</&lt;/g;
-        $locales_text =~ s/>/&gt;/g;
+        foreach ( $categories_text, $locales_text ) {
+            s/</&lt;/g;
+            s/>/&gt;/g;
+        }
 
-        @catlist = sort grep { s/^\s+//; s/\s+$//; $_; } # trim lead/trail space
+        # Trim leading and trailing spaces, collapse internal whitespace.
+        @catlist = sort grep { s/^\s+//; s/\s+$//; s/\s+/ /g; $_; }
                         split("\r\n", $categories_text);
-        @loclist = sort grep { s/^\s+//; s/\s+$//; $_; } # trim lead/trail space
+        @loclist = sort grep { s/^\s+//; s/\s+$//; s/\s+/ /g; $_; }
                         split("\r\n", $locales_text);
     }
 
@@ -357,11 +368,13 @@ sub extract_metadata_vars {
                                   : $q->param("website");
     my $formatted_website_text = "";
     if ( $website && $website ne "http://" && is_web_uri( $website ) ) {
-        my $trunc_website = substr( $website, 0, $config->website_link_max_chars );
+        my $trunc_website = substr( $website, 0,
+                                    $config->website_link_max_chars );
         unless ($website eq $trunc_website ) {
             $trunc_website .= '...';
         }
-        $formatted_website_text = '<a href="' . $website . '">' . $trunc_website . '</a>';
+        $formatted_website_text = '<a href="' . $website . '">'
+                                  . $trunc_website . '</a>';
     }
 
     my $hours_text = $args{metadata} ? $metadata{opening_hours_text}[0]
@@ -422,8 +435,10 @@ sub extract_metadata_vars {
                         coord_field_1       => "osie_x",
                         coord_field_2       => "osie_y",
                         dist_field          => "osie_dist",
-                        coord_field_1_name  =>"Irish National Grid X coordinate",
-                        coord_field_2_name  =>"Irish National Grid Y coordinate",
+                        coord_field_1_name
+                                       => "Irish National Grid X coordinate",
+                        coord_field_2_name
+                                       =>"Irish National Grid Y coordinate",
                         coord_field_1_value => $metadata{osie_x}[0],
                         coord_field_2_value => $metadata{osie_y}[0],
                     );
@@ -442,13 +457,15 @@ sub extract_metadata_vars {
                     );
         }
     } else {
-        foreach my $var ( qw( phone fax address postcode map_link website summary) ) {
+        foreach my $var ( qw( phone fax address postcode map_link website
+                              summary) ) {
             $vars{$var} = $q->param($var);
         }
 
         my $geo_handler = $config->geo_handler;
         if ( $geo_handler == 1 ) {
-            require Geography::NationalGrid::GB;
+            require Geo::Coordinates::OSGB;
+
             my $os_x   = $q->param("os_x");
             my $os_y   = $q->param("os_y");
             my $lat    = $q->param("latitude");
@@ -461,19 +478,22 @@ sub extract_metadata_vars {
             $os_y =~ s/\s+//g;
 
             # If we were sent x and y, work out lat/long; and vice versa.
-            if ( defined $os_x && length $os_x && defined $os_y && length $os_y ) {
-                my $point = Geography::NationalGrid::GB->new( Easting =>$os_x,
-                                     Northing=>$os_y);
-                $lat  = sprintf("%.6f", $point->latitude);
-                $long = sprintf("%.6f", $point->longitude);
-            } elsif ( defined $lat && length $lat && defined $long && length $long ) {
-                my $point = Geography::NationalGrid::GB->new(Latitude  => $lat,
-                                                             Longitude => $long);
-                $os_x = $point->easting;
-                $os_y = $point->northing;
+            if ( defined $os_x && length $os_x
+                   && defined $os_y && length $os_y ) {
+                ( $lat, $long ) = Geo::Coordinates::OSGB::grid_to_ll(
+                                      $os_x, $os_y );
+                $lat  = sprintf( "%.6f", $lat );
+                $long = sprintf( "%.6f", $long );
+            } elsif ( defined $lat && length $lat
+                        && defined $long && length $long ) {
+                ( $os_x, $os_y ) = Geo::Coordinates::OSGB::ll_to_grid(
+                                       $lat, $long );
+                $os_x = sprintf( "%d", $os_x );
+                $os_y = sprintf( "%d", $os_y );
             }
             
-            if ( defined $os_x && length $os_x && defined $os_y && length $os_y ) {
+            if ( defined $os_x && length $os_x
+                   && defined $os_y && length $os_y ) {
                 %vars = (
                             %vars,
                             latitude  => $lat,
@@ -495,7 +515,8 @@ sub extract_metadata_vars {
                         );
             }
         } elsif ( $geo_handler == 2 ) {
-            require Geography::NationalGrid::IE;
+            require Geo::Coordinates::ITM;
+
             my $osie_x = $q->param("osie_x");
             my $osie_y = $q->param("osie_y");
             my $lat    = $q->param("latitude");
@@ -506,18 +527,21 @@ sub extract_metadata_vars {
             $osie_y =~ s/\s+//g;
 
             # If we were sent x and y, work out lat/long; and vice versa.
-            if ( defined $osie_x && length $osie_x && defined $osie_y && length $osie_y ) {
-                my $point = Geography::NationalGrid::IE->new(Easting=>$osie_x,
-                                   Northing=>$osie_y);
-                $lat = sprintf("%.6f", $point->latitude);
-                $long = sprintf("%.6f", $point->longitude);
-            } elsif ( defined $lat && length $lat && defined $long && length $long ) {
-                my $point = Geography::NationalGrid::GB->new(Latitude  => $lat,
-                                                             Longitude => $long);
-                $osie_x = $point->easting;
-                $osie_y = $point->northing;
+            if ( defined $osie_x && length $osie_x
+                   && defined $osie_y && length $osie_y ) {
+                ( $lat, $long ) = Geo::Coordinates::ITM::grid_to_ll(
+                                      $osie_x, $osie_y );
+                $lat  = sprintf( "%.6f", $lat );
+                $long = sprintf( "%.6f", $long );
+            } elsif ( defined $lat && length $lat && defined $long
+                        && length $long ) {
+                ( $osie_x, $osie_y ) = Geo::Coordinates::ITM::ll_to_grid(
+                                           $lat, $long );
+                $osie_x = sprintf( "%d", $osie_x );
+                $osie_y = sprintf( "%d", $osie_y );
             }
-            if ( defined $osie_x && length $osie_x && defined $osie_y && length $osie_y ) {
+            if ( defined $osie_x && length $osie_x
+                   && defined $osie_y && length $osie_y ) {
                 %vars = (
                             %vars,
                             latitude  => $lat,
@@ -532,8 +556,10 @@ sub extract_metadata_vars {
                             coord_field_1       => "osie_x",
                             coord_field_2       => "osie_y",
                             dist_field          => "osie_dist",
-                            coord_field_1_name  => "Irish National Grid X coordinate",
-                            coord_field_2_name  => "Irish National Grid Y coordinate",
+                            coord_field_1_name
+                                         => "Irish National Grid X coordinate",
+                            coord_field_2_name
+                                         => "Irish National Grid Y coordinate",
                             coord_field_1_value => $osie_x,
                             coord_field_2_value => $osie_y,
                         );
@@ -543,7 +569,8 @@ sub extract_metadata_vars {
             my $lat    = $q->param("latitude");
             my $long   = $q->param("longitude");
             
-            if ( defined $lat && length $lat && defined $long && length $long ) {
+            if ( defined $lat && length $lat
+                   && defined $long && length $long ) {
                 # Trim whitespace.
                 $lat =~ s/\s+//g;
                 $long =~ s/\s+//g;
@@ -582,11 +609,36 @@ sub extract_metadata_vars {
         foreach my $var ( qw( latitude longitude ) ) {
             next unless defined $vars{$var} && length $vars{$var};
             $vars{$var."_unmunged"} = $vars{$var};
-            $vars{$var} = Geography::NationalGrid->deg2string($vars{$var});
+            $vars{$var} = _deg2string($vars{$var});
         }
     }
 
     return %vars;
+}
+
+# Slightly modified from the no-longer-available Geography::NationalGrid
+# module, which was written by P Kent and distributed under the Artistic
+# Licence.
+sub _deg2string {
+    my $degrees = shift;
+
+    # make positive
+    my $isneg = 0;
+    if ($degrees < 0) {
+        $isneg = 1;
+        $degrees = abs( $degrees );
+    } elsif ($degrees == 0) {
+        return '0d 0m 0s';
+    }
+
+    my $d = int( $degrees );
+    $degrees -= $d;
+    $degrees *= 60;
+    my $m = int( $degrees );
+    $degrees -= $m;
+    my $s = $degrees * 60;
+
+    return sprintf("%s%dd %um %.2fs", ($isneg?'-':''), $d, $m, $s);
 }
 
 =back
@@ -597,7 +649,7 @@ The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 
-  Copyright (C) 2003-2009 The OpenGuides Project.  All Rights Reserved.
+  Copyright (C) 2003-2012 The OpenGuides Project.  All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
