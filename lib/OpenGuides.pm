@@ -14,7 +14,7 @@ use URI::Escape;
 
 use vars qw( $VERSION );
 
-$VERSION = '0.66';
+$VERSION = '0.67';
 
 =head1 NAME
 
@@ -156,6 +156,13 @@ sub differ {
                           return_output => 1,
                       );
 
+  # Return output as a string with HTTP headers omitted (for tests).
+  $guide->display_node(
+                          id            => "Calthorpe Arms",
+                          return_output => 1,
+                          noheaders     => 1,
+                      );
+
   # Or return the hash of variables that will be passed to the template
   # (not including those set additionally by OpenGuides::Template).
   $guide->display_node(
@@ -176,6 +183,9 @@ C<return_output> parameter is omitted.
 (At the moment, C<return_tt_vars> acts as if the C<intercept_redirect>
 parameter was passed.)
 
+The C<noheaders> parameter only takes effect if C<return_output> is true
+and C<intercept_redirect> is false or omitted.
+
 If you have specified the C<host_checker_module> option in your
 C<wiki.conf>, this method will attempt to call the <blacklisted_host>
 method of that module to determine whether the host requesting the node
@@ -191,6 +201,8 @@ sub display_node {
     my ($self, %args) = @_;
     my $return_output = $args{return_output} || 0;
     my $intercept_redirect = $args{intercept_redirect};
+    my $noheaders = ( $return_output && !$intercept_redirect
+                      && $args{noheaders} );
     my $version = $args{version};
     my $id = $args{id} || $self->config->home_name;
     my $wiki = $self->wiki;
@@ -212,12 +224,13 @@ sub display_node {
 
     if ( $is_blacklisted ) {
         my $output = OpenGuides::Template->output(
-            wiki     => $self->wiki,
-            config   => $config,
-            template => "blacklisted_host.tt",
-            vars     => {
-                          not_editable => 1,
-                        },
+            wiki      => $self->wiki,
+            config    => $config,
+            template  => "blacklisted_host.tt",
+            vars      => {
+                           not_editable => 1,
+                         },
+            noheaders => $noheaders,
         );
         return $output if $return_output;
         print $output;
@@ -262,7 +275,7 @@ sub display_node {
                                         latitude => $metadata{latitude}[0],
                                         config => $config);
     if ($args{format} && $args{format} eq 'raw') {
-        print "Content-Type: text/plain\n\n";
+        print "Content-Type: text/plain\n\n" unless $noheaders;
         print $node_data{content};
         return 0;
     }
@@ -364,20 +377,22 @@ sub display_node {
         }
         return %tt_vars if $args{return_tt_vars};
         my $output = $self->process_template(
-                                                id            => $id,
-                                                template      => "home_node.tt",
-                                                tt_vars       => \%tt_vars,
-                                                http_status   => $http_status
+                                              id          => $id,
+                                              template    => "home_node.tt",
+                                              tt_vars     => \%tt_vars,
+                                              http_status => $http_status,
+                                              noheaders   => $noheaders,
                                             );
         return $output if $return_output;
         print $output;
     } else {
         return %tt_vars if $args{return_tt_vars};
         my $output = $self->process_template(
-                                                id            => $id,
-                                                template      => "node.tt",
-                                                tt_vars       => \%tt_vars,
-                                                http_status   => $http_status
+                                              id          => $id,
+                                              template    => "node.tt",
+                                              tt_vars     => \%tt_vars,
+                                              http_status => $http_status,
+                                              noheaders   => $noheaders,
                                             );
         return $output if $return_output;
         print $output;
@@ -637,6 +652,48 @@ sub preview_edit {
     }
 }
 
+=item B<display_prefs_form>
+
+  $guide->display_prefs_form;
+
+Displays a form that lets the user view and set their preferences.  The
+C<return_output> and C<return_tt_vars> parameters can be used to return
+the output or template variables, instead of printing the output to STDOUT.
+The C<noheaders> parameter can also be used in conjunction with
+C<return_output>, if you wish to omit all HTTP headers.
+
+=cut
+
+sub display_prefs_form {
+    my ($self, %args) = @_;
+    my $config = $self->config;
+    my $wiki = $self->wiki;
+
+    my $from = $ENV{HTTP_REFERER} || "";
+    my $url_base = $config->script_url . $config->script_name;
+    if ( $from !~ /^$url_base/ ) {
+        $from = "";
+    }
+
+    my %tt_vars = (
+                    not_editable  => 1,
+                    show_form     => 1,
+                    not_deletable => 1,
+                    return_to_url => $from,
+    );
+    return %tt_vars if $args{return_tt_vars};
+
+    my $output = OpenGuides::Template->output(
+        wiki      => $wiki,
+        config    => $config,
+        template  => "preferences.tt",
+	vars      => \%tt_vars,
+        noheaders => $args{noheaders},
+    );
+    return $output if $args{return_output};
+    print $output;
+}
+
 =item B<display_recent_changes>  
 
   $guide->display_recent_changes;
@@ -654,8 +711,10 @@ sub display_recent_changes {
     my $id = $args{id} || $self->config->home_name;
     my $return_output = $args{return_output} || 0;
     my (%tt_vars, %recent_changes);
+    # NB the $q stuff below should be removed - we should _always_ do this via
+    # an argument to the method.
     my $q = CGI->new;
-    my $since = $q->param("since");
+    my $since = $args{since} || $q->param("since");
     if ( $since ) {
         $tt_vars{since} = $since;
         my $t = localtime($since); # overloaded by Time::Piece
@@ -663,59 +722,30 @@ sub display_recent_changes {
         my %criteria = ( since => $since );   
         $criteria{metadata_was} = { edit_type => "Normal edit" }
           unless $minor_edits;
-        my @rc = $self->{wiki}->list_recent_changes( %criteria );
-
-        my $base_url = $config->script_name . '?';
-        
-        @rc = map {
-            {
-              name        => CGI->escapeHTML($_->{name}),
-              last_modified => CGI->escapeHTML($_->{last_modified}),
-              version     => CGI->escapeHTML($_->{version}),
-              comment     => OpenGuides::Utils::parse_change_comment(
-                  CGI->escapeHTML($_->{metadata}{comment}[0]),
-                  $base_url,
-              ),
-              username    => CGI->escapeHTML($_->{metadata}{username}[0]),
-              host        => CGI->escapeHTML($_->{metadata}{host}[0]),
-              username_param => CGI->escape($_->{metadata}{username}[0]),
-              edit_type   => CGI->escapeHTML($_->{metadata}{edit_type}[0]),
-              url         => $base_url
-      . CGI->escape($wiki->formatter->node_name_to_node_param($_->{name})),
-        }
-                   } @rc;
+        my @rc = $self->_get_recent_changes(
+                     config => $config, criteria => \%criteria );
         if ( scalar @rc ) {
             $recent_changes{since} = \@rc; 
         }
     } else {
+        # Look at day, week, fortnight, month separately, but make sure things
+        # don't appear in e.g. "week" if we've already seen them in "day".
+        my %seen;
         for my $days ( [0, 1], [1, 7], [7, 14], [14, 30] ) {
             my %criteria = ( between_days => $days );
             $criteria{metadata_was} = { edit_type => "Normal edit" }
               unless $minor_edits;
-            my @rc = $self->{wiki}->list_recent_changes( %criteria );
-
-            my $base_url = $config->script_name . '?';
-            
-            @rc = map {
-            {
-              name        => CGI->escapeHTML($_->{name}),
-              last_modified => CGI->escapeHTML($_->{last_modified}),
-              version     => CGI->escapeHTML($_->{version}),
-              comment     => OpenGuides::Utils::parse_change_comment(
-                  CGI->escapeHTML($_->{metadata}{comment}[0]),
-                  $base_url,
-              ),
-              username    => CGI->escapeHTML($_->{metadata}{username}[0]),
-              host        => CGI->escapeHTML($_->{metadata}{host}[0]),
-              username_param => CGI->escape($_->{metadata}{username}[0]),
-              edit_type   => CGI->escapeHTML($_->{metadata}{edit_type}[0]),
-              url         => $base_url
-      . CGI->escape($wiki->formatter->node_name_to_node_param($_->{name})),
-        }
-                       } @rc;
-            if ( scalar @rc ) {
-                $recent_changes{$days->[1]} = \@rc;
-        }
+            my @rc = $self->_get_recent_changes(
+                         config => $config, criteria => \%criteria );
+            my @filtered;
+            foreach my $node ( @rc ) {
+                next if $seen{$node->{name}};
+                $seen{$node->{name}}++;
+                push @filtered, $node;
+            }
+            if ( scalar @filtered ) {
+                $recent_changes{$days->[1]} = \@filtered;
+            }
         }
     }
     $tt_vars{not_editable} = 1;
@@ -735,6 +765,49 @@ sub display_recent_changes {
     my $output = $self->process_template( %processing_args );
     return $output if $return_output;
     print $output;
+}
+
+sub _get_recent_changes {
+    my ( $self, %args ) = @_;
+    my $wiki = $self->wiki;
+    my $formatter = $wiki->formatter;
+    my $config = $self->config;
+    my %criteria = %{ $args{criteria} };
+
+    my @rc = $wiki->list_recent_changes( %criteria );
+    my $base_url = $config->script_name . '?';
+
+    # If using metadata_was then we need to pick out just the most recent
+    # versions.
+    if ( $criteria{metadata_was} ) {
+        my %seen;
+        my @filtered;
+        foreach my $node ( @rc ) {
+            next if $seen{$node->{name}};
+            $seen{$node->{name}}++;
+            push @filtered, $node;
+        }
+        @rc = @filtered;
+    }
+
+    @rc = map {
+        {
+          name => CGI->escapeHTML($_->{name}),
+          last_modified => CGI->escapeHTML($_->{last_modified}),
+          version => CGI->escapeHTML($_->{version}),
+          comment => OpenGuides::Utils::parse_change_comment(
+                         CGI->escapeHTML($_->{metadata}{comment}[0]),
+                         $base_url,
+                     ),
+          username => CGI->escapeHTML($_->{metadata}{username}[0]),
+          host => CGI->escapeHTML($_->{metadata}{host}[0]),
+          username_param => CGI->escape($_->{metadata}{username}[0]),
+          edit_type => CGI->escapeHTML($_->{metadata}{edit_type}[0]),
+          url => $base_url
+                . CGI->escape($formatter->node_name_to_node_param($_->{name})),
+        }
+    } @rc;
+    return @rc;
 }
 
 =item B<display_diffs>
@@ -846,34 +919,66 @@ sub show_backlinks {
 
 =item B<show_index>
 
+  # Show everything in Category: Pubs.
   $guide->show_index(
-                        type   => "category",
-                        value  => "pubs",
+                        cat => "pubs",
                     );
 
-  # RDF version.
+  # Show all pubs in Holborn.
   $guide->show_index(
-                        type   => "locale",
-                        value  => "Holborn",
+                        cat => "pubs",
+                        loc => "holborn",
+                    );
+
+  # RDF version of things in Locale: Holborn.
+  $guide->show_index(
+                        loc  => "Holborn",
                         format => "rdf",
                     );
 
   # RSS / Atom version (recent changes style).
   $guide->show_index(
-                        type   => "locale",
-                        value  => "Holborn",
+                        loc    => "Holborn",
                         format => "rss",
                     );
 
   # Or return output as a string (useful for writing tests).
   $guide->show_index(
-                        type          => "category",
-                        value         => "pubs",
+                        cat           => "pubs",
                         return_output => 1,
                     );
 
-If either the C<type> or the C<value> parameter is omitted, then all pages
-will be returned.
+  # Return output as a string with HTTP headers omitted (for tests).
+  $guide->show_index(
+                        cat           => "pubs",
+                        return_output => 1,
+                        noheaders     => 1,
+                    );
+
+  # Or return the template variables (again, useful for writing tests).
+  $guide->show_index(
+                        cat            => "pubs",
+                        format         => "map"
+                        return_tt_vars => 1,
+                    );
+
+If neither C<cat> or C<loc> is supplied, then all pages will be returned.
+
+The recommended format of parameters to this method changed to the
+above in version 0.67 of OpenGuides, though older invocations are
+still supported and will redirect to the new URL format.
+
+If you pass the C<return_output> or C<return_tt_vars> parameters, and a
+redirect is required, this method will fake the redirect and return the
+output/variables that will actually end up being viewed by the user.  If
+instead you want to see the HTTP headers that will be printed in order to
+perform the redirect, pass the C<intercept_redirect> parameter as well.
+
+The C<intercept_redirect> parameter has no effect if no redirect is required,
+or if the C<return_output>/C<return_tt_vars> parameter is omitted.
+
+The C<noheaders> parameter only takes effect if C<return_output> is true
+and C<intercept_redirect> is false or omitted.
 
 =cut
 
@@ -881,6 +986,7 @@ sub show_index {
     my ($self, %args) = @_;
     my $wiki = $self->wiki;
     my $formatter = $wiki->formatter;
+    my $use_leaflet = $self->config->use_leaflet;
     my %tt_vars;
     my @selnodes;
 
@@ -895,29 +1001,79 @@ sub show_index {
             };
             $tt_vars{not_editable} = 1;
         } else {
-            @selnodes = $wiki->list_nodes_by_metadata(
-                metadata_type  => $args{type},
-                metadata_value => $args{value},
-                ignore_case    => 1
-            );
-            my $name = ucfirst($args{type}) . " $args{value}";
-            my $url = $self->config->script_name
-                      . "?"
-                      . ucfirst( $args{type} )
-                      . "_"
-                      . uri_escape(
-                                      $formatter->node_name_to_node_param($args{value})
-                                  );
-            $tt_vars{criterion} = {
-                type  => $args{type},
-                value => $args{value}, # for RDF version
-                name  => CGI->escapeHTML( $name ),
-                url   => $url
-            };
-            $tt_vars{not_editable} = 1;
+            return $self->_do_old_style_index_search( %args );
         }
     } else {
-        @selnodes = $wiki->list_all_nodes();
+        # OK, we either show everything, or do a new-style cat/loc search.
+        my $cat = $args{cat} || "";
+        my $loc = $args{loc} || "";
+        my ( $type, $value, @names, @criteria );
+        if ( !$cat && !$loc ) {
+            @selnodes = $wiki->list_all_nodes();
+        } else {
+            my ( @catnodes, @locnodes );
+            if ( $cat ) {
+                @catnodes = $wiki->list_nodes_by_metadata(
+                    metadata_type  => "category",
+                    metadata_value => $cat,
+                    ignore_case    => 1
+                );
+                my $name = "Category $cat";
+                $name =~ s/(\s\w)/\U$1/g;
+                push @criteria, {
+                    type  => "category",
+                    value => $cat,
+                    name  => $name,
+                    param => $formatter->node_name_to_node_param( $name ),
+                };
+                push @names, $name;
+            }
+            if ( $loc ) {
+                @locnodes = $wiki->list_nodes_by_metadata(
+                    metadata_type  => "locale",
+                    metadata_value => $loc,
+                    ignore_case    => 1
+                );
+                my $name = "Locale $loc";
+                $name =~ s/(\s\w)/\U$1/g;
+                push @criteria, {
+                    type  => "locale",
+                    value => $loc,
+                    name  => $name,
+                    param => $formatter->node_name_to_node_param( $name ),
+                };
+                push @names, $name;
+            }
+            if ( $cat && !$loc ) {
+                @selnodes = @catnodes;
+            } elsif ( $loc && !$cat ) {
+                @selnodes = @locnodes;
+            } else {
+                # Intersect the category and locale results.
+                my %count = ();
+                foreach my $node ( @catnodes, @locnodes ) { $count{$node}++; }
+                foreach my $node ( keys %count ) {
+                    push @selnodes, $node if $count{$node} > 1;
+                }
+            }
+            $tt_vars{criteria_title} = join( " and ", @names );
+            $tt_vars{criteria} = \@criteria;
+            $tt_vars{not_editable} = 1;
+        }
+        my $feed_base = $self->config->script_url
+                        . $self->config->script_name . "?action=index";
+        foreach my $criterion ( @criteria ) {
+            if ( $criterion->{type} eq "category" ) {
+              $feed_base .= ";cat=" . lc( $criterion->{value} );
+            } elsif ( $criterion->{type} eq "locale" ) {
+              $feed_base .= ";loc=" . lc( $criterion->{value} );
+            }
+        }
+        my @dropdowns = OpenGuides::CGI->make_index_form_dropdowns(
+                guide => $self,
+                selected => \@criteria );
+        $tt_vars{index_form_fields} = \@dropdowns;
+        $tt_vars{feed_base} = $feed_base;
     }
 
     my @nodes = map {
@@ -927,7 +1083,9 @@ sub show_index {
                             param     => $formatter->node_name_to_node_param($_) }
                         } sort @selnodes;
 
-    # Convert the lat+long to WGS84 as required
+    # Convert the lat+long to WGS84 as required.  If displaying a map
+    # using Leaflet, also grab the min and max lat and long.
+    my ( $min_lat, $max_lat, $min_long, $max_long );
     for(my $i=0; $i<scalar @nodes;$i++) {
         my $node = $nodes[$i];
         if($node) {
@@ -943,6 +1101,28 @@ sub show_index {
 
             push @{$nodes[$i]->{node_data}->{metadata}->{wgs84_long}}, $wgs84_long;
             push @{$nodes[$i]->{node_data}->{metadata}->{wgs84_lat}},  $wgs84_lat;
+            if ( $use_leaflet ) {
+                if ( defined $wgs84_lat && $wgs84_lat =~ /^[-.\d]+$/
+                     && defined $wgs84_long && $wgs84_long =~ /^[-.\d]+$/ ) {
+                    $node->{has_geodata} = 1;
+                    $node->{wgs84_lat} = $wgs84_lat;
+                    $node->{wgs84_long} = $wgs84_long;
+                    if ( !defined $min_lat ) {
+                        $min_lat = $max_lat = $wgs84_lat;
+                    } elsif ( $wgs84_lat < $min_lat ) {
+                        $min_lat = $wgs84_lat;
+                    } elsif ( $wgs84_lat > $max_lat ) {
+                        $max_lat = $wgs84_lat;
+                    }
+                    if ( !defined $min_long ) {
+                        $min_long = $max_long = $wgs84_long;
+                    } elsif ( $wgs84_long < $min_long ) {
+                        $min_long = $wgs84_long;
+                    } elsif ( $wgs84_long > $max_long ) {
+                        $max_long = $wgs84_long;
+                    }
+                }
+            }
         }
     }
 
@@ -961,26 +1141,47 @@ sub show_index {
             $template = "plain_index.tt";
             $conf{content_type} = "text/plain";
         } elsif ( $args{format} eq "map" ) {
-            my $q = CGI->new;
-            $tt_vars{zoom} = $q->param('zoom') || '';
-            $tt_vars{lat} = $q->param('lat') || '';
-            $tt_vars{long} = $q->param('long') || '';
-            $tt_vars{map_type} = $q->param('map_type') || '';
-            $tt_vars{centre_long} = $self->config->centre_long;
-            $tt_vars{centre_lat} = $self->config->centre_lat;
-            $tt_vars{default_gmaps_zoom} = $self->config->default_gmaps_zoom;
-            $tt_vars{enable_gmaps} = 1;
             $tt_vars{display_google_maps} = 1; # override for this page
-            $template = "map_index.tt";
-            
+            if ( $use_leaflet ) {
+                if ( defined $min_lat ) {
+                    %tt_vars = ( %tt_vars,
+                        min_lat     => $min_lat,
+                        max_lat     => $max_lat,
+                        min_long    => $min_long,
+                        max_long    => $max_long,
+                        centre_lat  => ( ( $max_lat + $min_lat ) / 2 ),
+                        centre_long => ( ( $max_long + $min_long ) / 2 ),
+                    );
+                } else {
+                    $tt_vars{no_nodes_on_map} = 1;
+                }
+                $template = "map_index_leaflet.tt";
+            } else {
+                my $q = CGI->new;
+                $tt_vars{zoom} = $q->param('zoom') || '';
+                $tt_vars{lat} = $q->param('lat') || '';
+                $tt_vars{long} = $q->param('long') || '';
+                $tt_vars{map_type} = $q->param('map_type') || '';
+                $tt_vars{centre_long} = $self->config->centre_long;
+                $tt_vars{centre_lat} = $self->config->centre_lat;
+                $tt_vars{default_gmaps_zoom}
+                                      = $self->config->default_gmaps_zoom;
+                $tt_vars{enable_gmaps} = 1;
+                $template = "map_index.tt";
+            }
         } elsif( $args{format} eq "rss" || $args{format} eq "atom") {
             # They really wanted a recent changes style rss/atom feed
             my $feed_type = $args{format};
             my ($feed,$content_type) = $self->get_feed_and_content_type($feed_type);
-            $feed->set_feed_name_and_url_params(
-                        "Index of $args{type} $args{value}",
-                        "action=index;index_type=$args{type};index_value=$args{value}"
-            );
+            my ($name, $params );
+            if ( $args{cat} ) {
+                $name = "Index of Category $args{cat}";
+                $params = "action=index;cat=$args{cat}";
+            } else {
+                $name = "Index of Locale $args{loc}";
+                $params = "action=index;loc=$args{loc}";
+            }
+            $feed->set_feed_name_and_url_params( $name, $params );
 
             # Grab the actual node data out of @nodes
             my @node_data;
@@ -1000,15 +1201,43 @@ sub show_index {
         $template = "site_index.tt";
     }
 
+    return %tt_vars if $args{return_tt_vars};
+
     %conf = (
                 %conf,
                 template    => $template,
                 tt_vars     => \%tt_vars,
             );
 
+    if ( $args{return_output} && !$args{intercept_redirect} ) {
+        $conf{noheaders} = $args{noheaders};
+    }
+
     my $output = $self->process_template( %conf );
     return $output if $args{return_output};
     print $output;
+}
+
+# Deal with legacy URLs/tests.
+sub _do_old_style_index_search {
+    my ( $self, %args ) = @_;
+    if ( ( $args{return_output} || $args{return_tt_vars} ) ) {
+        if ( $args{intercept_redirect} ) {
+            return $self->redirect_index_search( %args );
+        } else {
+            my $type = delete $args{type};
+            my $value = delete $args{value};
+            if ( $type eq "category" ) {
+                return $self->show_index( %args, cat => $value );
+            } elsif ( $type eq "locale" ) {
+                return $self->show_index( %args, loc => $value );
+            } else {
+                return $self->show_index( %args );
+            }
+        }
+    } else {
+        print $self->redirect_index_search( %args );
+    }
 }
 
 =item B<show_metadata>
@@ -2267,12 +2496,36 @@ sub process_template {
                           template    => $args{template},
                           vars        => $args{tt_vars},
                           cookies     => $args{cookies},
-                          http_status => $args{http_status}
+                          http_status => $args{http_status},
+                          noheaders   => $args{noheaders},
                       );
     if ( $args{content_type} ) {
         $output_conf{content_type} = $args{content_type};
     }
     return OpenGuides::Template->output( %output_conf );
+}
+
+# Redirection for legacy URLs.
+sub redirect_index_search {
+    my ( $self, %args ) = @_;
+    my $type   = lc( $args{type} || "" );
+    my $value  = lc( $args{value} || "" );
+    my $format = lc( $args{format} || "" );
+
+    my $script_url = $self->config->script_url;
+    my $script_name = $self->config->script_name;
+
+    my $url = "$script_url$script_name?action=index";
+
+    if ( $type eq "category" ) {
+        $url .= ";cat=$value";
+    } elsif ( $type eq "locale" ) {
+        $url .= ";loc=$value";
+    }
+    if ( $format ) {
+        $url .= ";format=$format";
+    }
+    return CGI->redirect( -uri => $url, -status => 301 );
 }
 
 sub redirect_to_node {

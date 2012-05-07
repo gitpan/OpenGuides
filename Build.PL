@@ -15,7 +15,8 @@ my $force;
 
 GetOptions('force' => \$force);
 
-unless ($force) {
+
+unless ($force || $ENV{'AUTOMATED_TESTING'}) {
 	print <<EOF;
 
 Beginning install process... if you already have an OpenGuides
@@ -46,12 +47,12 @@ EOF
 my %yn_vars = map { $_ => 1 }
    qw(use_plucene enable_page_deletion navbar_on_home_page backlinks_in_title
       moderation_requires_password enable_node_image enable_common_categories
-      enable_common_locales recent_changes_on_home_page
+      enable_common_locales recent_changes_on_home_page use_leaflet
       random_page_omits_locales random_page_omits_categories
       content_above_navbar_in_html show_gmap_in_node_display force_wgs84
       send_moderation_notifications read_only);
 
-my $skip_config = $force ? 'y' : Module::Build->y_n("Skip OpenGuides configuration?", "n");
+my $skip_config = $force || $ENV{AUTOMATED_TESTING} ? 'y' : Module::Build->y_n("Skip OpenGuides configuration?", "n");
 if ( $skip_config ) {
     print <<EOF;
 ===========================================================================
@@ -97,6 +98,9 @@ push @answers, { question => $dbtype_qu,
 
 my $install_directory; # used to suggest template paths
 my $use_plucene = 1; # keep track of this so we know what to put in prereqs
+my $use_leaflet; # if true, we skip the GMaps questions
+my %gmaps_vars = map { $_ => 1 } qw( gmaps_api_key centre_long centre_lat
+                                default_gmaps_zoom default_gmaps_search_zoom );
 my $centre_lat = ''; # contains centre lat derived from Google Maps URL
 foreach my $var ( qw(
    dbname dbuser dbpass dbhost dbport script_name
@@ -106,8 +110,8 @@ foreach my $var ( qw(
    recent_changes_on_home_page random_page_omits_locales
    random_page_omits_categories content_above_navbar_in_html home_name
    site_desc default_city default_country contact_email default_language
-   formatting_rules_node backlinks_in_title gmaps_api_key centre_long
-   centre_lat show_gmap_in_node_display default_gmaps_zoom
+   formatting_rules_node backlinks_in_title use_leaflet gmaps_api_key
+   centre_long centre_lat show_gmap_in_node_display default_gmaps_zoom
    default_gmaps_search_zoom force_wgs84 google_analytics_key
    licence_name licence_url licence_info_url moderation_requires_password
    enable_node_image enable_common_categories enable_common_locales
@@ -145,6 +149,15 @@ foreach my $var ( qw(
         push @answers, { question => $qu,
                          variable => $var,
                          value => 1 };
+        next;
+    }
+
+    # If we're using Leaflet, we can skip the GMaps stuff.  Don't erase any
+    # previous answers from their config file though.
+    if ( $use_leaflet && $gmaps_vars{$var} ) {
+        push @answers, { question => $qu,
+                         variable => $var,
+                         value => $val };
         next;
     }
 
@@ -196,6 +209,10 @@ foreach my $var ( qw(
     # Keep track of chosen search method so we know what to put in prereqs.
     # From Module::Build docs: ->y_n returns a Perl boolean true or false.
     $use_plucene = 1 if $var eq "use_plucene" and $val;
+
+    # If they've just chosen to use Leaflet, we won't need to ask any of the
+    # GMaps questions.
+    $use_leaflet = 1 if $var eq "use_leaflet" and $val;
 
     # Make sure that script_url ends in a /
     if ( $var eq "script_url" and $val !~ /\/$/ ) {
@@ -282,7 +299,7 @@ my $build = OpenGuides::Build->new(
         'CGI'                                 => '2.92',  # avoid escapeHTML bug
         'CGI::Carp'                           => 0,
         'CGI::Cookie'                         => 0,
-        'Wiki::Toolkit'                       => '0.77',
+        'Wiki::Toolkit'                       => '0.80',
         'Wiki::Toolkit::Feed::Atom'           => 0,
         'Wiki::Toolkit::Feed::RSS'            => 0,
         'Wiki::Toolkit::Formatter::UseMod'    => 0,
@@ -298,12 +315,14 @@ my $build = OpenGuides::Build->new(
         'File::Spec::Functions'               => 0,
         'File::Temp'                          => 0,
         'HTML::Entities'                      => 0,
+        'JSON'                                => 0, # W::T::P::JSON uses anyway
         'LWP::Simple'                         => 0,
         'MIME::Lite'                          => 0,
         'Parse::RecDescent'                   => 0,
         $search_module                        => 0,
         'POSIX'                               => 0,
         'Template'                            => '2.24', # for .lower vmethod
+        'Template::Plugin::JSON::Escape'      => 0,
         'Time::Piece'                         => 0,
         'URI::Escape'                         => 0,
         'XML::RSS'                            => 0,
@@ -333,6 +352,14 @@ my $build = OpenGuides::Build->new(
         'Test::Pod'                           => 0,
 
     },
+  meta_merge     => {
+    resources => {
+      MailingList => 'openguides-dev@lists.openguides.org',
+      homepage => 'http://openguides.org',
+      bugtracker => 'http://dev.openguides.org',
+      repository  => 'https://urchin.earth.li/svn/openguides', 
+    }
+  },
     dynamic_config => 1,
     create_makefile_pl => "passthrough"
 );
@@ -358,14 +385,18 @@ $build->config_data( __templates     => [
                       "delete_password_wrong.tt",
                       "differences.tt",
                       "display_metadata.tt",
+                      "json_index.tt",
                       "metadata.tt",
                       "edit_form.tt",
                       "edit_form_actions.tt",
+                      "edit_form_preview.tt",
                       "error.tt",
                       "footer.tt",
                       "header.tt",
                       "home_node.tt",
+                      "index_form.tt",
                       "map_index.tt",
+                      "map_index_leaflet.tt",
                       "missing_metadata.tt",
                       "moderate_confirm.tt",
                       "moderate_password_wrong.tt",
@@ -384,6 +415,7 @@ $build->config_data( __templates     => [
                       "newpage.tt",
                       "node.tt",
                       "node_history.tt",
+                      "node_image.tt",
                       "node_image_fields.tt",
                       "node_photo_notes.tt",
                       "node_rdf.tt",
@@ -402,7 +434,8 @@ $build->config_data( __templates     => [
     ] );
 
 $build->config_data( __static_files => [
-    # XXX to be supplied when we have some
+        "map-leaflet.js",
+        "openguides-base.css",
     ] );
 
 # Finally write the build script.

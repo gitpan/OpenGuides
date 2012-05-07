@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use vars qw( $VERSION );
-$VERSION = '0.06';
+$VERSION = '0.07';
 
 use Carp qw( croak );
 use Config::Tiny;
@@ -20,7 +20,7 @@ my @variables = qw(
    default_language http_charset ping_services
    formatting_rules_node formatting_rules_link backlinks_in_title template_path
    custom_template_path geo_handler ellipsoid gmaps_api_key centre_long
-   show_gmap_in_node_display google_analytics_key
+   show_gmap_in_node_display google_analytics_key use_leaflet
    centre_lat default_gmaps_zoom default_gmaps_search_zoom force_wgs84
    licence_name licence_url licence_info_url
    moderation_requires_password moderate_whitelist
@@ -104,6 +104,7 @@ sub _init {
                      backlinks_in_title => 0,
                      geo_handler => 1,
                      ellipsoid => "WGS-84",
+                     use_leaflet => 0,
                      show_gmap_in_node_display => 1,
                      centre_long => 0,
                      centre_lat => 0,
@@ -117,7 +118,7 @@ sub _init {
                      host_checker_module => "",
                      static_path => "/usr/local/share/openguides/static",
                      send_moderation_notifications => 1,
-                     website_link_max_chars => 20,
+                     website_link_max_chars => 25,
                      read_only => 0,
                    );
 
@@ -166,7 +167,7 @@ sub _init {
         enable_page_deletion => "Do you want to enable page deletion?",
         moderation_requires_password => "Is the admin password required for moderating pages?",
         admin_pass => "Please specify a password for the site admin.",
-        stylesheet_url => "What's the URL of the site's stylesheet?",
+        stylesheet_url => "What's the URL of the site's stylesheet?  If you don't enter one here, the basic OpenGuides stylesheet will be used instead.",
         enable_node_image => "Should nodes be allowed to have an externally hosted image?",
         enable_common_categories => "Do you want a common list of categories shown on all node pages?",
         enable_common_locales => "Do you want a common list of locales shown on all node pages?",
@@ -188,12 +189,13 @@ sub _init {
         formatting_rules_link => "What URL do you want to use for the text formatting rules (leave blank to use a wiki node instead)?",
         backlinks_in_title => "Make node titles link to node backlinks (C2 style)?",
         ellipsoid => "Which ellipsoid do you want to use? (eg 'Airy', 'WGS-84')",
-        gmaps_api_key => "Do you have a Google Maps API key to use with this guide? If you enter it here the Google Maps functionality will be automatically enabled.",
-        centre_long => "What is the longitude of the centre point of a map to draw for your guide? (This question can be ignored if you aren't using Google Maps). You may paste in a Google Maps URL here (hint: copy URL from 'Link to this page')",
-        centre_lat => "What is the latitude of the centre point of a map to draw for your guide? (This question can be ignored if you aren't using Google Maps)",
+        use_leaflet => "Do you want to use the Leaflet mapping library? (this is recommended)",
+        gmaps_api_key => "Do you have a Google Maps API key to use with this guide? If so, enter it here. (Note: our Google Maps support is deprecated, and we recommend you choose to use Leaflet instead.)",
+        centre_long => "What is the longitude of the centre point of a map to draw for your guide? (This question can be ignored if you aren't using Google Maps - we recommend you use Leaflet instead, as our Leaflet code will figure this out for you.) You may paste in a Google Maps URL here (hint: copy URL from 'Link to this page')",
+        centre_lat => "What is the latitude of the centre point of a map to draw for your guide? (This question can be ignored if you aren't using Google Maps - we recommend you use Leaflet instead, as our Leaflet code will figure this out for you.)",
         default_gmaps_zoom => "What default zoom level shall we use for Google Maps? (This question can be ignored if you aren't using Google Maps)",
         default_gmaps_search_zoom => "What default zoom level shall we use for Google Maps in the search results? (This question can be ignored if you aren't using Google Maps)",
-        show_gmap_in_node_display => "Would you like to display a Google Map on every node that has geodata? (This question can be ignored if you aren't using Google Maps)",
+        show_gmap_in_node_display => "Would you like to display a map on every node that has geodata?",
         force_wgs84 => "Forcibly treat stored lat/long data as if they used the WGS84 ellipsoid?",
         google_analytics_key => "Do you have a Google Analytics key to use with this guide? If you enter it here, then Google Analytics functionality will be automatically enabled.",
         licence_name => "What licence will you use for the guide?",
@@ -309,6 +311,8 @@ sub script_url {
 
 =item * ellipsoid (default: C<WGS-84>)
 
+=item * use_leaflet
+
 =item * gmaps_api_key
 
 =item * centre_long
@@ -337,13 +341,23 @@ sub script_url {
 
 =item * static_path
 
-=item * static_url
+=item * static_url (this is constrained to always end in C</>)
+
+=cut
+
+sub static_url {
+    my $self = shift;
+    # See perldoc Class::Accessor - can't just use SUPER.
+    my $url = $self->_static_url_accessor( @_ );
+    $url .= "/" unless (defined $url && $url =~ /\/$/);
+    return $url;
+}
 
 =item * send_moderation_notifications
 
 =item * moderate_whitelist
 
-=item * website_link_max_chars (default: C<20>)
+=item * website_link_max_chars (default: C<25>)
 
 =item * read_only
 
@@ -355,7 +369,7 @@ The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 
-     Copyright (C) 2004-2010 The OpenGuides Project.  All Rights Reserved.
+     Copyright (C) 2004-2012 The OpenGuides Project.  All Rights Reserved.
 
 The OpenGuides distribution is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

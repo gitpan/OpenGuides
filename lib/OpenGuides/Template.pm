@@ -2,7 +2,7 @@ package OpenGuides::Template;
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = '0.16';
+$VERSION = '0.17';
 
 use Carp qw( croak );
 use CGI; # want to get rid of this and put the burden on the templates
@@ -317,8 +317,8 @@ sub extract_metadata_vars {
     # a URL too.  This is ick.
     my (@catlist, @loclist);
     if ( $args{metadata} ) {
-        @catlist = @{ $metadata{category} || [] };
-        @loclist = @{ $metadata{locale}   || [] };
+        @catlist = sort @{ $metadata{category} || [] };
+        @loclist = sort @{ $metadata{locale}   || [] };
     } else {
         my $categories_text = $q->param('categories');
         my $locales_text    = $q->param('locales');
@@ -366,12 +366,19 @@ sub extract_metadata_vars {
 
     my $website = $args{metadata} ? $metadata{website}[0]
                                   : $q->param("website");
+    # Do truncation for website name display.  Max length of field is set in
+    # conf file (website_link_max_chars).  Leading http:// and www. if present
+    # is stripped; trailing / is also stripped if it's the only / in the URL.
     my $formatted_website_text = "";
     if ( $website && $website ne "http://" && is_web_uri( $website ) ) {
-        my $trunc_website = substr( $website, 0,
-                                    $config->website_link_max_chars );
-        unless ($website eq $trunc_website ) {
-            $trunc_website .= '...';
+        my $maxlen = $config->website_link_max_chars;
+        my $trunc_website = $website;
+        $trunc_website =~ s|http://(www.)?||;
+        if ( $trunc_website =~ tr|/|| == 1 ) {
+            $trunc_website =~ s|/$||;
+        }
+        if ( length( $trunc_website ) > $maxlen ) {
+            $trunc_website = substr( $trunc_website, 0, $maxlen - 3 ) . "...";
         }
         $formatted_website_text = '<a href="' . $website . '">'
                                   . $trunc_website . '</a>';

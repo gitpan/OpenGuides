@@ -21,11 +21,13 @@ if ( $@ ) {
 }
 
 
-plan tests => 10;
+plan tests => 15;
 
-OpenGuides::Test::refresh_db();
+# Clear out the database from any previous runs.
+unlink "t/node.db";
+unlink <t/indexes/*>;
 
-
+Wiki::Toolkit::Setup::SQLite::setup( { dbname => "t/node.db" } );
 my $config = OpenGuides::Config->new(
        vars => {
                  dbtype             => "sqlite",
@@ -71,7 +73,7 @@ ok( $wiki->node_exists( "Wombats" ), "Wombats written" );
 my %node = $wiki->retrieve_node("Wombats");
 is( $node{version}, 1, "First version" );
 
-
+sleep(2);
 # Now write a second version of it
 $q->param( -name => "edit_type", -value => "Normal edit" );
 $q->param( -name => "checksum", -value => $node{checksum} );
@@ -87,33 +89,28 @@ $output = $guide->commit_node(
 is( $node{version}, 2, "First version" );
 is( $node{metadata}->{edit_type}[0], "Normal edit", "Right edit type" );
 
-# Now try to commit some invalid data, and make sure we get an edit form back
-$q = OpenGuides::Test->make_cgi_object(
-    content => "foo",
-    os_x => "fooooo",
-    username => "bob",
-    comment => "bar",
-    node_image => "image",
-    edit_type => "Minor tidying"
-);
-
+sleep(2);
+# Now write a third version of it
+$q->param( -name => "edit_type", -value => "Minor tidying" );
+$q->param( -name => "checksum", -value => $node{checksum} );
+$q->param( -name => "comment", -value => "Third edit" );
 $output = $guide->commit_node(
-                                return_output => 1,
-                                id => "Wombats again",
-                                cgi_obj => $q,
+                               return_output => 1,
+                               id => "Wombats",
+                               cgi_obj => $q,
                              );
 
-like( $output, qr/Your input was invalid/,
-    "Edit form displayed and invalid input message shown if invalid input" );
+# Check it's as expected
+%node = $wiki->retrieve_node("Wombats");
+is( $node{version}, 3, "Third version" );
+is( $node{metadata}->{edit_type}[0], "Minor tidying", "Right edit type" );
 
-like( $output, qr/os_x must be integer/,
-    "Edit form displayed and os_x integer message displayed" );
 
 my @nodes = $wiki->list_recent_changes( days => 1 );
     is( scalar @nodes, 1,
         "By default each node returned only once however many times changed" );
     @nodes = $wiki->list_recent_changes( days => 1, include_all_changes => 1 );
-    is( scalar @nodes, 2,
+    is( scalar @nodes, 3,
         "...returned more than once when 'include_all_changes' set" );
 
 # when minor_edits = 1
@@ -132,11 +129,13 @@ my $cookie = OpenGuides::CGI->make_prefs_cookie(
 );
 $output = $guide->display_recent_changes( return_output => 1 );
 
+like ($output, qr/<td class="recentchanges_node_name">/, "expecting a table defintion for an edit");
+like ($output, qr/Third edit/, "showing the most recent minor edit"); 
 unlike ($output, qr/First edit/, "showing a page edit twice when show minor edits enabled. "); 
 
 
 # set show_minor_edits to 0.
- $cookie = OpenGuides::CGI->make_prefs_cookie(
+$cookie = OpenGuides::CGI->make_prefs_cookie(
     config                     => $config,
     username                   => "bob",
     include_geocache_link      => 1,
@@ -150,11 +149,8 @@ unlike ($output, qr/First edit/, "showing a page edit twice when show minor edit
 );
 $ENV{HTTP_COOKIE} = $cookie;
 
-
-
 $output = $guide->display_recent_changes( return_output => 1 );
-
-TODO: {
-    local $TODO = "http://dev.openguides.org/ticket/270";
-    unlike ($output, qr/First edit/, "showing a page edit twice when not showing minor edits"); 
-}
+like ($output, qr/<td class="recentchanges_node_name">/, "expecting a table defintion for an edit");
+like ($output, qr/Second edit/, "expecting at least one edit"); 
+unlike ($output, qr/First edit/, "showing a page edit twice when not showing minor edits"); 
+unlike ($output, qr/Third edit/, "showing a page edit twice when not showing minor edits");

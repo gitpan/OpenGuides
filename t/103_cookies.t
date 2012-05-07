@@ -3,7 +3,7 @@ use OpenGuides::Config;
 use OpenGuides::CGI;
 use Time::Piece;
 use Time::Seconds;
-use Test::More tests => 29;
+use Test::More tests => 30;
 
 eval { OpenGuides::CGI->make_prefs_cookie; };
 ok( $@, "->make_prefs_cookie dies if no config object supplied" );
@@ -68,7 +68,7 @@ is( $prefs{cookie_expires}, "never", "...and requested cookie expiry" );
 is( $prefs{track_recent_changes_views}, "rc_pref",
                                      "...and recent changes tracking" );
 is( $prefs{display_google_maps}, "gm_pref",
-                                     "...and Google Maps display preference" );
+                                     "...and map display preference" );
 is( $prefs{is_admin}, "admin_pref",
                                      "...and admin preference" );
 # Now make sure that true/false preferences are taken account of when
@@ -102,3 +102,15 @@ delete $ENV{HTTP_COOKIE};
 %prefs = eval { OpenGuides::CGI->get_prefs_from_cookie( config => $config ); };
 is( $@, "", "->get_prefs_from_cookie doesn't die if no cookie set" );
 is( keys %prefs, 11, "...and returns ten default values" );
+
+# Check that the prefs cookie is still looked for even if we send along a
+# non-prefs cookie.
+my $rc_cookie = OpenGuides::CGI->make_recent_changes_cookie(
+                    config => $config );
+my $prefs_cookie = OpenGuides::CGI->make_prefs_cookie(
+                    config => $config, is_admin => 1 );
+$ENV{HTTP_COOKIE} = $prefs_cookie;
+%prefs = OpenGuides::CGI->get_prefs_from_cookie( config => $config,
+                                                 cookies => [ $rc_cookie ] );
+ok( $prefs{is_admin},
+    "->get_prefs_from_cookie still works with ENV if we send RC cookie" );

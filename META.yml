@@ -12,7 +12,7 @@ configure_requires:
   Config::Tiny: 0
   Module::Build: 0.26
 dynamic_config: 1
-generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.112621'
+generated_by: 'Module::Build version 0.4, CPAN::Meta::Converter version 2.120921'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -21,22 +21,22 @@ name: OpenGuides
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.66
+    version: 0.67
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
     version: 0.02
   OpenGuides::CGI:
     file: lib/OpenGuides/CGI.pm
-    version: 0.10
+    version: 0.11
   OpenGuides::Config:
     file: lib/OpenGuides/Config.pm
-    version: 0.06
+    version: 0.07
   OpenGuides::Feed:
     file: lib/OpenGuides/Feed.pm
     version: 0.02
   OpenGuides::JSON:
     file: lib/OpenGuides/JSON.pm
-    version: 0.02
+    version: 0.03
   OpenGuides::RDF:
     file: lib/OpenGuides/RDF.pm
     version: 0.14
@@ -45,13 +45,13 @@ provides:
     version: 0.14
   OpenGuides::Template:
     file: lib/OpenGuides/Template.pm
-    version: 0.16
+    version: 0.17
   OpenGuides::Test:
     file: lib/OpenGuides/Test.pm
     version: 0.06
   OpenGuides::Utils:
     file: lib/OpenGuides/Utils.pm
-    version: 0.12
+    version: 0.13
 recommends:
   DBD::SQLite: 0
   Geo::HelmertTransform: 0
@@ -74,6 +74,7 @@ requires:
   Geo::Coordinates::OSGB: 0
   Geo::Coordinates::UTM: 0
   HTML::Entities: 0
+  JSON: 0
   LWP::Simple: 0
   List::Util: 0
   MIME::Lite: 0
@@ -82,9 +83,10 @@ requires:
   Parse::RecDescent: 0
   Plucene: 0
   Template: 2.24
+  Template::Plugin::JSON::Escape: 0
   Time::Piece: 0
   URI::Escape: 0
-  Wiki::Toolkit: 0.77
+  Wiki::Toolkit: 0.80
   Wiki::Toolkit::Feed::Atom: 0
   Wiki::Toolkit::Feed::RSS: 0
   Wiki::Toolkit::Formatter::UseMod: 0
@@ -95,5 +97,9 @@ requires:
   Wiki::Toolkit::Plugin::RSS::Reader: 0
   XML::RSS: 0
 resources:
+  bugtracker: http://dev.openguides.org
+  homepage: http://openguides.org
   license: http://dev.perl.org/licenses/
-version: 0.66
+  repository: https://urchin.earth.li/svn/openguides
+  x_MailingList: openguides-dev@lists.openguides.org
+version: 0.67

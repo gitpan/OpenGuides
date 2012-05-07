@@ -3,6 +3,41 @@
 More detailed changelogs can be found at
 <http://dev.openguides.org/log/trunk>.
 
+0.67    07 May 2012
+        Switched from the Google Maps API to the Leaflet mapping library.
+          To make this work, set use_leaflet = 1 in your wiki.conf, and ensure
+          that div#map_index_canvas is given a non-zero height in your
+          stylesheet (you may also want to style div#map_index_node_list and
+          div#node_map_canvas).  Google Maps support is retained for those
+          who fear change, but is no longer actively maintained.
+        Added support for indexing on category and locale at the same time.
+          As part of this, action=index now uses a new form of parameters, so
+          instead of e.g.
+            action=index;index_type=locale;index_value=holborn
+          you should use
+            action=index;loc=holborn
+          or indeed
+            action=index;cat=pubs;loc=holborn
+          Format params such as format=map work as before.  Old-style URLs
+          will automatically redirect to new-style ones.
+	Added project metadata to Build.PL (#285).
+	Skip Build.PL questions if AUTOMATED_TESTING=1 (#291)
+        Added a basic stylesheet, installed into the static_path directory.
+        Fixed the JSON output for action=index (using a new dependency on
+          Template::Plugin::JSON::Escape).
+        Added JSON output for the preferences page (#293).
+        IP addresses no longer show on recent changes for people without the
+          admin preference set.
+        Website truncation on node display is now a little more intelligent
+          (you can still tweak this by setting website_link_max_chars in
+          your wiki.conf).
+        The preferences page now remembers what page the user got to it from,
+          and sends them back there.
+        Fixed bug with recent changes display when minor edit suppressed (for
+          which we require version 0.80 of Wiki::Toolkit).
+	Renumber tests so we have more room (#297).
+	Fix warnings in tests due to undef values being lower cased (#298).
+
 0.66    12 April 2012
         All templates now have access to the "username" TT variable.
         Node name parameters in URLs are now accepted with spaces instead of
