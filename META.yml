@@ -21,7 +21,7 @@ name: OpenGuides
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.67
+    version: 0.68
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
     version: 0.02
@@ -102,4 +102,4 @@ resources:
   license: http://dev.perl.org/licenses/
   repository: https://urchin.earth.li/svn/openguides
   x_MailingList: openguides-dev@lists.openguides.org
-version: 0.67
+version: 0.68
