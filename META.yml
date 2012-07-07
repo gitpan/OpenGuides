@@ -21,7 +21,7 @@ name: OpenGuides
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.68
+    version: 0.69
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
     version: 0.02
@@ -51,7 +51,7 @@ provides:
     version: 0.06
   OpenGuides::Utils:
     file: lib/OpenGuides/Utils.pm
-    version: 0.13
+    version: 0.14
 recommends:
   DBD::SQLite: 0
   Geo::HelmertTransform: 0
@@ -102,4 +102,4 @@ resources:
   license: http://dev.perl.org/licenses/
   repository: https://urchin.earth.li/svn/openguides
   x_MailingList: openguides-dev@lists.openguides.org
-version: 0.68
+version: 0.69

@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use sigtrap die => 'normal-signals';
 use vars qw( $VERSION );
-$VERSION = '0.68';
+$VERSION = '0.69';
 
 use CGI qw/:standard/;
 use CGI::Carp qw(croak);
@@ -121,7 +121,8 @@ eval {
                    metadata_type  => $q->param("metadata_type") || "",
                    metadata_value => $q->param("metadata_value") || "",
                    exclude_locales => $q->param("exclude_locales") || "",
-                   exclude_categories => $q->param("exclude_categories") || ""
+                   exclude_categories => $q->param("exclude_categories") || "",
+                   format => $q->param( "format" ) || "",
         );
     } elsif ( $action eq 'set_moderation' ) {
         $guide->set_node_moderation(

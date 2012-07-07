@@ -2,7 +2,7 @@ package OpenGuides::Utils;
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = '0.13';
+$VERSION = '0.14';
 
 use Carp qw( croak );
 use Wiki::Toolkit;
@@ -339,6 +339,51 @@ sub get_wgs84_coords {
     } else {
         croak "Invalid geo_handler config option $config->geo_handler";
     }
+}
+
+=item B<get_wgs84_min_max>
+
+Given a set of WGS84 coordinate data, returns the minimum, maximum,
+and centre latitude and longitude.
+
+    %data = OpenGuides::Utils->get_wgs84_min_max(
+        nodes => [
+                   { wgs84_lat => 51.1, wgs84_long => 1.1 },
+                   { wgs84_lat => 51.2, wgs84_long => 1.2 },
+                 ]
+    );
+    print "Top right-hand corner is $data{max_lat}, $data{max_long}";
+    print "Centre point is $data{centre_lat}, $data{centre_long}";
+
+The hashes in the C<nodes> argument can include other key/value pairs;
+these will just be ignored.
+
+Returns false if it can't find any valid geodata in the nodes.
+
+=cut
+
+sub get_wgs84_min_max {
+    my ( $self, %args ) = @_;
+    my @nodes = @{$args{nodes}};
+
+    my @lats  = sort
+                grep { defined $_ && /^[-.\d]+$/ }
+                map { $_->{wgs84_lat} }
+                @nodes;
+    my @longs = sort
+                grep { defined $_ && /^[-.\d]+$/ }
+                map { $_->{wgs84_long} }
+                @nodes;
+
+    if ( !scalar @lats || !scalar @longs ) {
+        return;
+    }
+
+    my %data = ( min_lat  => $lats[0],  max_lat  => $lats[$#lats],
+                 min_long => $longs[0], max_long => $longs[$#longs] );
+    $data{centre_lat} = ( $data{min_lat} + $data{max_lat} ) / 2;
+    $data{centre_long} = ( $data{min_long} + $data{max_long} ) / 2;
+    return %data;
 }
 
 =item B<detect_redirect>

@@ -81,7 +81,7 @@
    "provides" : {
       "OpenGuides" : {
          "file" : "lib/OpenGuides.pm",
-         "version" : "0.68"
+         "version" : "0.69"
       },
       "OpenGuides::Build" : {
          "file" : "lib/OpenGuides/Build.pm",
@@ -121,7 +121,7 @@
       },
       "OpenGuides::Utils" : {
          "file" : "lib/OpenGuides/Utils.pm",
-         "version" : "0.13"
+         "version" : "0.14"
       }
    },
    "release_status" : "stable",
@@ -138,5 +138,5 @@
       },
       "x_MailingList" : "openguides-dev@lists.openguides.org"
    },
-   "version" : "0.68"
+   "version" : "0.69"
 }
