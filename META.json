@@ -68,7 +68,7 @@
             "Wiki::Toolkit" : "0.80",
             "Wiki::Toolkit::Feed::Atom" : "0",
             "Wiki::Toolkit::Feed::RSS" : "0",
-            "Wiki::Toolkit::Formatter::UseMod" : "0",
+            "Wiki::Toolkit::Formatter::UseMod" : "0.24",
             "Wiki::Toolkit::Plugin::Categoriser" : "0",
             "Wiki::Toolkit::Plugin::Diff" : "0",
             "Wiki::Toolkit::Plugin::JSON" : "0",
@@ -81,7 +81,7 @@
    "provides" : {
       "OpenGuides" : {
          "file" : "lib/OpenGuides.pm",
-         "version" : "0.69"
+         "version" : "0.70"
       },
       "OpenGuides::Build" : {
          "file" : "lib/OpenGuides/Build.pm",
@@ -121,7 +121,7 @@
       },
       "OpenGuides::Utils" : {
          "file" : "lib/OpenGuides/Utils.pm",
-         "version" : "0.14"
+         "version" : "0.15"
       }
    },
    "release_status" : "stable",
@@ -138,5 +138,5 @@
       },
       "x_MailingList" : "openguides-dev@lists.openguides.org"
    },
-   "version" : "0.69"
+   "version" : "0.70"
 }

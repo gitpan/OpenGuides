@@ -21,7 +21,7 @@ name: OpenGuides
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.69
+    version: 0.70
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
     version: 0.02
@@ -51,7 +51,7 @@ provides:
     version: 0.06
   OpenGuides::Utils:
     file: lib/OpenGuides/Utils.pm
-    version: 0.14
+    version: 0.15
 recommends:
   DBD::SQLite: 0
   Geo::HelmertTransform: 0
@@ -89,7 +89,7 @@ requires:
   Wiki::Toolkit: 0.80
   Wiki::Toolkit::Feed::Atom: 0
   Wiki::Toolkit::Feed::RSS: 0
-  Wiki::Toolkit::Formatter::UseMod: 0
+  Wiki::Toolkit::Formatter::UseMod: 0.24
   Wiki::Toolkit::Plugin::Categoriser: 0
   Wiki::Toolkit::Plugin::Diff: 0
   Wiki::Toolkit::Plugin::JSON: 0
@@ -102,4 +102,4 @@ resources:
   license: http://dev.perl.org/licenses/
   repository: https://urchin.earth.li/svn/openguides
   x_MailingList: openguides-dev@lists.openguides.org
-version: 0.69
+version: 0.70

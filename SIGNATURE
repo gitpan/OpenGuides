@@ -14,14 +14,14 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 0300508c98bd7fbf6e1e81ef30b4602a6d202a0f Build.PL
+SHA1 307a56aa0e62546a207058ca6c066a96ab7d2b7f Build.PL
 SHA1 34a09556161b7ed833e2e56e33dd5002afc604fe CONTRIBUTORS
 SHA1 edde6fbaf96fd851190d07b90ca69e478a0a53c3 CUSTOMISATION
-SHA1 ead085a0985891ed290d6845e8b260960741ac59 Changes
+SHA1 6baa708cd9aa0e54a5d5733f0e8de5978ef0ac21 Changes
 SHA1 a0200a743b5de73a1318dd1711c8d78e41cde105 INSTALL
-SHA1 67fade1253073be934249258f45d365f175a2604 MANIFEST
-SHA1 9fd0b96928b810851cd618bee07dd77377ea575d META.json
-SHA1 a331925da5b3faddf6637ca7c83610470b34cbd5 META.yml
+SHA1 bef27df90c72830cb77f7fb95687f547877dc8fe MANIFEST
+SHA1 8788814c5269f665f0ed790eb7fd5d7084aeff49 META.json
+SHA1 89d6fee3a283b63202b301fc851a3f61a5cad81f META.yml
 SHA1 ad2eb979e2b2e89dc4de98bd309d2a4f97f23a32 Makefile.PL
 SHA1 c05707ab098aeaad22e128d6a096d004f71c23be README
 SHA1 1cf3f37d0424b023c299d7230a4e85fe8276cd94 README.CSS
@@ -29,7 +29,7 @@ SHA1 a663bb72d725a4bdd40bd27bd1c3621d55871428 README.GMAPS
 SHA1 8b6c69afbf883c6410f7b52e73aa5f16cb63b9fa TROUBLESHOOTING
 SHA1 3b271a72ccf2b19072860611d2d0fdbc5ae09427 UPGRADING
 SHA1 56af6cfc7c441e5a38c759a8dd3047625c48fe32 examples/reindex.pl
-SHA1 498587a9ea84bdc113da7fd236acad5884cbd4a5 lib/OpenGuides.pm
+SHA1 723bbfc8909283e2949bc39edb5560b9d540dffc lib/OpenGuides.pm
 SHA1 4ca790591db2fec815d56ab116eb88d20efa7359 lib/OpenGuides/Build.pm
 SHA1 4fa54d69d8bc76ac35d1750d8905bfb287606464 lib/OpenGuides/CGI.pm
 SHA1 c057ff0c70e4d67460c96d26d0bec2b614c0b9ab lib/OpenGuides/Config.pm
@@ -39,16 +39,16 @@ SHA1 cd66469846fcd8668ddc5872f0b5f18f79f09fe4 lib/OpenGuides/RDF.pm
 SHA1 25970f73860bc0f3c55aca703852b1a208848e16 lib/OpenGuides/Search.pm
 SHA1 0a5e3fd021ead8bf28874977331f4c8ea8033b03 lib/OpenGuides/Template.pm
 SHA1 5ea9a5c3da6c33b954c823ca5a6421914adb0e36 lib/OpenGuides/Test.pm
-SHA1 8db1b3b54e7ff42ffb58bf58eb5dbe5bd16fb628 lib/OpenGuides/Utils.pm
+SHA1 4a0ecc4f508bd2cca7815c833f0e45569b8a45f0 lib/OpenGuides/Utils.pm
 SHA1 3eb260297d714a0cdf853f409836032caa7549dd newpage.cgi
 SHA1 59da9b95c89010146ea98a62c113e7fd9e3ccc12 preferences.cgi
 SHA1 b9a32c47e81d4e8904c4a709423fe10f0247be8d search.cgi
-SHA1 3beeab8e88af631058f06dd838b83f6279348d80 static/map-leaflet.js
+SHA1 be78c536c5d9e810023d17b11180bc8226d00013 static/map-leaflet.js
 SHA1 4dba3b5e802e76bf6db19fb19df72d36fcedd862 static/openguides-base.css
 SHA1 70268ca7e31c9260c4685e5a480c94320eb91192 t/001_load.t
 SHA1 61e28ddd05ab0f3722f2a8cdce80a8f314b86391 t/002_pod.t
 SHA1 454a6f11bd39314caf3dc476de17e6bebf85ff64 t/101_utils.t
-SHA1 0b74756d23c214327373429a2cb9651d02de60f6 t/102_macros.t
+SHA1 5cde3607c82d18f7cde58edba1e240543b73c873 t/102_macros.t
 SHA1 ead3becaccc66fdd307d8b86afcc42838f8c905e t/103_cookies.t
 SHA1 e60a1710e38a3535635673414741ad0a16f618ff t/104_recent_changes_cookies.t
 SHA1 a9abb0bd4b359d232c7ef6b5c2e99a92cca28d81 t/105_template.t
@@ -87,6 +87,7 @@ SHA1 cf5cc0ee79dd147941328e426fbec8be01e5eecb t/406_map_in_node_display.t
 SHA1 5ecedef04489f3cc95dd1e0b4e48cb71c84ad2b3 t/407_navbar_placement.t
 SHA1 514b8a8bcc0ea605211a03018a1619dd82431f58 t/408_google_analytics.t
 SHA1 2bef3c4f2ea96923b15a124486b65025a97d2b3d t/409_custom_header.t
+SHA1 709e026bc27e5431a6d8d9560bb20269eb6fc524 t/410_meta_description.t
 SHA1 9f220832159f46bed355faca8a041be485918ebc t/500_http_response_codes.t
 SHA1 200ef50bc98d5491f6b8fa9488878870764a9d46 t/501_display_node.t
 SHA1 c471cc775d6742e697a0abaf9dc34fab5880446b t/502_display_diffs.t
@@ -130,7 +131,7 @@ SHA1 60157e46258a395e1635b5c51b0d7b9366473301 t/900_css_category_locale_classes.
 SHA1 bb7b263c93a92b8c2e14363801b00b773a8215e1 t/901_username_in_templates.t
 SHA1 ba494ec79b0925deb13861bcd54499ff64992900 t/902_node_name_from_cgi_obj.t
 SHA1 07ccd0090d052047b5cccd6098d8e043a57428c5 t/903_redirect_without_spaces.t
-SHA1 36e77117495add1f3f723e60ff6533cfe95336d9 t/904_leaflet.t
+SHA1 dbe93124351f6582ed31f7c2027dba42808a3846 t/904_leaflet.t
 SHA1 8cd9e737f7d71c82782f8ccd28618e097a2819cd t/905_multiple_index.t
 SHA1 bdd5cb5f59428be0b43b0991718743acb827dc94 t/906_show_index_form.t
 SHA1 7b7516a7b3f7f8f49bd455957dda73607cca3c0c t/templates/105_test.tt
@@ -150,7 +151,7 @@ SHA1 737c8dd558008f1226ae267e29012ceaf793af37 templates/edit_form_actions.tt
 SHA1 b9223e06806f795b741a33bc22ff5e68df6ead63 templates/edit_form_preview.tt
 SHA1 9fd61428d329f5f66d329c2f865b305a1b8cc639 templates/error.tt
 SHA1 4136e46d2396c8e7960c84a122aad8679a4586f1 templates/footer.tt
-SHA1 a7c99bdffe53376061f15a18ae2a650245de9ee7 templates/header.tt
+SHA1 80a5f71f6ba802c6d89c352c892fb7d2f7635be5 templates/header.tt
 SHA1 1c83a6f0c8cf31c574506ea1426b041ca4a93fc1 templates/home_node.tt
 SHA1 8e58c04b464a4a66f343bcead9bede9f48506ede templates/index_form.tt
 SHA1 34fef184d50938d60891e6336ef8dbc78dbb124e templates/json_index.tt
@@ -193,15 +194,15 @@ SHA1 a2fb88d6d02a376ce3811b347e88b63243b07e4b templates/site_index.tt
 SHA1 1f1a463a5127a54e5f5059b11f921abe4fa9af37 templates/spam_detected.tt
 SHA1 603d7c89a53dca5a57e5a735aff9b74fe13bcfb3 templates/userstats.tt
 SHA1 778881b68d86bebc1cfba9e49d3e3e1d524514f9 templates/wanted_pages.tt
-SHA1 0f93a551fbf67c7ccc28a9bba72877d60513311e wiki.cgi
+SHA1 05fd342ab72d044c9c7d4c0cf15e8aad57666c3a wiki.cgi
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.11 (GNU/Linux)
 
-iQEcBAEBAgAGBQJP+JedAAoJEP476R3A5D3YLI0H/1IHDOr73LeaQo2825JNqSe2
-PSz1+1vXnYzoOzCEw45T3U/xpVQPLWjGVCg/8Zhmx7/bGwXdNyZFijA0KVeLnRzA
-ZbegWUk8x8ZKA/GlGfAE0KeQVDiflc578xHU0mtPRdwIjFGm4J96XdD7lE1MfnyZ
-4h02D9N/5AppUysh6Yg9Q4bbT+HEhu8n/QbWwbB34aAImzuUdSXo87dSgbI2OJAf
-rBypoYUaWSsulYf76sNzIvDYvQAdXBPk9w5/bGqvphgazlHqjbrJJWIQ09L3h7cp
-npd8fBoTzd7QrAqb4O17kD05hD/zxtwlKoC3hGdXXyM73QRIMUnyKySky0BoXPI=
-=P1om
+iQEcBAEBAgAGBQJQOgFQAAoJEP476R3A5D3YckgIAK7TOnmc/S1vEtC0zhQNKW4D
+aotJcIbtozOaVH/YgoSpb7eL1ymnkohhgnx6Cgl0SvcXdD34kyU2UMB4YeNfLOxr
+EFH55noIZStC1/vTm7djjrP19k1xMbYpeq8Y3mbRbwDS9Ah4S6T72Sn8c8he0g9L
+irYrR/tF3txHcXVXF11C9OVak2Ej6btQqZ4Pa5S5eMmeHZRfgrG1Glpe49ivk2kp
+nIYCDSEaru7FVYgNk9/QCMzfXOP6gYhxiYBGHLJk0zVkgHTYz3FGqtpNcTAhi/1F
+RtPtwtfnFxcLZN2ZgwxE6p6YD41otFH42Y0JhN90tuB6FcvyYcXYhZnXgCWk+wo=
+=gBQN
 -----END PGP SIGNATURE-----
