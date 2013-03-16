@@ -6,6 +6,7 @@ build_requires:
   Class::Accessor: 0
   Config::Tiny: 0
   Data::Dumper: 0
+  File::Path: 0
   Module::Build: 0.26
 configure_requires:
   Class::Accessor: 0
@@ -21,10 +22,10 @@ name: OpenGuides
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.70
+    version: 0.71
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
-    version: 0.02
+    version: 0.03
   OpenGuides::CGI:
     file: lib/OpenGuides/CGI.pm
     version: 0.11
@@ -102,4 +103,4 @@ resources:
   license: http://dev.perl.org/licenses/
   repository: https://urchin.earth.li/svn/openguides
   x_MailingList: openguides-dev@lists.openguides.org
-version: 0.70
+version: 0.71
