@@ -3,7 +3,7 @@ package OpenGuides::JSON;
 use strict;
 
 use vars qw( $VERSION );
-$VERSION = '0.03';
+$VERSION = '0.04';
 
 use Wiki::Toolkit::Plugin::JSON;
 use Time::Piece;
@@ -101,7 +101,7 @@ sub emit_json {
     $data->{timestamp} = $node_data{last_modified};
 
     # Make a Time::Piece object.
-    my $timestamp_fmt = $Wiki::Toolkit;
+    my $timestamp_fmt = $Wiki::Toolkit::Store::Database::timestamp_fmt;
 
     if ( $data->{timestamp} ) {
         my $time = Time::Piece->strptime( $data->{timestamp}, $timestamp_fmt );
@@ -187,7 +187,7 @@ developers.
     my $wiki = Wiki::Toolkit->new( ... );
     my $config = OpenGuides::Config->new( file => "wiki.conf" );
     my $json_writer = OpenGuides::JSON->new( wiki   => $wiki,
-                                         config => $config ); 
+                                         config => $config );
 
     # JSON version of a node.
     print "Content-Type: application/javascript\n\n";
@@ -205,7 +205,7 @@ developers.
 =item B<new>
 
     my $json_writer = OpenGuides::JSON->new( wiki   => $wiki,
-                                           config => $config ); 
+                                           config => $config );
 
 C<wiki> must be a L<Wiki::Toolkit> object and C<config> must be an
 L<OpenGuides::Config> object.  Both arguments mandatory.
@@ -286,9 +286,9 @@ defaults for any preferences not set, returns the result as JSON.
 
     print "Last-Modified: " . $json_writer->json_timestamp( %args ) . "\n\n";
 
-Returns the timestamp of the RSS feed in POSIX::strftime style ("Tue, 29 Feb 2000 
+Returns the timestamp of the RSS feed in POSIX::strftime style ("Tue, 29 Feb 2000
 12:34:56 GMT"), which is equivalent to the timestamp of the most recent item
-in the feed. Takes the same arguments as make_recentchanges_json(). You will most 
+in the feed. Takes the same arguments as make_recentchanges_json(). You will most
 likely need this to print a Last-Modified HTTP header so user-agents can determine
 whether they need to reload the feed or not.
 
@@ -312,14 +312,14 @@ The OpenGuides Project (openguides-dev@openguides.org)
 
 =head1 COPYRIGHT
 
-Copyright (C) 2003-2012 The OpenGuides Project.  All Rights Reserved.
+Copyright (C) 2003-2013 The OpenGuides Project.  All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
 
 =head1 CREDITS
 
-Code in this module is mostly pirated from OpenGuides::RDF, those authors deserve all the credit. Chris Prather 
+Code in this module is mostly pirated from OpenGuides::RDF, those authors deserve all the credit. Chris Prather
 did the pirating.
 
 =cut

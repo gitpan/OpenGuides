@@ -13,7 +13,7 @@ configure_requires:
   Config::Tiny: 0
   Module::Build: 0.26
 dynamic_config: 1
-generated_by: 'Module::Build version 0.4, CPAN::Meta::Converter version 2.120921'
+generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.110440'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -22,37 +22,37 @@ name: OpenGuides
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.71
+    version: 0.72
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
-    version: 0.03
+    version: 0.04
   OpenGuides::CGI:
     file: lib/OpenGuides/CGI.pm
-    version: 0.11
+    version: 0.12
   OpenGuides::Config:
     file: lib/OpenGuides/Config.pm
-    version: 0.07
+    version: 0.08
   OpenGuides::Feed:
     file: lib/OpenGuides/Feed.pm
-    version: 0.02
+    version: 0.03
   OpenGuides::JSON:
     file: lib/OpenGuides/JSON.pm
-    version: 0.03
+    version: 0.04
   OpenGuides::RDF:
     file: lib/OpenGuides/RDF.pm
-    version: 0.14
+    version: 0.15
   OpenGuides::Search:
     file: lib/OpenGuides/Search.pm
-    version: 0.14
+    version: 0.15
   OpenGuides::Template:
     file: lib/OpenGuides/Template.pm
-    version: 0.17
+    version: 0.18
   OpenGuides::Test:
     file: lib/OpenGuides/Test.pm
-    version: 0.06
+    version: 0.07
   OpenGuides::Utils:
     file: lib/OpenGuides/Utils.pm
-    version: 0.15
+    version: 0.16
 recommends:
   DBD::SQLite: 0
   Geo::HelmertTransform: 0
@@ -98,9 +98,9 @@ requires:
   Wiki::Toolkit::Plugin::RSS::Reader: 0
   XML::RSS: 0
 resources:
-  bugtracker: http://dev.openguides.org
+  bugtracker: https://github.com/OpenGuides/OpenGuides/issues
   homepage: http://openguides.org
   license: http://dev.perl.org/licenses/
-  repository: https://urchin.earth.li/svn/openguides
+  repository: git://github.com/OpenGuides/OpenGuides.git
   x_MailingList: openguides-dev@lists.openguides.org
-version: 0.71
+version: 0.72

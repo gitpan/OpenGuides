@@ -1,6 +1,6 @@
 package OpenGuides::Search;
 use strict;
-our $VERSION = '0.14';
+our $VERSION = '0.15';
 
 use CGI qw( :standard );
 use Wiki::Toolkit::Plugin::Locator::Grid;
@@ -512,7 +512,7 @@ sub _run_phrase_search {
             delete $contents_res{$node};
             next;
         }
-        
+
         # It'll be a real phrase (as opposed to a word) if it has a space in it.
         # In this case, dump out the nodes that don't match the search exactly.
         # I don't know why the phrase searching isn't working properly.  Fix later.
@@ -827,7 +827,7 @@ The OpenGuides Project (openguides-dev@lists.openguides.org)
 
 =head1 COPYRIGHT
 
-     Copyright (C) 2003-2012 The OpenGuides Project.  All Rights Reserved.
+     Copyright (C) 2003-2013 The OpenGuides Project.  All Rights Reserved.
 
 The OpenGuides distribution is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

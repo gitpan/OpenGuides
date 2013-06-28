@@ -7,6 +7,7 @@ MANIFEST
 Makefile.PL
 META.yml
 README
+README.pod
 README.CSS
 README.GMAPS
 SIGNATURE
@@ -72,6 +73,7 @@ templates/node.tt
 templates/node_history.tt
 templates/node_image.tt
 templates/node_image_fields.tt
+templates/node_location_search.tt
 templates/node_photo_notes.tt
 templates/node_rdf.tt
 templates/openguides_information_boxes.tt
@@ -177,6 +179,8 @@ t/903_redirect_without_spaces.t
 t/904_leaflet.t
 t/905_multiple_index.t
 t/906_show_index_form.t
+t/907_auto_map_link.t
+t/908_custom_node_location_search.t
 t/templates/105_test.tt
 wiki.cgi
 META.json

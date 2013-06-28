@@ -43,9 +43,22 @@ The custom templates currently supported are:
        e.g. "Category" - note that the first letter is capitalised
      - [% index_value %]
        e.g. "Vegan-friendly" - capitalisation just as typed in the edit form
-     - [% node_name %] 
+     - [% node_name %]
        e.g. "Category Vegan-Friendly" - the full, "official" name of the
        autocreated node
+
+ - custom_auto_map_link.tt
+   Used to include map links. The TT variable map_link will contain the
+   map link from the node data, which you may wish to display. If the
+   template is being called from within an address class, the
+   auto_map_link_in_address TT variable will be set.
+   Note: at least one of phone, fax, address, postcode, website,
+         hours_text, map_link is required for this hook to be called,
+         but you should not rely on this behaviour.
+
+- custom_node_location_search.tt
+  Used to add more location based searches on a node page for example nearest
+  tube station. Located after the find all things within * of here form.
 
 Requests for further custom inserts are welcomed.
 
