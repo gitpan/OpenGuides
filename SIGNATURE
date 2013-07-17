@@ -14,14 +14,14 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 76e66b88abd04e6507fe583efd2a87c0bf546176 Build.PL
+SHA1 bd10ca982eef28a45d1ed86c25b119cd64a6662c Build.PL
 SHA1 34a09556161b7ed833e2e56e33dd5002afc604fe CONTRIBUTORS
 SHA1 b7a4d8b30b269f2a1adf5617503a7684d04ce733 CUSTOMISATION
-SHA1 b5a32dde6fff92ac55f161b2e8901d0108727b82 Changes
+SHA1 303f5581bbc8418f72abf381f7df0ecf175e6c0c Changes
 SHA1 07f93a06a38a3a52b1e7dbc6dbc30fbbfdf5d480 INSTALL
-SHA1 8a51bb55df9b4fb029b3f90d6dc827857e5f4f7e MANIFEST
-SHA1 011e4c73b14aaa60139aeacc5644d19865087c65 META.json
-SHA1 31d033d5f2f1d563adbd5cadbdb56d814ebfe84d META.yml
+SHA1 5869b990adddec2fb6fa8b0196f5c1e0e26e26ac MANIFEST
+SHA1 c27befacc03f74f0b1cd3a6f14b334be8af5fb79 META.json
+SHA1 5812c6181dff1390edb7e1439b4cd2c8b4fd527f META.yml
 SHA1 7a24574cbe5c3849850a61a595343147d4def070 Makefile.PL
 SHA1 3078f658de87babcc30fdd83217dd445411372c0 README
 SHA1 7dfb84cf0322ed41fb80110d11db2fc288347192 README.CSS
@@ -30,17 +30,17 @@ SHA1 f5bfeead4820514b4e88be6989f3680752b840a0 README.pod
 SHA1 4257dd5b8ade3a0c36db723a807a4634ce31164f TROUBLESHOOTING
 SHA1 137951315fe0798c6f4f210dbe8112e28b5172a8 UPGRADING
 SHA1 56af6cfc7c441e5a38c759a8dd3047625c48fe32 examples/reindex.pl
-SHA1 8262dff42cb6a87aac797c612978c894e80c366f lib/OpenGuides.pm
+SHA1 c1ea52b99b5b932c0f08592e17b8097a7b5b28df lib/OpenGuides.pm
 SHA1 2b96b7e4a10a4686ecc99a3ebf34b6d4b350a55c lib/OpenGuides/Build.pm
 SHA1 c8c01e0e92a24e7d7999bff71a65e54d6c7298b5 lib/OpenGuides/CGI.pm
 SHA1 e038b89c6549a0522e59ccaa6665a173e1512c75 lib/OpenGuides/Config.pm
 SHA1 ebc58ad5bb6fdb224a43de214a998421a2e330a7 lib/OpenGuides/Feed.pm
-SHA1 37a62e3d0be074be70be1ddf4ff56c553c300702 lib/OpenGuides/JSON.pm
+SHA1 c959d5cf171b6c18c8a9e96407fa2d636d49251b lib/OpenGuides/JSON.pm
 SHA1 cc570c04610512e75a65651cc48e73d9e46778dd lib/OpenGuides/RDF.pm
 SHA1 781f4ac4e54a152d1eface424e95dc4839d43428 lib/OpenGuides/Search.pm
-SHA1 79fffb05153119652fbca08f58b0babc82e8fb5b lib/OpenGuides/Template.pm
+SHA1 078542c7e5ffec784429db7bcd943cea1e1980bd lib/OpenGuides/Template.pm
 SHA1 7c17be771409ba2a16cf5db6ef564875cc8fe1b0 lib/OpenGuides/Test.pm
-SHA1 c317b4787e593c5fdc44909c1f438c08a6d8a008 lib/OpenGuides/Utils.pm
+SHA1 4764a71d6459cea721c8c4727011eed35e0ea888 lib/OpenGuides/Utils.pm
 SHA1 3eb260297d714a0cdf853f409836032caa7549dd newpage.cgi
 SHA1 59da9b95c89010146ea98a62c113e7fd9e3ccc12 preferences.cgi
 SHA1 b9a32c47e81d4e8904c4a709423fe10f0247be8d search.cgi
@@ -49,7 +49,7 @@ SHA1 4dba3b5e802e76bf6db19fb19df72d36fcedd862 static/openguides-base.css
 SHA1 70268ca7e31c9260c4685e5a480c94320eb91192 t/001_load.t
 SHA1 fada08a138c7f5d0c435fbd184ebfbd975f5da7d t/002_pod.t
 SHA1 454a6f11bd39314caf3dc476de17e6bebf85ff64 t/101_utils.t
-SHA1 5cde3607c82d18f7cde58edba1e240543b73c873 t/102_macros.t
+SHA1 1ff8e3d1cec019286a3a8d9adf1a1b906574778f t/102_macros.t
 SHA1 ead3becaccc66fdd307d8b86afcc42838f8c905e t/103_cookies.t
 SHA1 3f765b96e182a8f1ab6b3349b0adf919bc8d3f45 t/104_recent_changes_cookies.t
 SHA1 a9abb0bd4b359d232c7ef6b5c2e99a92cca28d81 t/105_template.t
@@ -67,6 +67,7 @@ SHA1 7da97a8aa26f19fb8d4db429c628d291b6e6430b t/206_geo_data_search_form.t
 SHA1 a70ccaa6cac26cad8b23c38f34b3af78965564db t/207_geo_data_edit_form.t
 SHA1 0413fd9251152f748b697d0009881658093c88b0 t/208_wgs84_coords.t
 SHA1 951d0431aa545dcfda71b2ab46449510231f5f2e t/209_max_min_wgs84_coords.t
+SHA1 6a71f76a886e0f0d4681231dcc6359b73bede621 t/210_json.t
 SHA1 31d6a6f98cacd6c95aef131d5027be577684b95f t/300_search_raw.t
 SHA1 e34f02dd72b095741964f49dc6a503ade4907685 t/301_search.t
 SHA1 78b213f1973327c0c06c623f39d6bd1a2ba8d51e t/302_search_simple_metadata.t
@@ -106,7 +107,7 @@ SHA1 8fe079b7c87660ea30b12e04ce7f8bf8bfedcf0e t/604_bug_node_history.t
 SHA1 ead9f6bd8e49d2e072c3b11027fbb180ce922e97 t/605_bug_metadata_escape.t
 SHA1 61052a07f565de62742d294cbfcefc1e7f9b98a1 t/606_bug_latlong_representation.t
 SHA1 a766018818680cea63972c1960c39d5b223b13a6 t/607_bug_first_version.t
-SHA1 f53427678273d5aa8791252082a8e431505fbdde t/608_bug_website_displayed.t
+SHA1 b4de21f38eb75727357bfae77f624d7e29c76941 t/608_bug_website_displayed.t
 SHA1 62a0efb3eefc577824305fd265df7f94e27f9367 t/609_bug_zero_geo.t
 SHA1 483f47ce992c7114b3357c0fe12be4b54e903589 t/700_admin_home.t
 SHA1 b75640394b5ae507b52f95a638508eafa9d7ef3d t/701_missing_metadata.t
@@ -137,6 +138,7 @@ SHA1 710aa847505e17781f6af536d05ff1e96a6bfbd4 t/905_multiple_index.t
 SHA1 ae36f1fb0608a55fb7a9044cc1a20a7f8d3c2234 t/906_show_index_form.t
 SHA1 d0e6b21d43a6f85381fc9b619ed8698ca9d008a3 t/907_auto_map_link.t
 SHA1 d533d373a22056e4a1569115027f7e4e4b9ef405 t/908_custom_node_location_search.t
+SHA1 50ffca1a2c5bdc5d0128ac3274d62384e19a7e84 t/909_external_class_metadata.t
 SHA1 7b7516a7b3f7f8f49bd455957dda73607cca3c0c t/templates/105_test.tt
 SHA1 cb9eebdc15a501e5d8f4ffdc145cdec776534a33 templates/admin_home.tt
 SHA1 a75c73eae929e63f42207277c2267e6a01472794 templates/admin_revert_user.tt
@@ -148,7 +150,7 @@ SHA1 17feb029eac8abe973a71ae2e51448271e97c953 templates/delete_confirm.tt
 SHA1 6f1a2af753659e9a27b7a76f6de800e61c20566a templates/delete_done.tt
 SHA1 b87db1175fc9d6ca3298b8fd8b36c2bdafd0430e templates/delete_password_wrong.tt
 SHA1 ee3f99700eec3b7a1cac930e99d39d98bec3bee0 templates/differences.tt
-SHA1 fa831d2721ce8a27807decadb5fce8aa5fb76377 templates/display_metadata.tt
+SHA1 e4fd219479a5861bd19d4f0b288823cb9ed06b63 templates/display_metadata.tt
 SHA1 6e4169fbb6b7c2bd80d2a3a1c430c346e5682d53 templates/edit_form.tt
 SHA1 737c8dd558008f1226ae267e29012ceaf793af37 templates/edit_form_actions.tt
 SHA1 b9223e06806f795b741a33bc22ff5e68df6ead63 templates/edit_form_preview.tt
@@ -198,13 +200,15 @@ SHA1 a2fb88d6d02a376ce3811b347e88b63243b07e4b templates/site_index.tt
 SHA1 1f1a463a5127a54e5f5059b11f921abe4fa9af37 templates/spam_detected.tt
 SHA1 603d7c89a53dca5a57e5a735aff9b74fe13bcfb3 templates/userstats.tt
 SHA1 778881b68d86bebc1cfba9e49d3e3e1d524514f9 templates/wanted_pages.tt
-SHA1 2fac7911553f296231a5d758377517d6a515f1d9 wiki.cgi
+SHA1 cc44eaf7e20951dc07e3303cf1ca1a0e61174ff8 wiki.cgi
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-iJwEAQECAAYFAlHODEoACgkQivyhN+Jvqw0eEQQAlAaqGQBrZZ8OKyJnA14O2xKs
-l9/pXDGfr41i+tT+ctRI9Zw/2gTL3/R0/njrYDowwOdW+mSCYamTBaIM5c0IcDBQ
-hHfBugJE2J6zyQEJ1TndYegsp6gGTaSegKsOjGlnQKNrPIFi9UflCnaQ8oZ9+QeJ
-xjdex2gAYWX3h/a+o5Y=
-=q3B+
+iQEcBAEBAgAGBQJR5syoAAoJEJsOndGQ5lgDIh4IAJ51ytpgLp8MJj7yVBbW14UW
+UawMnHvNdHj4xhj/9h7MTuq9/0o3emOGfje1u5Bkf64qybwX7947vy+4+7NK7Z8Z
+gI2CDJbmJweO7UeOd+O/bTGituYFqhWBoAN4FAkM57OUfHaVrmTSxnt4RL4BJK8g
+xJPP2VCg3YhTi5bt2aVMo7tAU3ggjJhUCNAz5AwKuiPLzDoDc1V9UuIVko2tY3Qo
+tMR/saQmZiG1go52gKrAeCQol3PPrqPDUeUC1UHpHkSyAezc5QUtdpBl0pYzsxUV
+M79BNn6DhchpkQwj+O/sC/evf8AT3lKORflDQzLIuhTc8adSwwlBvpymt6H8Hgo=
+=fJWu
 -----END PGP SIGNATURE-----

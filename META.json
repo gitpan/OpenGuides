@@ -35,6 +35,7 @@
             "DBD::SQLite" : 0,
             "Geo::HelmertTransform" : 0,
             "Test::HTML::Content" : 0,
+            "Test::JSON" : 0,
             "Test::Pod" : 0,
             "Wiki::Toolkit::Plugin::Ping" : 0
          },
@@ -72,7 +73,7 @@
             "Wiki::Toolkit::Formatter::UseMod" : "0.24",
             "Wiki::Toolkit::Plugin::Categoriser" : 0,
             "Wiki::Toolkit::Plugin::Diff" : 0,
-            "Wiki::Toolkit::Plugin::JSON" : 0,
+            "Wiki::Toolkit::Plugin::JSON" : "0.05",
             "Wiki::Toolkit::Plugin::Locator::Grid" : 0,
             "Wiki::Toolkit::Plugin::RSS::Reader" : 0,
             "XML::RSS" : 0
@@ -82,7 +83,7 @@
    "provides" : {
       "OpenGuides" : {
          "file" : "lib/OpenGuides.pm",
-         "version" : "0.72"
+         "version" : "0.73"
       },
       "OpenGuides::Build" : {
          "file" : "lib/OpenGuides/Build.pm",
@@ -102,7 +103,7 @@
       },
       "OpenGuides::JSON" : {
          "file" : "lib/OpenGuides/JSON.pm",
-         "version" : "0.04"
+         "version" : "0.05"
       },
       "OpenGuides::RDF" : {
          "file" : "lib/OpenGuides/RDF.pm",
@@ -114,7 +115,7 @@
       },
       "OpenGuides::Template" : {
          "file" : "lib/OpenGuides/Template.pm",
-         "version" : "0.18"
+         "version" : "0.19"
       },
       "OpenGuides::Test" : {
          "file" : "lib/OpenGuides/Test.pm",
@@ -122,7 +123,7 @@
       },
       "OpenGuides::Utils" : {
          "file" : "lib/OpenGuides/Utils.pm",
-         "version" : "0.16"
+         "version" : "0.17"
       }
    },
    "release_status" : "stable",
@@ -140,5 +141,5 @@
       },
       "x_MailingList" : "openguides-dev@lists.openguides.org"
    },
-   "version" : "0.72"
+   "version" : "0.73"
 }

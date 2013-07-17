@@ -22,7 +22,7 @@ name: OpenGuides
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.72
+    version: 0.73
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
     version: 0.04
@@ -37,7 +37,7 @@ provides:
     version: 0.03
   OpenGuides::JSON:
     file: lib/OpenGuides/JSON.pm
-    version: 0.04
+    version: 0.05
   OpenGuides::RDF:
     file: lib/OpenGuides/RDF.pm
     version: 0.15
@@ -46,17 +46,18 @@ provides:
     version: 0.15
   OpenGuides::Template:
     file: lib/OpenGuides/Template.pm
-    version: 0.18
+    version: 0.19
   OpenGuides::Test:
     file: lib/OpenGuides/Test.pm
     version: 0.07
   OpenGuides::Utils:
     file: lib/OpenGuides/Utils.pm
-    version: 0.16
+    version: 0.17
 recommends:
   DBD::SQLite: 0
   Geo::HelmertTransform: 0
   Test::HTML::Content: 0
+  Test::JSON: 0
   Test::Pod: 0
   Wiki::Toolkit::Plugin::Ping: 0
 requires:
@@ -93,7 +94,7 @@ requires:
   Wiki::Toolkit::Formatter::UseMod: 0.24
   Wiki::Toolkit::Plugin::Categoriser: 0
   Wiki::Toolkit::Plugin::Diff: 0
-  Wiki::Toolkit::Plugin::JSON: 0
+  Wiki::Toolkit::Plugin::JSON: 0.05
   Wiki::Toolkit::Plugin::Locator::Grid: 0
   Wiki::Toolkit::Plugin::RSS::Reader: 0
   XML::RSS: 0
@@ -103,4 +104,4 @@ resources:
   license: http://dev.perl.org/licenses/
   repository: git://github.com/OpenGuides/OpenGuides.git
   x_MailingList: openguides-dev@lists.openguides.org
-version: 0.72
+version: 0.73

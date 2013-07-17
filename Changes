@@ -1,8 +1,18 @@
-"#" items refer to tickets. See <http://dev.openguides.org/report/9> for details.
+"#" items are GitHub issues since the 0.72 release see <https://github.com/OpenGuides/OpenGuides/issues> before that they were tickets on <http://dev.openguides.org>
 
 More detailed changelogs can be found at
-<http://dev.openguides.org/log/trunk>.
+<http://github.com/OpenGuides/OpenGuides>
 
+0.73    
+        Bump required version of Wiki::Toolkit::Plugin::JSON to remove
+          deprecation warnings. 
+        Node JSON output now contains image information.
+        Node JSON output now includes raw and html formatted content.
+        Add the external class to website and map links when
+          displaying them in the metadata section of a node. 
+        Add the @NODE_COUNT macro to count the number of nodes 
+          in a category/locale.
+        Allow passing Module::Build long options to Build.PL. Fixes #71.
 
 0.72    28 June 2013
         Fix the date in json output. Fixes #5

@@ -3,7 +3,7 @@ package OpenGuides::JSON;
 use strict;
 
 use vars qw( $VERSION );
-$VERSION = '0.04';
+$VERSION = '0.05';
 
 use Wiki::Toolkit::Plugin::JSON;
 use Time::Piece;
@@ -97,6 +97,11 @@ sub emit_json {
     $data->{categories} = $node_data{metadata}{category}     || [];
     $data->{locales}    = $node_data{metadata}{locale}       || [];
     $data->{summary}    = $node_data{metadata}{summary}[0]   || '';
+    $data->{content}    = $node_data{content};
+    $data->{formatted_content}  = $wiki->format($node_data{content});
+    $data->{node_image} = $node_data{metadata}{node_image}[0]|| '';
+    $data->{node_image_url} = $node_data{metadata}{node_image_url}[0]|| '';
+    $data->{node_image_licence} = $node_data{metadata}{node_image_licence}[0]|| '';
 
     $data->{timestamp} = $node_data{last_modified};
 
