@@ -13,7 +13,7 @@ configure_requires:
   Config::Tiny: 0
   Module::Build: 0.26
 dynamic_config: 1
-generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.110440'
+generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.112621'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -22,7 +22,7 @@ name: OpenGuides
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.73
+    version: 0.74
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
     version: 0.04
@@ -104,4 +104,4 @@ resources:
   license: http://dev.perl.org/licenses/
   repository: git://github.com/OpenGuides/OpenGuides.git
   x_MailingList: openguides-dev@lists.openguides.org
-version: 0.73
+version: 0.74
