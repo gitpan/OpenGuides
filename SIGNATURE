@@ -1,5 +1,5 @@
 This file contains message digests of all files listed in MANIFEST,
-signed via the Module::Signature module, version 0.68.
+signed via the Module::Signature module, version 0.73.
 
 To verify the content in this distribution, first make sure you have
 Module::Signature installed, then type:
@@ -14,14 +14,14 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 bd10ca982eef28a45d1ed86c25b119cd64a6662c Build.PL
+SHA1 84576b885adbbf3892aa9e95ca2d5bf9e6f7f851 Build.PL
 SHA1 34a09556161b7ed833e2e56e33dd5002afc604fe CONTRIBUTORS
 SHA1 b7a4d8b30b269f2a1adf5617503a7684d04ce733 CUSTOMISATION
-SHA1 d87341ca5bf54df52cfcedae41d862c8f15d3064 Changes
-SHA1 07f93a06a38a3a52b1e7dbc6dbc30fbbfdf5d480 INSTALL
-SHA1 5869b990adddec2fb6fa8b0196f5c1e0e26e26ac MANIFEST
-SHA1 cb734047391a69d576f3384dfd3651fe10a9a8fb META.json
-SHA1 830f9adb332c1b0cd4a23b98d87b9d615e4309a2 META.yml
+SHA1 b937634cad7d52fae952daeede9fd49995a6abec Changes
+SHA1 69bdb9596876c59878db47408bbea755cb864742 INSTALL
+SHA1 9bb7883ace904fb8ff45559c7ee08eabff8f6b9f MANIFEST
+SHA1 6d1c04f1f23a6dac15ff8134df10b324ba2f3eab META.json
+SHA1 2a98386f10918b95c6d6a4cb0d55b6ce6ede54f9 META.yml
 SHA1 7a24574cbe5c3849850a61a595343147d4def070 Makefile.PL
 SHA1 3078f658de87babcc30fdd83217dd445411372c0 README
 SHA1 7dfb84cf0322ed41fb80110d11db2fc288347192 README.CSS
@@ -30,17 +30,18 @@ SHA1 f5bfeead4820514b4e88be6989f3680752b840a0 README.pod
 SHA1 4257dd5b8ade3a0c36db723a807a4634ce31164f TROUBLESHOOTING
 SHA1 137951315fe0798c6f4f210dbe8112e28b5172a8 UPGRADING
 SHA1 56af6cfc7c441e5a38c759a8dd3047625c48fe32 examples/reindex.pl
-SHA1 d8e97f66e946d57a7f62f3d2032a67810a89c29f lib/OpenGuides.pm
+SHA1 0080dbba72e04a3f539e5803aeed88a4aaf5c444 lib/OpenGuides.pm
 SHA1 2b96b7e4a10a4686ecc99a3ebf34b6d4b350a55c lib/OpenGuides/Build.pm
 SHA1 c8c01e0e92a24e7d7999bff71a65e54d6c7298b5 lib/OpenGuides/CGI.pm
-SHA1 e038b89c6549a0522e59ccaa6665a173e1512c75 lib/OpenGuides/Config.pm
+SHA1 6c41f115183396874d6f1e8a824de9f1e5c6bed1 lib/OpenGuides/Config.pm
 SHA1 ebc58ad5bb6fdb224a43de214a998421a2e330a7 lib/OpenGuides/Feed.pm
 SHA1 c959d5cf171b6c18c8a9e96407fa2d636d49251b lib/OpenGuides/JSON.pm
 SHA1 cc570c04610512e75a65651cc48e73d9e46778dd lib/OpenGuides/RDF.pm
-SHA1 781f4ac4e54a152d1eface424e95dc4839d43428 lib/OpenGuides/Search.pm
+SHA1 b70dfcc9937a0c933fff1a58acea3829aca1ecee lib/OpenGuides/Search.pm
+SHA1 b45b56afa5000bb0aecac981dce9736e05000aa2 lib/OpenGuides/Search/Lucy.pm
 SHA1 078542c7e5ffec784429db7bcd943cea1e1980bd lib/OpenGuides/Template.pm
-SHA1 7c17be771409ba2a16cf5db6ef564875cc8fe1b0 lib/OpenGuides/Test.pm
-SHA1 4764a71d6459cea721c8c4727011eed35e0ea888 lib/OpenGuides/Utils.pm
+SHA1 0a37eb51c30e720e0f3dd957ac2ec77ed55752bc lib/OpenGuides/Test.pm
+SHA1 4d9879e27f3e3fcab14d2e0d9505945ab07050a5 lib/OpenGuides/Utils.pm
 SHA1 3eb260297d714a0cdf853f409836032caa7549dd newpage.cgi
 SHA1 59da9b95c89010146ea98a62c113e7fd9e3ccc12 preferences.cgi
 SHA1 b9a32c47e81d4e8904c4a709423fe10f0247be8d search.cgi
@@ -48,7 +49,7 @@ SHA1 a3497394ed1df2a21496625ce79dff1dd1f339d4 static/map-leaflet.js
 SHA1 4dba3b5e802e76bf6db19fb19df72d36fcedd862 static/openguides-base.css
 SHA1 70268ca7e31c9260c4685e5a480c94320eb91192 t/001_load.t
 SHA1 fada08a138c7f5d0c435fbd184ebfbd975f5da7d t/002_pod.t
-SHA1 454a6f11bd39314caf3dc476de17e6bebf85ff64 t/101_utils.t
+SHA1 fbeb07504b34dfbcfb0da698345b2fa4afc72293 t/101_utils.t
 SHA1 1ff8e3d1cec019286a3a8d9adf1a1b906574778f t/102_macros.t
 SHA1 ead3becaccc66fdd307d8b86afcc42838f8c905e t/103_cookies.t
 SHA1 3f765b96e182a8f1ab6b3349b0adf919bc8d3f45 t/104_recent_changes_cookies.t
@@ -63,23 +64,23 @@ SHA1 9347bcb86802bee2cf6fa5aac2c64109d6d0a734 t/202_feed_recent_changes.t
 SHA1 6b4cbba63df888307892828b99b82a2f0b37e2b3 t/203_feed_node_all_versions.t
 SHA1 f4a3834683889bc3bc53d2b3b11c3d2e4c8f5cdf t/204_feed_node_listings.t
 SHA1 7c28f21f854a091fd5d941bb3e215fb6dc98a691 t/205_write_geo_data.t
-SHA1 7da97a8aa26f19fb8d4db429c628d291b6e6430b t/206_geo_data_search_form.t
+SHA1 827662f5622a56b29625d624924168e630e6ac51 t/206_geo_data_search_form.t
 SHA1 a70ccaa6cac26cad8b23c38f34b3af78965564db t/207_geo_data_edit_form.t
 SHA1 0413fd9251152f748b697d0009881658093c88b0 t/208_wgs84_coords.t
 SHA1 951d0431aa545dcfda71b2ab46449510231f5f2e t/209_max_min_wgs84_coords.t
 SHA1 1ccd537ca8032adc8230342f8b8f37074e065d49 t/210_json.t
-SHA1 31d6a6f98cacd6c95aef131d5027be577684b95f t/300_search_raw.t
-SHA1 e34f02dd72b095741964f49dc6a503ade4907685 t/301_search.t
-SHA1 78b213f1973327c0c06c623f39d6bd1a2ba8d51e t/302_search_simple_metadata.t
-SHA1 1769aaf0a590d8816e83f43490ea5377d20c4b6a t/303_search_advanced_search.t
-SHA1 670165eabf12fb81fe7111e91d01b68c753fd214 t/303_search_advanced_search_utm.t
-SHA1 6b98fe01dc22db6817b419b3ef0047e47f9e14c7 t/304_search_paging.t
-SHA1 4f914873bd4e6a334158a91fa9a47d1af939b6ea t/305_search_two_searches.t
-SHA1 15c9da23fc2cbe0b14b055b1c6306ba190294fa0 t/306_search_order.t
-SHA1 69f23108e277d016e01a266c72a9a1b0df3cb11d t/307_search_summaries.t
-SHA1 7db66444f52641c5dee42e23806ed0948e77bbec t/308_search_params.t
-SHA1 edc051ecc42e0850ac994112261f79f69ada58a0 t/309_search_form.t
-SHA1 c8a10e80cc72edf0bf73475fddd9166481a851a5 t/400_search_as_feed.t
+SHA1 a3a23528d89a4ff647739de34d48b38d3777c1f1 t/300_search_raw.t
+SHA1 89bbf96ffdeec5c91d1592a9026bc12072058107 t/301_search.t
+SHA1 7122307a62d6e25fdffd153791ac3161d21177dc t/302_search_simple_metadata.t
+SHA1 48efab4d08e25b818ebd7e231794f97e3adc31c8 t/303_search_advanced_search.t
+SHA1 58d42991a6386d6a20fea182d1d5016105c7ba84 t/303_search_advanced_search_utm.t
+SHA1 3b21845a56e4e71f11af3530c15e95a6bce68783 t/304_search_paging.t
+SHA1 98912b0ff284142140cbe00adba64523959639e5 t/305_search_two_searches.t
+SHA1 db527f617d9545ee1ef5c0bd6d768d10511ffbe3 t/306_search_order.t
+SHA1 5c2bdcd6e39e78a52cc1eacb817ddcd2469bc611 t/307_search_summaries.t
+SHA1 428e10566ab6d9ec5ba4851c3f88c02bcd64a35d t/308_search_params.t
+SHA1 3c99510673d6810a674fc452a4ef34e3ff9fdfd6 t/309_search_form.t
+SHA1 c680cf31818c72d403746f4f083f2d2e33ffb735 t/400_search_as_feed.t
 SHA1 f76d97207cf495e49c6698fa183a827a8f8e17f0 t/401_deletion.t
 SHA1 14d0a09765466792d6a5784bc41e09a5cf9f64b1 t/402_edit_conflict.t
 SHA1 f74a72bf14af684befd79b7b71c0cace5c9c0efe t/403_preview_edits.t
@@ -200,15 +201,15 @@ SHA1 a2fb88d6d02a376ce3811b347e88b63243b07e4b templates/site_index.tt
 SHA1 1f1a463a5127a54e5f5059b11f921abe4fa9af37 templates/spam_detected.tt
 SHA1 603d7c89a53dca5a57e5a735aff9b74fe13bcfb3 templates/userstats.tt
 SHA1 778881b68d86bebc1cfba9e49d3e3e1d524514f9 templates/wanted_pages.tt
-SHA1 41117f6c7a8ccb1c6bb576374c33b80dffedba64 wiki.cgi
+SHA1 f6e31b2e10d54faf171a649a077378841bfb9dc7 wiki.cgi
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQEcBAEBAgAGBQJR6TdPAAoJEJsOndGQ5lgD5JMH/jUAatyba9BRnA7mCXGHoEAv
-pXZ4dWoT4QpNr8pukfaLv6OeLPcZLpNC19rPkjPQI3eB+kxRkwdT0cLsJuRNst2c
-wcBNXu4ModlrYZSPGEpC4hI7kw8VPznT65b5nds+BwpKQJnFtM96euUAqeXuzooL
-cXjtZ2QxIZvqL9nhYWdp0YFous0xL6VK7FlY6cVVqUMdGj6eb8VPH8Q94d1cHCHI
-4Lunm91ErnxxWNjHDIuVj5Wm8EOShLVrBNwbZC6gqWtxMmJpxCefazSCgNVtnJ8+
-nRN1vLDhJC2Nawjfp9i7BUZczfggMiXbOKNy4OrS2qcXZfldd+48VKnhcUI49FQ=
-=U7MK
+iQEcBAEBAgAGBQJSkKB7AAoJEJsOndGQ5lgD+HgH/1OUOS+exihsA01quAVuxLmZ
+kyHY11/zr25NCIALY6zfB0/Nto60D0/m7HdPtJQXQP9h204FQ56cT4RDoBurfO5O
+fGVRiw+i1NRAmrFEW7ijCf2du09drCMZaMT37DeY4eJOFvoGG2EYeFivjx+OD35M
+Lc4z0jooCAfxWbpOjlgrQPHjhbW3gaKZqThl0Xw0ueJJokEKUZIf9EtXPeu2EbWK
+nnKH3chLM9mZPcTnh7STiu+HTVrKH0Z40y+keSyiXGN/WbWIdfMBL25zffWgPN9f
+oAXgqEaNvIwuqK1Og71GfflZXFGjEYCR4xg0XsL6rrlBDV2LFKq6hROaP9tVNvw=
+=4zzM
 -----END PGP SIGNATURE-----

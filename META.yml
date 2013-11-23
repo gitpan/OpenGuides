@@ -13,7 +13,7 @@ configure_requires:
   Config::Tiny: 0
   Module::Build: 0.26
 dynamic_config: 1
-generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.112621'
+generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.120351'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -22,7 +22,7 @@ name: OpenGuides
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.74
+    version: 0.75
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
     version: 0.04
@@ -44,6 +44,9 @@ provides:
   OpenGuides::Search:
     file: lib/OpenGuides/Search.pm
     version: 0.15
+  OpenGuides::Search::Lucy:
+    file: lib/OpenGuides/Search/Lucy.pm
+    version: 0
   OpenGuides::Template:
     file: lib/OpenGuides/Template.pm
     version: 0.19
@@ -88,7 +91,7 @@ requires:
   Template::Plugin::JSON::Escape: 0
   Time::Piece: 0
   URI::Escape: 0
-  Wiki::Toolkit: 0.80
+  Wiki::Toolkit: 0.83
   Wiki::Toolkit::Feed::Atom: 0
   Wiki::Toolkit::Feed::RSS: 0
   Wiki::Toolkit::Formatter::UseMod: 0.24
@@ -104,4 +107,4 @@ resources:
   license: http://dev.perl.org/licenses/
   repository: git://github.com/OpenGuides/OpenGuides.git
   x_MailingList: openguides-dev@lists.openguides.org
-version: 0.74
+version: 0.75
