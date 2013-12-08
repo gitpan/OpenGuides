@@ -83,7 +83,7 @@
    "provides" : {
       "OpenGuides" : {
          "file" : "lib/OpenGuides.pm",
-         "version" : "0.75"
+         "version" : "0.76"
       },
       "OpenGuides::Build" : {
          "file" : "lib/OpenGuides/Build.pm",
@@ -95,7 +95,7 @@
       },
       "OpenGuides::Config" : {
          "file" : "lib/OpenGuides/Config.pm",
-         "version" : "0.08"
+         "version" : "0.09"
       },
       "OpenGuides::Feed" : {
          "file" : "lib/OpenGuides/Feed.pm",
@@ -127,7 +127,7 @@
       },
       "OpenGuides::Utils" : {
          "file" : "lib/OpenGuides/Utils.pm",
-         "version" : "0.17"
+         "version" : "0.18"
       }
    },
    "release_status" : "stable",
@@ -144,5 +144,5 @@
       },
       "x_MailingList" : "openguides-dev@lists.openguides.org"
    },
-   "version" : "0.75"
+   "version" : "0.76"
 }

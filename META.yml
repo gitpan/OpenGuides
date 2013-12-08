@@ -22,7 +22,7 @@ name: OpenGuides
 provides:
   OpenGuides:
     file: lib/OpenGuides.pm
-    version: 0.75
+    version: 0.76
   OpenGuides::Build:
     file: lib/OpenGuides/Build.pm
     version: 0.04
@@ -31,7 +31,7 @@ provides:
     version: 0.12
   OpenGuides::Config:
     file: lib/OpenGuides/Config.pm
-    version: 0.08
+    version: 0.09
   OpenGuides::Feed:
     file: lib/OpenGuides/Feed.pm
     version: 0.03
@@ -55,7 +55,7 @@ provides:
     version: 0.07
   OpenGuides::Utils:
     file: lib/OpenGuides/Utils.pm
-    version: 0.17
+    version: 0.18
 recommends:
   DBD::SQLite: 0
   Geo::HelmertTransform: 0
@@ -107,4 +107,4 @@ resources:
   license: http://dev.perl.org/licenses/
   repository: git://github.com/OpenGuides/OpenGuides.git
   x_MailingList: openguides-dev@lists.openguides.org
-version: 0.75
+version: 0.76

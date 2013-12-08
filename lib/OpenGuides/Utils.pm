@@ -2,7 +2,7 @@ package OpenGuides::Utils;
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = '0.17';
+$VERSION = '0.18';
 
 use Carp qw( croak );
 use Wiki::Toolkit;
@@ -233,6 +233,14 @@ sub make_wiki_object {
                     $list .= "</ul>\n";
         },
     );
+
+    my $custom_macro_module = $config->custom_macro_module;
+    if ( $custom_macro_module ) {
+        eval {
+            eval "require $custom_macro_module";
+            %macros = $custom_macro_module->custom_macros(macros => \%macros);
+        };
+    }
 
     my $formatter = Wiki::Toolkit::Formatter::UseMod->new(
         extended_links      => 1,
